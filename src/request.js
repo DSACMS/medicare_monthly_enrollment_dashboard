@@ -7,7 +7,7 @@ async function runDashboardRequests() {
     const nationalYearly = await requestDataset("nationalEnrollment", {
       type: "yearly",
     });
-    //console.log("National Yearly Data:", nationalYearly);
+    console.log(JSON.stringify(nationalYearly, null, 2));
 
     // 2. National Monthly Request
     const nationalMonthly = await requestDataset("nationalEnrollment", {
