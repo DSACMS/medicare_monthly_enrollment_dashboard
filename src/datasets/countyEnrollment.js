@@ -3,7 +3,6 @@ import { cmsGet } from "../api/cmsClient.js";
 export async function fetchCountiesForState(options = {}) {
   const state = options.state;
   const year = options.year || "2024";
-  const month = options.month || "Year";
 
   if (!state) {
     throw new Error("fetchCountiesForState requires options.state (e.g. 'NY')");
@@ -26,7 +25,7 @@ export async function fetchCountiesForState(options = {}) {
     "filter[BENE_GEO_LVL]": "County",
     "filter[BENE_STATE_ABRVTN]": state,
     "filter[YEAR]": year,
-    "filter[MONTH]": month,
+    "filter[MONTH]": "Year",
     column: columns.join(","),
     size: "5000",
   });
@@ -48,7 +47,6 @@ export async function fetchCountiesForState(options = {}) {
       county: row.BENE_COUNTY_DESC,
       fips: row.BENE_FIPS_CD,
       year,
-      month,
       totalEnrollees: total,
       ffsCount: ffs,
       maCount: ma,
