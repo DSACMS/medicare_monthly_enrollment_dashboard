@@ -1,9 +1,12 @@
 import { fetchNationalData } from './datasets/nationalEnrollment.js';
 import { fetchCountiesForState } from './datasets/countyEnrollment.js';
+import { fetchAllStates, fetchStateEnrollment } from './datasets/stateEnrollment.js';
 
 const functionRegistry = {
   nationalEnrollment: fetchNationalData,
   countyEnrollment: fetchCountiesForState,
+  allStates: fetchAllStates,
+  stateEnrollment: fetchStateEnrollment,
 };
 
 export async function requestDataset(serviceName, options = {}) {
