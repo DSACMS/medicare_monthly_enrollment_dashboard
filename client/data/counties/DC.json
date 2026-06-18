@@ -1,1 +1,38 @@
-[{"state":"DC","stateName":"District of Columbia","county":"District Of Columbia","fips":"11001","year":"2026","month":"February","totalEnrollees":97380,"ffsCount":63874,"maCount":33506,"ffsPercent":65.59,"maPercent":34.41,"drugTotal":73142,"pdpCount":40924,"mapdCount":32218,"pdpPercent":55.95,"mapdPercent":44.05},{"state":"DC","stateName":"District of Columbia","county":"Unknown","fips":"11999","year":"2026","month":"February","totalEnrollees":0,"ffsCount":0,"maCount":0,"ffsPercent":0,"maPercent":0,"drugTotal":0,"pdpCount":0,"mapdCount":0,"pdpPercent":0,"mapdPercent":0}]
+[
+  {
+    "state": "DC",
+    "stateName": "District of Columbia",
+    "county": "District Of Columbia",
+    "fips": "11001",
+    "year": "2026",
+    "month": "February",
+    "totalEnrollees": 97380,
+    "ffsCount": 63874,
+    "maCount": 33506,
+    "ffsPercent": 65.59,
+    "maPercent": 34.41,
+    "drugTotal": 73142,
+    "pdpCount": 40924,
+    "mapdCount": 32218,
+    "pdpPercent": 55.95,
+    "mapdPercent": 44.05
+  },
+  {
+    "state": "DC",
+    "stateName": "District of Columbia",
+    "county": "Unknown",
+    "fips": "11999",
+    "year": "2026",
+    "month": "February",
+    "totalEnrollees": 0,
+    "ffsCount": 0,
+    "maCount": 0,
+    "ffsPercent": 0,
+    "maPercent": 0,
+    "drugTotal": 0,
+    "pdpCount": 0,
+    "mapdCount": 0,
+    "pdpPercent": 0,
+    "mapdPercent": 0
+  }
+]

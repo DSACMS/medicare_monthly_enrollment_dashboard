@@ -4,7 +4,7 @@ import { requestDataset } from "../src/router.js";
 const OUT = "client/data";
 
 async function writeJson(relativePath, data) {
-  await writeFile(`${OUT}/${relativePath}`, JSON.stringify(data));
+  await writeFile(`${OUT}/${relativePath}`, JSON.stringify(data, null, 2) + "\n");
   const size = Array.isArray(data) ? `${data.length} rows` : "object";
   console.log(`wrote ${relativePath} (${size})`);
 }
