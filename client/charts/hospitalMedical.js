@@ -1,8 +1,7 @@
 import { renderLineChart } from './lineChart.js';
-import { renderStackedBarChart, formatPercent } from './stackedBarChart.js';
+import { renderStackedBarChart } from './stackedBarChart.js';
 import { sortYearlyAscending, sortMonthlyAscending, formatPeriod } from './utils.js';
-
-const num = d3.format(',');
+import { hospitalYearly, hospitalMonthly } from '../tables/hospitalMedical/tableColumns.js';
 
 const HOSPITAL_LINE_SERIES = [
   { key: 'ffsCount', label: 'Fee-For-Service (FFS)' },
@@ -12,23 +11,6 @@ const HOSPITAL_LINE_SERIES = [
 const HOSPITAL_STACK_SEGMENTS = [
   { key: 'ffsPercent', label: 'Fee-For-Service (FFS)' },
   { key: 'maPercent', label: 'Medicare Advantage (MA)' },
-];
-
-const hospitalYearlyTableColumns = [
-  { label: 'Year', value: (d) => d.year },
-  { label: 'FFS Count', value: (d) => num(d.ffsCount) },
-  { label: 'MA Count', value: (d) => num(d.maCount) },
-  { label: 'FFS %', value: (d) => formatPercent(d.ffsPercent) },
-  { label: 'MA %', value: (d) => formatPercent(d.maPercent) },
-];
-
-const hospitalMonthlyTableColumns = [
-  { label: 'Year', value: (d) => d.year },
-  { label: 'Month', value: (d) => d.month },
-  { label: 'FFS Count', value: (d) => num(d.ffsCount) },
-  { label: 'MA Count', value: (d) => num(d.maCount) },
-  { label: 'FFS %', value: (d) => formatPercent(d.ffsPercent) },
-  { label: 'MA %', value: (d) => formatPercent(d.maPercent) },
 ];
 
 /**
@@ -44,7 +26,7 @@ export function renderHospitalYearlyLineChart(selector, data) {
     xLabel: 'Year',
     yLabel: 'Enrollment Count',
     title: 'Hospital/Medical Enrollment Count Yearly Trend',
-    tableColumns: hospitalYearlyTableColumns,
+    tableColumns: hospitalYearly,
   });
 }
 
@@ -61,7 +43,7 @@ export function renderHospitalMonthlyLineChart(selector, data) {
     xLabel: 'Month',
     yLabel: 'Enrollment Count',
     title: 'Hospital/Medical Enrollment Count 12-Month Trend',
-    tableColumns: hospitalMonthlyTableColumns,
+    tableColumns: hospitalMonthly,
   });
 }
 
@@ -78,7 +60,7 @@ export function renderHospitalYearlyStackedBarChart(selector, data) {
     xLabel: 'Year',
     yLabel: 'Percent of Total Enrollment',
     title: 'Hospital/Medical Percent of Total Enrollment Yearly Trend',
-    tableColumns: hospitalYearlyTableColumns,
+    tableColumns: hospitalYearly,
   });
 }
 
@@ -95,6 +77,6 @@ export function renderHospitalMonthlyStackedBarChart(selector, data) {
     xLabel: 'Month',
     yLabel: 'Percent of Total Enrollment',
     title: 'Hospital/Medical Percent of Total Enrollment 12-Month Trend',
-    tableColumns: hospitalMonthlyTableColumns,
+    tableColumns: hospitalMonthly,
   });
 }

@@ -1,7 +1,6 @@
-import { requestDataset } from './src/router.js';
+import { readFile } from 'node:fs/promises';
 
-const dashboardYearlyComparison = await requestDataset('nationalEnrollment', { type: 'yearly' });
-// console.log("Yearly view:", dashboardYearlyComparison);
+const national = JSON.parse(await readFile('./client/data/national.json', 'utf-8'));
 
-const dashboardMonthlyComparison = await requestDataset('nationalEnrollment', { type: 'monthly' });
-// console.log("Monthly view:", dashboardMonthlyComparison);
+console.log("Yearly view:", JSON.stringify(national.yearly, null, 2));
+console.log("Monthly view:", JSON.stringify(national.monthly, null, 2));

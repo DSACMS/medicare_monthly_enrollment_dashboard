@@ -1,8 +1,7 @@
 import { renderLineChart } from './lineChart.js';
-import { renderStackedBarChart, formatPercent } from './stackedBarChart.js';
+import { renderStackedBarChart } from './stackedBarChart.js';
 import { sortYearlyAscending, sortMonthlyAscending, formatPeriod } from './utils.js';
-
-const num = d3.format(',');
+import { drugYearly, drugMonthly } from '../tables/prescriptionDrug/tableColumns.js';
 
 const DRUG_LINE_SERIES = [
   { key: 'pdpCount', label: 'Standalone PDP' },
@@ -12,23 +11,6 @@ const DRUG_LINE_SERIES = [
 const DRUG_STACK_SEGMENTS = [
   { key: 'pdpPercent', label: 'Standalone PDP' },
   { key: 'mapdPercent', label: 'MA-PD Bundled' },
-];
-
-const drugYearlyTableColumns = [
-  { label: 'Year', value: (d) => d.year },
-  { label: 'PDP Count', value: (d) => num(d.pdpCount) },
-  { label: 'MAPD Count', value: (d) => num(d.mapdCount) },
-  { label: 'PDP %', value: (d) => formatPercent(d.pdpPercent) },
-  { label: 'MAPD %', value: (d) => formatPercent(d.mapdPercent) },
-];
-
-const drugMonthlyTableColumns = [
-  { label: 'Year', value: (d) => d.year },
-  { label: 'Month', value: (d) => d.month },
-  { label: 'PDP Count', value: (d) => num(d.pdpCount) },
-  { label: 'MAPD Count', value: (d) => num(d.mapdCount) },
-  { label: 'PDP %', value: (d) => formatPercent(d.pdpPercent) },
-  { label: 'MAPD %', value: (d) => formatPercent(d.mapdPercent) },
 ];
 
 /**
@@ -44,7 +26,7 @@ export function renderDrugYearlyLineChart(selector, data) {
     xLabel: 'Year',
     yLabel: 'Enrollment Count',
     title: 'Prescription Drug Enrollment Count Yearly Trend',
-    tableColumns: drugYearlyTableColumns,
+    tableColumns: drugYearly,
   });
 }
 
@@ -61,7 +43,7 @@ export function renderDrugMonthlyLineChart(selector, data) {
     xLabel: 'Month',
     yLabel: 'Enrollment Count',
     title: 'Prescription Drug Enrollment Count 12-Month Trend',
-    tableColumns: drugMonthlyTableColumns,
+    tableColumns: drugMonthly,
   });
 }
 
@@ -78,7 +60,7 @@ export function renderDrugYearlyStackedBarChart(selector, data) {
     xLabel: 'Year',
     yLabel: 'Percent of Total Enrollment',
     title: 'Prescription Drug Percent of Total Enrollment Yearly Trend',
-    tableColumns: drugYearlyTableColumns,
+    tableColumns: drugYearly,
   });
 }
 
@@ -95,6 +77,6 @@ export function renderDrugMonthlyStackedBarChart(selector, data) {
     xLabel: 'Month',
     yLabel: 'Percent of Total Enrollment',
     title: 'Prescription Drug Percent of Total Enrollment 12-Month Trend',
-    tableColumns: drugMonthlyTableColumns,
+    tableColumns: drugMonthly,
   });
 }
