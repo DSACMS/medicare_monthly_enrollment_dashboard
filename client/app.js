@@ -1,4 +1,15 @@
+import { requestDataset } from '../src/router.js';
 import { renderTable } from './tables/renderTable.js';
+import {
+  renderHospitalYearlyLineChart,
+  renderHospitalMonthlyLineChart,
+  renderHospitalYearlyStackedBarChart,
+  renderHospitalMonthlyStackedBarChart,
+  renderDrugYearlyLineChart,
+  renderDrugMonthlyLineChart,
+  renderDrugYearlyStackedBarChart,
+  renderDrugMonthlyStackedBarChart,
+} from './charts/index.js';
 
 // Paste your request_output.json data directly here
 const enrollmentData = [
@@ -179,3 +190,22 @@ const columns = [
 
 // Draw the data on load
 renderTable('#medicare-table', columns, enrollmentData);
+
+renderHospitalYearlyLineChart('#national-hospital-yearly-line', enrollmentData);
+renderHospitalYearlyStackedBarChart('#national-hospital-yearly-bar', enrollmentData);
+renderDrugYearlyLineChart('#national-drug-yearly-line', enrollmentData);
+renderDrugYearlyStackedBarChart('#national-drug-yearly-bar', enrollmentData);
+
+async function renderNationalMonthlyCharts() {
+  try {
+    const monthlyData = await requestDataset('nationalEnrollment', { type: 'monthly' });
+    renderHospitalMonthlyLineChart('#national-hospital-monthly-line', monthlyData);
+    renderHospitalMonthlyStackedBarChart('#national-hospital-monthly-bar', monthlyData);
+    renderDrugMonthlyLineChart('#national-drug-monthly-line', monthlyData);
+    renderDrugMonthlyStackedBarChart('#national-drug-monthly-bar', monthlyData);
+  } catch (error) {
+    console.error('Failed to load national monthly charts:', error.message);
+  }
+}
+
+renderNationalMonthlyCharts();
