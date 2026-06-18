@@ -1,4 +1,3 @@
-import { requestDataset } from "../../../src/router.js";
 import { renderTable } from "../renderTable.js";
 
 const formatNumber = (value) => value.toLocaleString();
@@ -14,7 +13,8 @@ const columns = [
 ];
 
 export async function renderCountyCurrentYearDrugTable(host, state) {
-  const data = await requestDataset("countyEnrollment", { state });
+  const response = await fetch(new URL(`../../data/counties/${state}.json`, import.meta.url));
+  const data = await response.json();
   data.sort((a, b) => a.county.localeCompare(b.county));
   renderTable(host, columns, data);
 }

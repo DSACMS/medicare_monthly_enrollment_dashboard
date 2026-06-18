@@ -1,4 +1,3 @@
-import { requestDataset } from "../../../src/router.js";
 import { renderTable } from "../renderTable.js";
 
 const formatNumber = (value) => value.toLocaleString();
@@ -14,7 +13,8 @@ const columns = [
 ];
 
 export async function renderNationalYearlyDrugTable(host) {
-  const data = await requestDataset("nationalEnrollment", { type: "yearly" });
-  data.sort((a, b) => a.year - b.year);
-  renderTable(host, columns, data);
+  const response = await fetch(new URL("../../data/national.json", import.meta.url));
+  const { yearly } = await response.json();
+  yearly.sort((a, b) => a.year - b.year);
+  renderTable(host, columns, yearly);
 }
