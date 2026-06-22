@@ -1,5 +1,6 @@
 export { renderLineChart } from './lineChart.js';
 export { renderStackedBarChart } from './stackedBarChart.js';
+export {renderPieChart} from './pieChart.js';
 
 export {
   renderHospitalYearlyLineChart,

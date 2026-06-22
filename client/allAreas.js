@@ -8,6 +8,7 @@ import {
   renderDrugMonthlyLineChart,
   renderDrugYearlyStackedBarChart,
   renderDrugMonthlyStackedBarChart,
+  renderPieChart
 } from './charts/index.js';
 
 const formatNum = d3.format(",");
@@ -50,6 +51,42 @@ async function init() {
     renderHospitalMonthlyStackedBarChart('#national-hospital-monthly-bar', monthly);
     renderDrugMonthlyLineChart('#national-drug-monthly-line', monthly);
     renderDrugMonthlyStackedBarChart('#national-drug-monthly-bar', monthly);
+
+    // IMPORTANT: keep MA/MA-PD as the SECOND item in each array below.
+    // pieChart.js renders index 1 on the left side of the donut (both the
+    // arc and its label). If you reorder these or add a third Medicare
+    // program type, double-check pieChart.js's xPosition logic still does
+    // what you expect.
+    //
+    // currentYear assumes `yearly` is sorted newest-first
+    const currentYear = yearly[0];
+ 
+    const medicareEnrollmentPieData = [
+      { name: "FFS", value: currentYear.ffsPercent },
+      { name: "MA", value: currentYear.maPercent }, 
+    ];
+    renderPieChart('#medicare-enrollment-pie', medicareEnrollmentPieData, currentYear.totalEnrollees, {
+      colors: ["#961d56", "#7928c9"],
+      title: `Medicare enrollment by program type, ${currentYear.year}`,
+      tableColumns: [
+        { label: 'Program', value: (d) => d.name },
+        { label: 'Percent of total', value: (d) => `${Math.round(d.value)}%` },
+      ],
+    });
+ 
+    const drugEnrollmentPieData = [
+      { name: "PDP", value: currentYear.pdpPercent },
+      { name: "MA-PD", value: currentYear.mapdPercent },
+    ];
+    renderPieChart('#drug-enrollment-pie', drugEnrollmentPieData, currentYear.drugTotal, {
+      colors: ["#89cc9e", "#009ad0"],
+      title: `Medicare Part D enrollment by plan type, ${currentYear.year}`,
+      tableColumns: [
+        { label: 'Plan type', value: (d) => d.name },
+        { label: 'Percent of total', value: (d) => `${Math.round(d.value)}%` },
+      ],
+    });
+
   } catch (error) {
     console.error('Failed to load national data:', error.message);
   }
