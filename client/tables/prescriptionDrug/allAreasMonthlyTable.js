@@ -1,4 +1,5 @@
 import { renderTable } from "../renderTable.js";
+import { requestDataset } from "../../../src/router.js";
 
 const formatNumber = (value) => value.toLocaleString();
 const round = (value) => Math.round(value);
@@ -14,8 +15,6 @@ const columns = [
 ];
 
 export async function renderNationalMonthlyDrugTable(host) {
-  const response = await fetch(new URL("../../data/national.json", import.meta.url));
-  const { monthly } = await response.json();
-  monthly.reverse();
+  const monthly = await requestDataset("nationalEnrollment", { type: "monthly" });
   renderTable(host, columns, monthly);
 }

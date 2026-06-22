@@ -1,4 +1,9 @@
+import { requestDataset } from '../../src/router.js';
+
 export async function fetchStateData(state) {
-  const data = await fetch(`/client/data/states/${state}.json`).then(r => r.json());
-  return data;
+  const [yearly, monthly] = await Promise.all([
+    requestDataset('stateEnrollment', { state, type: 'yearly' }),
+    requestDataset('stateEnrollment', { state, type: 'monthly' }),
+  ]);
+  return { yearly, monthly };
 }
