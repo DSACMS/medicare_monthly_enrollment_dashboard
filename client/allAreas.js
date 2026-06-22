@@ -1,3 +1,4 @@
+import { requestDataset } from '../src/router.js';
 import { renderTable } from './tables/renderTable.js';
 import {
   renderHospitalYearlyLineChart,
@@ -37,8 +38,10 @@ const columns = [
 
 async function init() {
   try {
-    const national = await fetch('/client/data/national.json').then(r => r.json());
-    const { yearly, monthly } = national;
+    const [yearly, monthly] = await Promise.all([
+      requestDataset('nationalEnrollment', { type: 'yearly' }),
+      requestDataset('nationalEnrollment', { type: 'monthly' }),
+    ]);
 
     renderTable('#medicare-table', columns, yearly);
 
