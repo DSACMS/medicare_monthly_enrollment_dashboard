@@ -9,8 +9,6 @@ const functionRegistry = {
   stateEnrollment: fetchStateEnrollment,
 };
 
-const cache = new Map();
-
 export async function requestDataset(serviceName, options = {}) {
   const targetFunction = functionRegistry[serviceName];
 
@@ -19,20 +17,11 @@ export async function requestDataset(serviceName, options = {}) {
   }
 
   const cacheKey = `${serviceName}:${JSON.stringify(options)}`;
-  if (cache.has(cacheKey)) {
-    return cache.get(cacheKey);
-  }
 
-  const request = (async () => {
-    try {
-      return await targetFunction(options);
-    } catch (error) {
-      cache.delete(cacheKey);
-      console.error(`Error executing dataset request for: ${serviceName}`, error);
-      throw error;
-    }
-  })();
+  const cached = sessionStorage.getItem(cacheKey);
+  if (cached) return JSON.parse(cached);
 
-  cache.set(cacheKey, request);
-  return request;
+  const data = await targetFunction(options);
+  sessionStorage.setItem(cacheKey, JSON.stringify(data));
+  return data;
 }
