@@ -4,34 +4,84 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Medicare Monthly Enrollment Dashboard</title>
-    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="/client/css/styles.css" />
   </head>
   <body>
     <!-- National Enrollment Trends -->
     <section id="national">
       <h2>Medicare National Enrollment Trends (2018 - 2026)</h2>
+
+      <h3>Hospital / Medical — Yearly Trend</h3>
+      <h4>Enrollment Count</h4>
+      <div class="table-container" id="national-hospital-yearly-line"></div>
+      <h4>Percent of Total Enrollment</h4>
+      <div class="table-container" id="national-hospital-yearly-bar"></div>
+
+      <h3>Hospital / Medical — 12-Month Trend</h3>
+      <h4>Enrollment Count</h4>
+      <div class="table-container" id="national-hospital-monthly-line"></div>
+      <h4>Percent of Total Enrollment</h4>
+      <div class="table-container" id="national-hospital-monthly-bar"></div>
+
+      <h3>Prescription Drug — Yearly Trend</h3>
+      <h4>Enrollment Count</h4>
+      <div class="table-container" id="national-drug-yearly-line"></div>
+      <h4>Percent of Total Enrollment</h4>
+      <div class="table-container" id="national-drug-yearly-bar"></div>
+
+      <h3>Prescription Drug — 12-Month Trend</h3>
+      <h4>Enrollment Count</h4>
+      <div class="table-container" id="national-drug-monthly-line"></div>
+      <h4>Percent of Total Enrollment</h4>
+      <div class="table-container" id="national-drug-monthly-bar"></div>
+
+      <h3>Data Table</h3>
       <div class="table-container" id="medicare-table"></div>
+      
+      <h3>Enrollment Breakdown — Current Year</h3>
+      <div class="table-container" id="medicare-enrollment-pie"></div>
+      <div class="table-container" id="drug-enrollment-pie"></div>
     </section>
 
-    <!-- State Enrollment Grids -->
+    <!-- State Enrollment -->
     <section id="state">
       <h2>State Enrollment — Hospital / Medical</h2>
       <h3>Yearly Trend</h3>
+      <h4>Enrollment Count</h4>
+      <div class="table-container" id="state-hospital-yearly-line"></div>
+      <h4>Percent of Total Enrollment</h4>
+      <div class="table-container" id="state-hospital-yearly-bar"></div>
+      <h4>Data Table</h4>
       <div class="table-container" id="state-hospital-yearly"></div>
 
       <h3>12-Month Trend</h3>
+      <h4>Enrollment Count</h4>
+      <div class="table-container" id="state-hospital-monthly-line"></div>
+      <h4>Percent of Total Enrollment</h4>
+      <div class="table-container" id="state-hospital-monthly-bar"></div>
+      <h4>Data Table</h4>
       <div class="table-container" id="state-hospital-monthly"></div>
 
       <h2>State Enrollment — Prescription Drug</h2>
       <h3>Yearly Trend</h3>
+      <h4>Enrollment Count</h4>
+      <div class="table-container" id="state-drug-yearly-line"></div>
+      <h4>Percent of Total Enrollment</h4>
+      <div class="table-container" id="state-drug-yearly-bar"></div>
+      <h4>Data Table</h4>
       <div class="table-container" id="state-drug-yearly"></div>
 
       <h3>12-Month Trend</h3>
+      <h4>Enrollment Count</h4>
+      <div class="table-container" id="state-drug-monthly-line"></div>
+      <h4>Percent of Total Enrollment</h4>
+      <div class="table-container" id="state-drug-monthly-bar"></div>
+      <h4>Data Table</h4>
       <div class="table-container" id="state-drug-monthly"></div>
     </section>
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script type="module" src="app.js"></script>
-    <script type="module" src="stateGrids.js"></script>
+    <script type="module" src="/client/allAreas.js"></script>
+    <script type="module" src="/client/counties/countiesView.js"></script>
   </body>
 </html>
