@@ -1,5 +1,5 @@
-import { requestDataset } from '../src/router.js';
-import { renderTable } from './tables/renderTable.js';
+import { requestDataset } from '../../../src/router.js';
+import { renderTable } from '../tables/renderTable.js';
 import {
   renderHospitalYearlyLineChart,
   renderHospitalMonthlyLineChart,
@@ -10,7 +10,7 @@ import {
   renderDrugYearlyStackedBarChart,
   renderDrugMonthlyStackedBarChart,
   renderPieChart
-} from './charts/index.js';
+} from '../charts/index.js';
 
 const formatNum = d3.format(",");
 

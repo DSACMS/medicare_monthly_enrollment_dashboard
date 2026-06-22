@@ -1,12 +1,29 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Medicare Monthly Enrollment Dashboard</title>
-    <link rel="stylesheet" href="/client/css/styles.css" />
-  </head>
-  <body>
+---
+permalink: /
+layout: layouts/default
+title: Home
+tags: website
+eleventyNavigation:
+  parent: website
+  key: website-home
+  order: 1
+  title: About this guide
+description: Medicare National & State Enrollment Trends (2018 - 2026)
+eleventyExcludeFromCollections: true
+---
+
+<!-- 1. Keep the template header section -->
+<div class="usa-section intro-header">
+  <div class="grid-container">
+    <h1 class="visually-hidden">{{ title }}</h1>
+    <p class="usa-intro usa-intro--sections no-print">{{ description }}</p>
+  </div>
+</div>
+
+<!-- 2. Your Dashboard Sections go inside the main container layout -->
+<div class="usa-section layout--sections">
+  <div class="grid-container"> <!-- Added to match USWDS layout system padding -->
+
     <!-- National Enrollment Trends -->
     <section id="national">
       <h2>Medicare National Enrollment Trends (2018 - 2026)</h2>
@@ -80,8 +97,10 @@
       <div class="table-container" id="state-drug-monthly"></div>
     </section>
 
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script type="module" src="/client/allAreas.js"></script>
-    <script type="module" src="/client/counties/countiesView.js"></script>
-  </body>
-</html>
+  </div>
+</div>
+
+<!-- 3. Your JavaScript Scripts go at the very bottom -->
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script type="module" src="/assets/_common/js/allAreas.js"></script>
+<script type="module" src="/assets/_common/js/counties/countiesView.js"></script>

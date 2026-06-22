@@ -1,0 +1,10 @@
+# The primary navigation
+website:
+  - name: Home
+    url: /
+  - name: Basic Page
+    url: /basic-page/
+  - name: Page with Side Nav
+    url: /page-with-side-nav/
+  - name: Other layouts
+    url: /other-layouts/

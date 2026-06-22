@@ -1,7 +1,7 @@
 import { fetchStateData } from './countiesData.js';
-import { renderTable } from '../tables/renderTable.js';
-import { hospitalYearly, hospitalMonthly } from '../tables/hospitalMedical/tableColumns.js';
-import { drugYearly, drugMonthly } from '../tables/prescriptionDrug/tableColumns.js';
+import { renderTable } from '../../tables/renderTable.js';
+import { hospitalYearly, hospitalMonthly } from '../../tables/hospitalMedical/tableColumns.js';
+import { drugYearly, drugMonthly } from '../../tables/prescriptionDrug/tableColumns.js';
 import {
   renderHospitalYearlyLineChart,
   renderHospitalMonthlyLineChart,
@@ -11,7 +11,7 @@ import {
   renderDrugMonthlyLineChart,
   renderDrugYearlyStackedBarChart,
   renderDrugMonthlyStackedBarChart,
-} from '../charts/index.js';
+} from '../../charts/index.js';
 
 async function renderCountiesView(state) {
   try {
