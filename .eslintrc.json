@@ -15,6 +15,7 @@
     "no-param-reassign": ["error", { "props": false }],
     "quotes": ["error", "single"],
     "no-iterator": ["off"],
-    "no-return-await": ["off"]
+    "no-return-await": ["off"],
+    "import/extensions": "off"
   }
 }

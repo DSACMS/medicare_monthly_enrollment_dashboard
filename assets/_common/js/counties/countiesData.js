@@ -1,4 +1,4 @@
-import requestDataset from '../../../../src/router';
+import requestDataset from '../../../../src/router.js';
 
 async function fetchStateData(state) {
   const [yearly, monthly] = await Promise.all([

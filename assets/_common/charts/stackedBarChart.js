@@ -1,15 +1,14 @@
 import * as d3 from 'd3';
-import { CHART_COLORS, BAR_FILLS } from './colors';
-import renderSrTable from './accessibility';
+import { CHART_COLORS, BAR_FILLS } from './colors.js';
+import renderSrTable from './accessibility.js';
 import {
   appendChartSvg,
   getChartSize,
   formatPeriod,
   addHatchPattern,
-} from './utils';
+} from './utils.js';
 
-
-const formatPercent = (v) => `${v}%`;
+// const formatPercent = (v) => `${v}%`;
 
 /**
  * Renders a stacked bar chart showing percent-of-total enrollment trends (0–100%).
@@ -24,7 +23,7 @@ const formatPercent = (v) => `${v}%`;
  * @param {string} config.title
  * @param {Array}  config.tableColumns
  */
-export function renderStackedBarChart(selector, data, config) {
+function renderStackedBarChart(selector, data, config) {
   const container = d3.select(selector);
   container.html('');
 
@@ -153,4 +152,4 @@ export function renderStackedBarChart(selector, data, config) {
   renderSrTable(container, title, tableColumns, data);
 }
 
-export { formatPercent };
+export default renderStackedBarChart;

@@ -1,5 +1,5 @@
-import renderTable from '../renderTable';
-import requestDataset from '../../../../src/router';
+import renderTable from '../renderTable.js';
+import requestDataset from '../../../../src/router.js';
 
 const formatNumber = (value) => value.toLocaleString();
 const round = (value) => Math.round(value);

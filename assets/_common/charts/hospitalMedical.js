@@ -1,7 +1,7 @@
-import renderLineChart from './lineChart';
-import { renderStackedBarChart } from './stackedBarChart';
-import { sortYearlyAscending, sortMonthlyAscending, formatPeriod } from './utils';
-import { hospitalYearly, hospitalMonthly } from '../tables/hospitalMedical/tableColumns';
+import renderLineChart from './lineChart.js';
+import renderStackedBarChart from './stackedBarChart.js';
+import { sortYearlyAscending, sortMonthlyAscending, formatPeriod } from './utils.js';
+import { hospitalYearly, hospitalMonthly } from '../tables/hospitalMedical/tableColumns.js';
 
 const HOSPITAL_LINE_SERIES = [
   { key: 'ffsCount', label: 'Fee-For-Service (FFS)' },

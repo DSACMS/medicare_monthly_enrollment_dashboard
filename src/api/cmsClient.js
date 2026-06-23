@@ -1,4 +1,4 @@
-import { baseUrl } from '../config';
+import { baseUrl } from '../config.js';
 
 async function cmsGet(queryParams) {
   const response = await fetch(`${baseUrl}?${queryParams.toString()}`, {
