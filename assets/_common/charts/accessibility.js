@@ -2,7 +2,7 @@
  * Renders a screen-reader-accessible data table mirroring chart data.
  * Uses .usa-sr-only per Section 508 requirements; pairs with existing .sr-only in styles.css.
  */
-export function renderSrTable(container, caption, columns, data) {
+function renderSrTable(container, caption, columns, data) {
   const wrapper = container
     .append('div')
     .attr('class', 'usa-sr-only sr-only');
@@ -35,3 +35,5 @@ export function renderSrTable(container, caption, columns, data) {
     .append('td')
     .text((cell) => cell);
 }
+
+export default { renderSrTable };

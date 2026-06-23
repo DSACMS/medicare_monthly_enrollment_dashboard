@@ -1,11 +1,13 @@
-import { CHART_COLORS, BAR_FILLS } from './colors.js';
-import { renderSrTable } from './accessibility.js';
+import * as d3 from 'd3';
+import { CHART_COLORS, BAR_FILLS } from './colors';
+import renderSrTable from './accessibility';
 import {
   appendChartSvg,
   getChartSize,
   formatPeriod,
   addHatchPattern,
-} from './utils.js';
+} from './utils';
+
 
 const formatPercent = (v) => `${v}%`;
 

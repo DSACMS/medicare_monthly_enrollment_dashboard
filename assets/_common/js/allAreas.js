@@ -1,5 +1,6 @@
-import { requestDataset } from '../../../src/router.js';
-import { renderTable } from '../tables/renderTable.js';
+import * as d3 from 'd3';
+import requestDataset from '../../../src/router';
+import renderTable from '../tables/renderTable';
 import {
   renderHospitalYearlyLineChart,
   renderHospitalMonthlyLineChart,
@@ -10,28 +11,29 @@ import {
   renderDrugYearlyStackedBarChart,
   renderDrugMonthlyStackedBarChart,
   renderPieChart
-} from '../charts/index.js';
+} from '../charts/index';
 
-const formatNum = d3.format(",");
+
+const formatNum = d3.format(',');
 
 const columns = [
-  { label: "Year", value: (d) => d.year },
-  { label: "Total Enrollees", value: (d) => formatNum(d.totalEnrollees) },
+  { label: 'Year', value: (d) => d.year },
+  { label: 'Total Enrollees', value: (d) => formatNum(d.totalEnrollees) },
   {
-    label: "Fee-For-Service (FFS)",
+    label: 'Fee-For-Service (FFS)',
     value: (d) => `${formatNum(d.ffsCount)} (${d.ffsPercent}%)`,
   },
   {
-    label: "Medicare Advantage (MA)",
+    label: 'Medicare Advantage (MA)',
     value: (d) => `${formatNum(d.maCount)} (${d.maPercent}%)`,
   },
-  { label: "Part D Total", value: (d) => formatNum(d.drugTotal) },
+  { label: 'Part D Total', value: (d) => formatNum(d.drugTotal) },
   {
-    label: "Standalone PDP",
+    label: 'Standalone PDP',
     value: (d) => `${formatNum(d.pdpCount)} (${d.pdpPercent}%)`,
   },
   {
-    label: "MA-PD Bundled",
+    label: 'MA-PD Bundled',
     value: (d) => `${formatNum(d.mapdCount)} (${d.mapdPercent}%)`,
   },
 ];
@@ -65,11 +67,11 @@ async function init() {
     const currentYear = yearly[0];
  
     const medicareEnrollmentPieData = [
-      { name: "FFS", value: currentYear.ffsPercent },
-      { name: "MA", value: currentYear.maPercent }, 
+      { name: 'FFS', value: currentYear.ffsPercent },
+      { name: 'MA', value: currentYear.maPercent }, 
     ];
     renderPieChart('#medicare-enrollment-pie', medicareEnrollmentPieData, currentYear.totalEnrollees, {
-      colors: ["#961d56", "#7928c9"],
+      colors: ['#961d56', '#7928c9'],
       title: `Medicare enrollment by program type, ${currentYear.year}`,
       tableColumns: [
         { label: 'Program', value: (d) => d.name },
@@ -78,11 +80,11 @@ async function init() {
     });
  
     const drugEnrollmentPieData = [
-      { name: "PDP", value: currentYear.pdpPercent },
-      { name: "MA-PD", value: currentYear.mapdPercent },
+      { name: 'PDP', value: currentYear.pdpPercent },
+      { name: 'MA-PD', value: currentYear.mapdPercent },
     ];
     renderPieChart('#drug-enrollment-pie', drugEnrollmentPieData, currentYear.drugTotal, {
-      colors: ["#89cc9e", "#009ad0"],
+      colors: ['#89cc9e', '#009ad0'],
       title: `Medicare Part D enrollment by plan type, ${currentYear.year}`,
       tableColumns: [
         { label: 'Plan type', value: (d) => d.name },

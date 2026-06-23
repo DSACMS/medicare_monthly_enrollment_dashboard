@@ -1,17 +1,17 @@
-export { renderLineChart } from './lineChart.js';
-export { renderStackedBarChart } from './stackedBarChart.js';
-export {renderPieChart} from './pieChart.js';
+export { default as renderLineChart } from './lineChart';
+export { renderStackedBarChart } from './stackedBarChart';
+export { default as renderPieChart } from './pieChart';
 
 export {
   renderHospitalYearlyLineChart,
   renderHospitalMonthlyLineChart,
   renderHospitalYearlyStackedBarChart,
   renderHospitalMonthlyStackedBarChart,
-} from './hospitalMedical.js';
+} from './hospitalMedical';
 
 export {
   renderDrugYearlyLineChart,
   renderDrugMonthlyLineChart,
   renderDrugYearlyStackedBarChart,
   renderDrugMonthlyStackedBarChart,
-} from './prescriptionDrug.js';
+} from './prescriptionDrug';

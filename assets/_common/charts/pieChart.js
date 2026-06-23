@@ -1,5 +1,7 @@
-import { CHART_COLORS } from './colors.js';
-import { renderSrTable } from './accessibility.js';
+import * as d3 from 'd3';
+import { CHART_COLORS } from './colors';
+import renderSrTable from './accessibility';
+
 
 // Default colors used if the caller doesn't supply both colors for the two slices.
 const DEFAULT_COLORS = [CHART_COLORS.primary, CHART_COLORS.secondary];
@@ -13,13 +15,13 @@ const DEFAULT_COLORS = [CHART_COLORS.primary, CHART_COLORS.secondary];
  */
 
 function drawArcs(svg, pieData, arc, colors) {
-  svg.append("g")
-    .selectAll("path")
+  svg.append('g')
+    .selectAll('path')
     .data(pieData)
-    .join("path")
-    .attr("fill", (d, i) => colors[i])
-    .attr("d", arc)
-    .append("title") //adding "title" allows the labeling to appear when hovering over
+    .join('path')
+    .attr('fill', (d, i) => colors[i])
+    .attr('d', arc)
+    .append('title') // adding "title" allows the labeling to appear when hovering over
     .text(d => `${d.data.name}: ${Math.round(d.data.value)}%`);
 }
 
@@ -30,23 +32,23 @@ function drawArcs(svg, pieData, arc, colors) {
  */
 
 function drawCenterText(svg, enrollmentInMillions) {
-  const centerText = svg.append("text")
-    .attr("text-anchor", "middle")
-    .attr("dominant-baseline", "middle")
-    .attr("font-family", "sans-serif");
-  centerText.append("tspan")
-    .attr("x", 0)
-    .attr("y", "-0.2em")
-    .attr("font-weight", "bold")
-    .attr("font-size", 60)
-    .text(enrollmentInMillions + "M");
-  centerText.append("tspan")
-    .attr("x", 0)
-    .attr("y", "1em")
-    .attr("font-weight", "bold")
-    .attr("font-size", 30)
-    .text("Total Enrollment");
-  centerText.append("title")
+  const centerText = svg.append('text')
+    .attr('text-anchor', 'middle')
+    .attr('dominant-baseline', 'middle')
+    .attr('font-family', 'sans-serif');
+  centerText.append('tspan')
+    .attr('x', 0)
+    .attr('y', '-0.2em')
+    .attr('font-weight', 'bold')
+    .attr('font-size', 60)
+    .text(`${enrollmentInMillions  }M`);
+  centerText.append('tspan')
+    .attr('x', 0)
+    .attr('y', '1em')
+    .attr('font-weight', 'bold')
+    .attr('font-size', 30)
+    .text('Total Enrollment');
+  centerText.append('title')
     .text(`Total Enrollment: ${enrollmentInMillions} Million`);
 }
 
@@ -69,13 +71,13 @@ function drawCenterText(svg, enrollmentInMillions) {
  *   given data item. Falls back to a basic Name/Percent table if omitted.
  */
 
-export function renderPieChart(containerSelector, data, totalEnrollment, config = {}) {
+function renderPieChart(containerSelector, data, totalEnrollment, config = {}) {
   if (!data?.length) {
-    console.warn("renderPieChart: no data provided, skipping render.");
+    console.warn('renderPieChart: no data provided, skipping render.');
     return;
   }
   if (!totalEnrollment) {
-    console.warn("renderPieChart: totalEnrollment is missing or zero.");
+    console.warn('renderPieChart: totalEnrollment is missing or zero.');
   }
 
   const {
@@ -106,49 +108,51 @@ export function renderPieChart(containerSelector, data, totalEnrollment, config 
   // inside the same container — matching the pattern in renderLineChart.
   const container = d3.select(containerSelector);
 
-  //By adjusting the innerRadius you can change the width of the circle
+  // By adjusting the innerRadius you can change the width of the circle
   const arc = d3.arc()
       .innerRadius(radius * 0.7)
       .outerRadius(radius - 1);
-  //Converts data into angles
+  // Converts data into angles
   const pie = d3.pie()
       .sort(null)
       .value(d => d.value);
-  //Creation and centering of the SVG where D3 will draw
+  // Creation and centering of the SVG where D3 will draw
   const svg = container
-      .append("svg")
-      .attr("width", width)
-      .attr("height", height)
-      .attr("viewBox", [-width / 2, -height / 2, width, height]);
+      .append('svg')
+      .attr('width', width)
+      .attr('height', height)
+      .attr('viewBox', [-width / 2, -height / 2, width, height]);
 
   const pieData = pie(data);
   drawArcs(svg, pieData, arc, resolvedColors);
   drawCenterText(svg, enrollmentInMillions);
 
-  //The side texts are developed here
-  svg.append("g")
-    .selectAll("text")
+  // The side texts are developed here
+  svg.append('g')
+    .selectAll('text')
     .data(pieData)
-    .join("text")
-    .attr("x", xPosition)
-    .attr("y", 0)
-    .attr("text-anchor", "middle")
+    .join('text')
+    .attr('x', xPosition)
+    .attr('y', 0)
+    .attr('text-anchor', 'middle')
     .call(text => {
-      text.append("tspan")
-        .attr("x", xPosition)
-        .attr("font-weight", "bold")
-        .attr("font-size", 19)
+      text.append('tspan')
+        .attr('x', xPosition)
+        .attr('font-weight', 'bold')
+        .attr('font-size', 19)
         .text(d =>
 `${d.data.name}: ${((d.data.value / 100) * enrollmentInMillions).toFixed(1)}M`
         );
-      text.append("tspan")
-        .attr("x", xPosition)
-        .attr("font-weight", "bold")
-        .attr("font-size", 19)
-        .attr("dy", "1.2em")
+      text.append('tspan')
+        .attr('x', xPosition)
+        .attr('font-weight', 'bold')
+        .attr('font-size', 19)
+        .attr('dy', '1.2em')
         .text(d => `(${Math.round(d.data.value)}% of total)`);
     });
 
   // Visually-hidden table mirroring the chart's data, for screen readers.
   renderSrTable(container, title, tableColumns, data);
 }
+
+export default { renderPieChart };

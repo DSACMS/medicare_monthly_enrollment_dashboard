@@ -1,7 +1,7 @@
-import { renderLineChart } from './lineChart.js';
-import { renderStackedBarChart } from './stackedBarChart.js';
-import { sortYearlyAscending, sortMonthlyAscending, formatPeriod } from './utils.js';
-import { drugYearly, drugMonthly } from '../tables/prescriptionDrug/tableColumns.js';
+import renderLineChart from './lineChart';
+import { renderStackedBarChart } from './stackedBarChart';
+import { sortYearlyAscending, sortMonthlyAscending, formatPeriod } from './utils';
+import { drugYearly, drugMonthly } from '../tables/prescriptionDrug/tableColumns';
 
 const DRUG_LINE_SERIES = [
   { key: 'pdpCount', label: 'Standalone PDP' },

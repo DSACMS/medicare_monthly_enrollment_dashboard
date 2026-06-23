@@ -1,10 +1,12 @@
-import { CHART_COLORS, LINE_STYLES } from './colors.js';
-import { renderSrTable } from './accessibility.js';
+import * as d3 from 'd3';
+import { CHART_COLORS, LINE_STYLES } from './colors';
+import renderSrTable from './accessibility';
 import {
   appendChartSvg,
   getChartSize,
   formatPeriod,
-} from './utils.js';
+} from './utils';
+
 
 const formatCount = d3.format(',');
 
@@ -38,7 +40,7 @@ function drawMarker(g, type, x, y, color) {
  * @param {string} config.title       - Used for aria-label and sr-table caption
  * @param {Array}  config.tableColumns - [{ label, value(row) }] for sr table
  */
-export function renderLineChart(selector, data, config) {
+function renderLineChart(selector, data, config) {
   const container = d3.select(selector);
   container.html('');
 
@@ -167,3 +169,5 @@ export function renderLineChart(selector, data, config) {
 
   renderSrTable(container, title, tableColumns, data);
 }
+
+export default renderLineChart;
