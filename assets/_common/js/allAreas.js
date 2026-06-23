@@ -84,6 +84,7 @@ async function init() {
       { name: 'PDP', value: currentYear.pdpPercent },
       { name: 'MA-PD', value: currentYear.mapdPercent },
     ];
+    
     renderPieChart('#drug-enrollment-pie', drugEnrollmentPieData, currentYear.drugTotal, {
       colors: ['#89cc9e', '#009ad0'],
       title: `Medicare Part D enrollment by plan type, ${currentYear.year}`,
@@ -93,16 +94,12 @@ async function init() {
       ],
     });
 
-        async function loadStateMap() {
-      // fetchStateEnrollment sorts DESC by year/month, so for any one state,
-      // row [0] of the monthly result is the most recent period available.
-
-      // By doing NY call, we are able to get a ref year and month to work off of
+    const loadStateMap = async () => {
       const recentRows = await fetchStateEnrollment({ state: 'NY', type: 'monthly' });
       const latest = recentRows[0];
-
-      // Reuse that period to pull all 50 states for that same year/month.
       const allStates = await fetchAllStates({ year: latest.year, month: latest.month });
+      renderStateMap('#medicare-enrollment-state-map', allStates);
+      
 
       renderStateMap('#medicare-enrollment-state-map', allStates, {
         title: 'Medicare Advantage enrollment by state',
@@ -121,7 +118,7 @@ async function init() {
     }
 
 
-    loadStateMap();
+    await loadStateMap();
 
 
   } catch (error) {

@@ -1,4 +1,5 @@
 import * as d3 from 'd3';
+import * as topojson from 'topojson-client';
 import renderSrTable from './accessibility.js';
 
 
@@ -137,7 +138,7 @@ export function renderStateMap(containerSelector, data, config = {}) {
     .style('font-size', '14px');
 
   d3.json('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json').then((us) => {
-    const features = topojson.feature(us, us.objects.states).features;
+    const { features } = topojson.feature(us, us.objects.states);
 
     svg.append('g')
       .selectAll('path')
@@ -163,8 +164,8 @@ export function renderStateMap(containerSelector, data, config = {}) {
         // where the tooltip div should be placed inside that same container.
         tooltip
           .style('display', 'block')
-          .style('left', (event.offsetX + 14) + 'px')
-          .style('top', (event.offsetY + 14) + 'px')
+          .style('left', `${event.offsetX + 14}px`)
+          .style('top', `${event.offsetY + 14}px`)
           .html(`
             <table style="border-collapse: collapse;">
               <tr><td style="padding:2px 12px 2px 0; color:#555;">State</td><td style="text-align:right; font-weight:600;">${row.stateName}</td></tr>
@@ -187,3 +188,4 @@ export function renderStateMap(containerSelector, data, config = {}) {
   renderSrTable(container, title, tableColumns, data);
 }
 
+export default renderStateMap;
