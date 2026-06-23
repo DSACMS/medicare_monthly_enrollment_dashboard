@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
-import { CHART_COLORS } from './colors.js';
-import renderSrTable from './accessibility.js';
+import { CHART_COLORS } from './colors';
+import renderSrTable from './accessibility';
 
 // Default colors used if the caller doesn't supply both colors for the two slices.
 const DEFAULT_COLORS = [CHART_COLORS.primary, CHART_COLORS.secondary];

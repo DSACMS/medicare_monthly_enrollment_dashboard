@@ -1,11 +1,11 @@
 import * as d3 from 'd3';
-import { CHART_COLORS, LINE_STYLES } from './colors.js';
-import renderSrTable from './accessibility.js';
+import { CHART_COLORS, LINE_STYLES } from './colors';
+import renderSrTable from './accessibility';
 import {
   appendChartSvg,
   getChartSize,
   formatPeriod,
-} from './utils.js';
+} from './utils';
 
 const formatCount = d3.format(',');
 

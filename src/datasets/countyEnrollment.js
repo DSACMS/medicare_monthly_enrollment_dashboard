@@ -1,4 +1,4 @@
-import cmsGet from '../api/cmsClient.js';
+import cmsGet from '../api/cmsClient';
 
 const monthOrder = {
   January: 1, February: 2, March: 3, April: 4, May: 5, June: 6,
