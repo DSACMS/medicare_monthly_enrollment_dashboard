@@ -1,6 +1,6 @@
-import fetchNationalData from './datasets/nationalEnrollment.js';
-import fetchCountiesForState from './datasets/countyEnrollment.js';
-import { fetchAllStates, fetchStateEnrollment } from './datasets/stateEnrollment.js';
+import fetchNationalData from './datasets/nationalEnrollment';
+import fetchCountiesForState from './datasets/countyEnrollment';
+import { fetchAllStates, fetchStateEnrollment } from './datasets/stateEnrollment';
 
 const functionRegistry = {
   nationalEnrollment: fetchNationalData,

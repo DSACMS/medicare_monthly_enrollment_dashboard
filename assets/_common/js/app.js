@@ -1,3 +1,6 @@
+import './allAreas';
+import './counties/countiesView';
+
 require('@uswds/uswds');
 
 /* eslint no-plusplus: 0 */

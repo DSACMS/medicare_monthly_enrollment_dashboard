@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
-import requestDataset from '../../../src/router.js';
-import renderTable from '../tables/renderTable.js';
+import requestDataset from '../../../src/router';
+import renderTable from '../tables/renderTable';
 import {
   renderHospitalYearlyLineChart,
   renderHospitalMonthlyLineChart,
@@ -11,7 +11,7 @@ import {
   renderDrugYearlyStackedBarChart,
   renderDrugMonthlyStackedBarChart,
   renderPieChart
-} from '../charts/index.js';
+} from '../charts/index';
 
 const formatNum = d3.format(',');
 
