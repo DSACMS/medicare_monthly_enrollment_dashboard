@@ -235,32 +235,35 @@ module.exports = function (config) {
           'aria-hidden="true" role="img">' +
           '<use xlink:href="#svg-lock_outline"></use>' +
           '</svg>'
-        content = content.replace('>', `> ${prefixIcon}`);
+        content = content.replace(/(<a\b[^>]*>)/i, `$1 ${prefixIcon}`);
         tokens[idx].content = content;
       }
 
       // Add external links, as definied above
       if (!content.includes('.gov')) {
+        // 1. HANDLE CLASSES
         if (content.includes('class=')) {
           if (!content.includes('usa-link--external')) {
-            content = content.replace('class="', 'class="usa-link usa-link--external ');
-            tokens[idx].content = content;
+            // Safely injects the new classes right after the opening quote of the existing class attribute
+            content = content.replace(/class=["']/, '$&usa-link usa-link--external ');
           }
+        } else {
+          // Safely appends the class attribute right before the closing > of the anchor tag
+          content = content.replace(/(<a\b[^>]*?)(>)/i, '$1 class="usa-link usa-link--external"$2');
         }
-        else {
-          content = content.replace('>', ' class="usa-link usa-link--external">');
-          tokens[idx].content = content;
-        }
+
+        // 2. HANDLE REL ATTRIBUTE
         if (content.includes('rel=')) {
-          if (!content.include('noreferrer')) {
-            content = content.replace('rel=', 'rel="noreferrer ">');
-            tokens[idx].content = content;
+          if (!content.includes('noreferrer')) {
+            // Safely injects noreferrer right after the opening quote of the existing rel attribute
+            content = content.replace(/rel=["']/, '$&noreferrer ');
           }
+        } else {
+          // Safely appends the rel attribute right before the closing > of the anchor tag
+          content = content.replace(/(<a\b[^>]*?)(>)/i, '$1 rel="noreferrer"$2');
         }
-        else {
-          content = content.replace('>', ' rel="noreferrer">');
-          tokens[idx].content = content;
-        }
+
+        tokens[idx].content = content;
       }
     }
     return inlineHTMLDefaultRender(tokens, idx, options, env, self);
