@@ -1,6 +1,6 @@
 import { baseUrl } from '../config.js';
 
-export async function cmsGet(queryParams) {
+async function cmsGet(queryParams) {
   const response = await fetch(`${baseUrl}?${queryParams.toString()}`, {
     method: 'GET',
     headers: { 'Accept': 'application/json' }
@@ -12,3 +12,5 @@ export async function cmsGet(queryParams) {
 
   return response.json();
 }
+
+export default cmsGet;

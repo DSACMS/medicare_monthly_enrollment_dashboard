@@ -1,39 +1,39 @@
-import { cmsGet } from "../api/cmsClient.js";
+import cmsGet from '../api/cmsClient.js';
 
 const monthOrder = {
   January: 1, February: 2, March: 3, April: 4, May: 5, June: 6,
   July: 7, August: 8, September: 9, October: 10, November: 11, December: 12,
 };
 
-export async function fetchCountiesForState(options = {}) {
-  const state = options.state;
+async function fetchCountiesForState(options = {}) {
+  const {state} = options;
 
   if (!state) {
-    throw new Error("fetchCountiesForState requires options.state (e.g. 'NY')");
+    throw new Error('fetchCountiesForState requires options.state (e.g. \'NY\')');
   }
 
   const columns = [
-    "BENE_STATE_ABRVTN",
-    "BENE_STATE_DESC",
-    "BENE_COUNTY_DESC",
-    "BENE_FIPS_CD",
-    "YEAR",
-    "MONTH",
-    "TOT_BENES",
-    "ORGNL_MDCR_BENES",
-    "MA_AND_OTH_BENES",
-    "PRSCRPTN_DRUG_TOT_BENES",
-    "PRSCRPTN_DRUG_PDP_BENES",
-    "PRSCRPTN_DRUG_MAPD_BENES",
+    'BENE_STATE_ABRVTN',
+    'BENE_STATE_DESC',
+    'BENE_COUNTY_DESC',
+    'BENE_FIPS_CD',
+    'YEAR',
+    'MONTH',
+    'TOT_BENES',
+    'ORGNL_MDCR_BENES',
+    'MA_AND_OTH_BENES',
+    'PRSCRPTN_DRUG_TOT_BENES',
+    'PRSCRPTN_DRUG_PDP_BENES',
+    'PRSCRPTN_DRUG_MAPD_BENES',
   ];
 
   const queryParams = new URLSearchParams({
-    "filter[BENE_GEO_LVL]": "County",
-    "filter[BENE_STATE_ABRVTN]": state,
-    "sort[YEAR]": "DESC",
-    "sort[MONTH]": "DESC",
-    column: columns.join(","),
-    size: "5000",
+    'filter[BENE_GEO_LVL]': 'County',
+    'filter[BENE_STATE_ABRVTN]': state,
+    'sort[YEAR]': 'DESC',
+    'sort[MONTH]': 'DESC',
+    column: columns.join(','),
+    size: '5000',
   });
 
   const rawData = await cmsGet(queryParams);
@@ -67,9 +67,9 @@ export async function fetchCountiesForState(options = {}) {
         mapdPercent: drugTotal > 0 ? parseFloat(((mapd / drugTotal) * 100).toFixed(2)) : 0,
       };
     })
-    .filter((row) => row.month !== "Year");
+    .filter((row) => row.month !== 'Year');
 
-  const latestYear = rows.reduce((max, row) => (row.year > max ? row.year : max), "0");
+  const latestYear = rows.reduce((max, row) => (row.year > max ? row.year : max), '0');
   const inYear = rows.filter((row) => row.year === latestYear);
   const latestMonth = inYear.reduce(
     (max, row) => (monthOrder[row.month] > monthOrder[max] ? row.month : max),
@@ -78,3 +78,5 @@ export async function fetchCountiesForState(options = {}) {
 
   return inYear.filter((row) => row.month === latestMonth);
 }
+
+export default fetchCountiesForState;

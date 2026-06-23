@@ -1,5 +1,5 @@
-import { fetchNationalData } from './datasets/nationalEnrollment.js';
-import { fetchCountiesForState } from './datasets/countyEnrollment.js';
+import fetchNationalData from './datasets/nationalEnrollment.js';
+import fetchCountiesForState from './datasets/countyEnrollment.js';
 import { fetchAllStates, fetchStateEnrollment } from './datasets/stateEnrollment.js';
 
 const functionRegistry = {
@@ -9,7 +9,7 @@ const functionRegistry = {
   stateEnrollment: fetchStateEnrollment,
 };
 
-export async function requestDataset(serviceName, options = {}) {
+async function requestDataset(serviceName, options = {}) {
   const targetFunction = functionRegistry[serviceName];
 
   if (!targetFunction) {
@@ -31,3 +31,5 @@ export async function requestDataset(serviceName, options = {}) {
 
   return data;
 }
+
+export default requestDataset;

@@ -1,11 +1,11 @@
-import { cmsGet } from '../api/cmsClient.js';
+import cmsGet from '../api/cmsClient.js';
 
 const monthOrder = {
   'January': 1, 'February': 2, 'March': 3, 'April': 4, 'May': 5, 'June': 6,
   'July': 7, 'August': 8, 'September': 9, 'October': 10, 'November': 11, 'December': 12
 };
 
-export async function fetchNationalData(options) {
+async function fetchNationalData(options) {
   const type = options.type || 'monthly';
 
   const queryParams = new URLSearchParams({
@@ -39,7 +39,7 @@ export async function fetchNationalData(options) {
       maPercent: total > 0 ? parseFloat(((ma / total) * 100).toFixed(2)) : 0,
 
       // Add clean Drug metrics to the mapped objects
-      drugTotal: drugTotal,
+      drugTotal,
       pdpCount: pdp,
       mapdCount: mapd,
       pdpPercent: drugTotal > 0 ? parseFloat(((pdp / drugTotal) * 100).toFixed(2)) : 0,
@@ -60,4 +60,8 @@ export async function fetchNationalData(options) {
       })
       .slice(0, 12);
   }
+
+  return parsedRows;
 }
+
+export default fetchNationalData;
