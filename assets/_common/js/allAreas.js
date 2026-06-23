@@ -1,4 +1,5 @@
 import * as d3 from 'd3';
+import { fetchAllStates, fetchStateEnrollment } from '../../../src/datasets/stateEnrollment.js'; 
 import requestDataset from '../../../src/router.js';
 import renderTable from '../tables/renderTable.js';
 import {
@@ -10,7 +11,8 @@ import {
   renderDrugMonthlyLineChart,
   renderDrugYearlyStackedBarChart,
   renderDrugMonthlyStackedBarChart,
-  renderPieChart
+  renderPieChart,
+  renderStateMap
 } from '../charts/index.js';
 
 const formatNum = d3.format(',');
@@ -90,6 +92,37 @@ async function init() {
         { label: 'Percent of total', value: (d) => `${Math.round(d.value)}%` },
       ],
     });
+
+        async function loadStateMap() {
+      // fetchStateEnrollment sorts DESC by year/month, so for any one state,
+      // row [0] of the monthly result is the most recent period available.
+
+      // By doing NY call, we are able to get a ref year and month to work off of
+      const recentRows = await fetchStateEnrollment({ state: 'NY', type: 'monthly' });
+      const latest = recentRows[0];
+
+      // Reuse that period to pull all 50 states for that same year/month.
+      const allStates = await fetchAllStates({ year: latest.year, month: latest.month });
+
+      renderStateMap('#medicare-enrollment-state-map', allStates, {
+        title: 'Medicare Advantage enrollment by state',
+      });
+
+      renderStateMap('#medicare-mapd-state-map', allStates, {
+        metricLabel: 'MAPD',
+        metricPercent: (d) => d.mapdPercent,
+        metricCount: (d) => d.mapdCount,
+        breakpoints: [21, 40, 60, 79],
+        colors: ['#f4f1a3', '#75c3a3', '#3d8b6f', '#aac4e8', '#3a5fa0'],
+        comparisonLabel: 'PDP',
+        comparisonPercent: (d) => d.pdpPercent,
+        comparisonCount: (d) => d.pdpCount,
+      });
+    }
+
+
+    loadStateMap();
+
 
   } catch (error) {
     console.error('Failed to load national data:', error.message);
