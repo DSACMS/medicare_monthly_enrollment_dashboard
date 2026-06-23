@@ -101,6 +101,38 @@ eleventyExcludeFromCollections: true
 </div>
 
 <!-- 3. Your JavaScript Scripts go at the very bottom -->
+<script type="importmap">
+{
+  "imports": {
+    "d3": "https://cdn.jsdelivr.net/npm/d3@7/+esm",
+    "/src/router": "/src/router.js",
+    "/assets/_common/tables/renderTable": "/assets/_common/tables/renderTable.js",
+    "/assets/_common/charts/index": "/assets/_common/charts/index.js",
+    "/assets/_common/js/counties/countiesData": "/assets/_common/js/counties/countiesData.js",
+    
+    "/assets/_common/tables/hospitalMedical/tableColumns": "/assets/_common/tables/hospitalMedical/tableColumns.js",
+    "/assets/_common/tables/prescriptionDrug/tableColumns": "/assets/_common/tables/prescriptionDrug/tableColumns.js",
+    
+    "/src/datasets/nationalEnrollment": "/src/datasets/nationalEnrollment.js",
+    "/src/datasets/countyEnrollment": "/src/datasets/countyEnrollment.js",
+    "/src/datasets/stateEnrollment": "/src/datasets/stateEnrollment.js",
+    
+    "/assets/_common/charts/lineChart": "/assets/_common/charts/lineChart.js",
+    "/assets/_common/charts/stackedBarChart": "/assets/_common/charts/stackedBarChart.js",
+    "/assets/_common/charts/pieChart": "/assets/_common/charts/pieChart.js",
+    
+    "/assets/_common/charts/hospitalMedical": "/assets/_common/charts/hospitalMedical.js",
+    "/assets/_common/charts/prescriptionDrug": "/assets/_common/charts/prescriptionDrug.js",
+    
+    "/src/api/cmsClient": "/src/api/cmsClient.js",
+    "/assets/_common/charts/utils": "/assets/_common/charts/utils.js",
+    "/assets/_common/charts/colors": "/assets/_common/charts/colors.js",
+    "/assets/_common/charts/accessibility": "/assets/_common/charts/accessibility.js",
+    
+    "/src/config": "/src/config.js"
+  }
+}
+</script>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script type="module" src="/assets/_common/js/allAreas.js"></script>
 <script type="module" src="/assets/_common/js/counties/countiesView.js"></script>

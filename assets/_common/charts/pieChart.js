@@ -155,4 +155,4 @@ function renderPieChart(containerSelector, data, totalEnrollment, config = {}) {
   renderSrTable(container, title, tableColumns, data);
 }
 
-export default { renderPieChart };
+export default renderPieChart;

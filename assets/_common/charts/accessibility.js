@@ -36,4 +36,4 @@ function renderSrTable(container, caption, columns, data) {
     .text((cell) => cell);
 }
 
-export default { renderSrTable };
+export default renderSrTable;
