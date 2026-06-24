@@ -1,4 +1,5 @@
 import * as d3 from 'd3';
+import { fetchAllStates, fetchStateEnrollment } from '../../../src/datasets/stateEnrollment'; 
 import requestDataset from '../../../src/router';
 import renderTable from '../tables/renderTable';
 import {
@@ -10,7 +11,8 @@ import {
   renderDrugMonthlyLineChart,
   renderDrugYearlyStackedBarChart,
   renderDrugMonthlyStackedBarChart,
-  renderPieChart
+  renderPieChart,
+  renderStateMap
 } from '../charts/index';
 
 const formatNum = d3.format(',');
@@ -82,6 +84,7 @@ async function init() {
       { name: 'PDP', value: currentYear.pdpPercent },
       { name: 'MA-PD', value: currentYear.mapdPercent },
     ];
+    
     renderPieChart('#drug-enrollment-pie', drugEnrollmentPieData, currentYear.drugTotal, {
       colors: ['#89cc9e', '#009ad0'],
       title: `Medicare Part D enrollment by plan type, ${currentYear.year}`,
@@ -90,6 +93,32 @@ async function init() {
         { label: 'Percent of total', value: (d) => `${Math.round(d.value)}%` },
       ],
     });
+
+    const loadStateMap = async () => {
+      const recentRows = await fetchStateEnrollment({ state: 'NY', type: 'monthly' });
+      const latest = recentRows[0];
+      const allStates = await fetchAllStates({ year: latest.year, month: latest.month });
+      
+
+      renderStateMap('#medicare-enrollment-state-map', allStates, {
+        title: 'Medicare Advantage enrollment by state',
+      });
+
+      renderStateMap('#medicare-mapd-state-map', allStates, {
+        metricLabel: 'MAPD',
+        metricPercent: (d) => d.mapdPercent,
+        metricCount: (d) => d.mapdCount,
+        breakpoints: [21, 40, 60, 79],
+        colors: ['#f4f1a3', '#75c3a3', '#3d8b6f', '#aac4e8', '#3a5fa0'],
+        comparisonLabel: 'PDP',
+        comparisonPercent: (d) => d.pdpPercent,
+        comparisonCount: (d) => d.pdpCount,
+      });
+    }
+
+
+    await loadStateMap();
+
 
   } catch (error) {
     console.error('Failed to load national data:', error.message);
