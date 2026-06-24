@@ -1,16 +1,23 @@
 import renderLineChart from './lineChart';
 import renderStackedBarChart from './stackedBarChart';
-import { sortYearlyAscending, sortMonthlyAscending, formatPeriod } from './utils';
+import {
+  sortYearlyAscending,
+  sortMonthlyAscending,
+  formatPeriod,
+  formatMillions,
+} from './utils';
+import { SERIES_COLORS } from './colors';
 import { drugYearly, drugMonthly } from '../tables/prescriptionDrug/tableColumns';
 
 const DRUG_LINE_SERIES = [
-  { key: 'pdpCount', label: 'Standalone PDP' },
-  { key: 'mapdCount', label: 'MA-PD Bundled' },
+  { key: 'pdpCount', label: 'PDP', color: SERIES_COLORS.ffs },
+  { key: 'mapdCount', label: 'MA-PD', color: SERIES_COLORS.ma },
+  { key: 'drugTotal', label: 'TOTAL', color: SERIES_COLORS.total },
 ];
 
 const DRUG_STACK_SEGMENTS = [
-  { key: 'pdpPercent', label: 'Standalone PDP' },
-  { key: 'mapdPercent', label: 'MA-PD Bundled' },
+  { key: 'pdpPercent', countKey: 'pdpCount', label: 'PDP', color: SERIES_COLORS.ffs },
+  { key: 'mapdPercent', countKey: 'mapdCount', label: 'MA-PD', color: SERIES_COLORS.ma },
 ];
 
 /**
@@ -27,6 +34,7 @@ export function renderDrugYearlyLineChart(selector, data) {
     yLabel: 'Enrollment Count',
     title: 'Prescription Drug Enrollment Count Yearly Trend',
     tableColumns: drugYearly,
+    yTickFormat: formatMillions,
   });
 }
 
@@ -44,6 +52,7 @@ export function renderDrugMonthlyLineChart(selector, data) {
     yLabel: 'Enrollment Count',
     title: 'Prescription Drug Enrollment Count 12-Month Trend',
     tableColumns: drugMonthly,
+    yTickFormat: formatMillions,
   });
 }
 

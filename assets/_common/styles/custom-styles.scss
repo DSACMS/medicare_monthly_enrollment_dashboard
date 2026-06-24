@@ -237,3 +237,32 @@ h2.heading-md {
     vertical-align: middle;
   }
 }
+
+.chart-tooltip {
+  position: absolute;
+  pointer-events: none;
+  z-index: 10;
+  min-width: 11rem;
+  padding: 0.5rem 0.75rem;
+  background: color('white');
+  border: 1px solid color('base-light');
+  border-radius: 0.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  font-size: 0.85rem;
+  color: color('ink');
+  transition: opacity 0.1s ease;
+}
+
+.chart-tooltip__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.chart-tooltip__row--spaced {
+  margin-top: 0.5rem;
+}
+
+.chart-tooltip__label {
+  color: color('base');
+}

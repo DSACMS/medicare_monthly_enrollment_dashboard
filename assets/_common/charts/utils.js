@@ -27,6 +27,26 @@ export function formatPeriod(d) {
   return d.month ? `${d.month} ${d.year}` : String(d.year);
 }
 
+export function formatMillions(d) {
+  if (d === 0) return '0';
+  const m = d / 1e6;
+  return Number.isInteger(m) ? `${m}M` : `${m.toFixed(1)}M`;
+}
+
+export function createTooltip(container) {
+  container.style('position', 'relative');
+  return container
+    .append('div')
+    .attr('class', 'chart-tooltip')
+    .attr('aria-hidden', 'true')
+    .style('opacity', 0);
+}
+
+export function moveTooltip(tooltip, containerNode, event) {
+  const [x, y] = d3.pointer(event, containerNode);
+  tooltip.style('left', `${x + 16}px`).style('top', `${y + 16}px`);
+}
+
 export function getChartSize(containerNode, height = 400) {
   const width = containerNode.getBoundingClientRect().width || 800;
   const margin = CHART_MARGIN;

@@ -1,16 +1,23 @@
 import renderLineChart from './lineChart';
 import renderStackedBarChart from './stackedBarChart';
-import { sortYearlyAscending, sortMonthlyAscending, formatPeriod } from './utils';
+import {
+  sortYearlyAscending,
+  sortMonthlyAscending,
+  formatPeriod,
+  formatMillions,
+} from './utils';
+import { SERIES_COLORS } from './colors';
 import { hospitalYearly, hospitalMonthly } from '../tables/hospitalMedical/tableColumns';
 
 const HOSPITAL_LINE_SERIES = [
-  { key: 'ffsCount', label: 'Fee-For-Service (FFS)' },
-  { key: 'maCount', label: 'Medicare Advantage (MA)' },
+  { key: 'ffsCount', label: 'FFS', color: SERIES_COLORS.ffs },
+  { key: 'maCount', label: 'MA', color: SERIES_COLORS.ma },
+  { key: 'totalEnrollees', label: 'TOTAL', color: SERIES_COLORS.total },
 ];
 
 const HOSPITAL_STACK_SEGMENTS = [
-  { key: 'ffsPercent', label: 'Fee-For-Service (FFS)' },
-  { key: 'maPercent', label: 'Medicare Advantage (MA)' },
+  { key: 'ffsPercent', countKey: 'ffsCount', label: 'FFS', color: SERIES_COLORS.ffs },
+  { key: 'maPercent', countKey: 'maCount', label: 'MA', color: SERIES_COLORS.ma },
 ];
 
 /**
@@ -27,6 +34,7 @@ export function renderHospitalYearlyLineChart(selector, data) {
     yLabel: 'Enrollment Count',
     title: 'Hospital/Medical Enrollment Count Yearly Trend',
     tableColumns: hospitalYearly,
+    yTickFormat: formatMillions,
   });
 }
 
@@ -44,6 +52,7 @@ export function renderHospitalMonthlyLineChart(selector, data) {
     yLabel: 'Enrollment Count',
     title: 'Hospital/Medical Enrollment Count 12-Month Trend',
     tableColumns: hospitalMonthly,
+    yTickFormat: formatMillions,
   });
 }
 
