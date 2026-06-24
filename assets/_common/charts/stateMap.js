@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
-import renderSrTable from './accessibility.js';
+import renderSrTable from './accessibility';
 
 
 
@@ -58,7 +58,7 @@ const PROJECTION_SCALE = 800;
  *   config.tableColumns. Falls back to a State/<metric>%/<comparison>%/Total
  *   table if omitted.
  */
-export function renderStateMap(containerSelector, data, config = {}) {
+ function renderStateMap(containerSelector, data, config = {}) {
   if (!data?.length) {
     console.warn('renderStateMap: no data provided, skipping render.');
     return;
@@ -183,8 +183,6 @@ export function renderStateMap(containerSelector, data, config = {}) {
   });
 
   // Visually-hidden table mirroring the chart's data, for screen readers.
-  // Rendered immediately (doesn't depend on the topojson fetch above) so
-  // it's available even if that network request is slow.
   renderSrTable(container, title, tableColumns, data);
 }
 
