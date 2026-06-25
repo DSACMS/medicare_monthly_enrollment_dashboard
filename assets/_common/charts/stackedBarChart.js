@@ -5,10 +5,11 @@ import {
   appendChartSvg,
   getChartSize,
   formatPeriod,
-  addHatchPattern,
+  createTooltip,
+  moveTooltip,
 } from './utils';
 
-// const formatPercent = (v) => `${v}%`;
+const formatCount = d3.format(',');
 
 /**
  * Renders a stacked bar chart showing percent-of-total enrollment trends (0–100%).
@@ -42,19 +43,14 @@ function renderStackedBarChart(selector, data, config) {
     container.node(),
   );
 
+  const tooltip = createTooltip(container);
   const { svg } = appendChartSvg(container, width, height, title);
   const g = svg
     .append('g')
     .attr('transform', `translate(${margin.left},${margin.top})`);
 
-  segments.forEach((seg, i) => {
-    const style = BAR_FILLS[i % BAR_FILLS.length];
-    if (style.pattern === 'hatch') {
-      addHatchPattern(svg, `pattern-${seg.key}`, seg.color || style.fill);
-    }
-  });
-
   const xLabels = data.map(xAccessor);
+  const rotateLabels = xLabels.some((label) => String(label).length > 6);
   const xScale = d3
     .scaleBand()
     .domain(xLabels)
@@ -75,13 +71,15 @@ function renderStackedBarChart(selector, data, config) {
     .call(d3.axisBottom(xScale))
     .selectAll('text')
     .attr('fill', CHART_COLORS.axis)
-    .attr('transform', xLabels.length > 8 ? 'rotate(-35)' : null)
-    .style('text-anchor', xLabels.length > 8 ? 'end' : 'middle');
+    .attr('transform', rotateLabels ? 'rotate(-35)' : null)
+    .style('text-anchor', rotateLabels ? 'end' : 'middle')
+    .style('font-size', '13px');
 
   g.append('g')
     .call(d3.axisLeft(yScale).ticks(5).tickFormat((d) => `${d}%`))
     .selectAll('text')
-    .attr('fill', CHART_COLORS.axis);
+    .attr('fill', CHART_COLORS.axis)
+    .style('font-size', '13px');
 
   g.append('text')
     .attr('transform', 'rotate(-90)')
@@ -89,6 +87,8 @@ function renderStackedBarChart(selector, data, config) {
     .attr('y', -60)
     .attr('text-anchor', 'middle')
     .attr('fill', CHART_COLORS.axis)
+    .style('font-size', '15px')
+    .style('font-weight', '600')
     .text(yLabel);
 
   g.append('text')
@@ -96,32 +96,45 @@ function renderStackedBarChart(selector, data, config) {
     .attr('y', innerHeight + 48)
     .attr('text-anchor', 'middle')
     .attr('fill', CHART_COLORS.axis)
+    .style('font-size', '15px')
+    .style('font-weight', '600')
     .text(xLabel);
 
-  const layer = g
-    .selectAll('.stack-layer')
-    .data(stackedData)
-    .enter()
-    .append('g')
-    .attr('class', 'stack-layer')
-    .attr('fill', (d, i) => {
-      const seg = segments[i];
-      const style = BAR_FILLS[i % BAR_FILLS.length];
-      const color = seg.color || style.fill;
-      return style.pattern === 'hatch' ? `url(#pattern-${seg.key})` : color;
-    });
+  stackedData.forEach((layerData, i) => {
+    const seg = segments[i];
+    const style = BAR_FILLS[i % BAR_FILLS.length];
+    const color = seg.color || style.fill;
 
-  layer
-    .selectAll('rect')
-    .data((d) => d)
-    .enter()
-    .append('rect')
-    .attr('x', (d) => xScale(xAccessor(d.data)))
-    .attr('y', (d) => yScale(d[1]))
-    .attr('height', (d) => yScale(d[0]) - yScale(d[1]))
-    .attr('width', xScale.bandwidth())
-    .attr('stroke', CHART_COLORS.axis)
-    .attr('stroke-width', 0.5);
+    g.append('g')
+      .selectAll('rect')
+      .data(layerData)
+      .enter()
+      .append('rect')
+      .attr('x', (d) => xScale(xAccessor(d.data)))
+      .attr('y', (d) => yScale(d[1]))
+      .attr('height', (d) => yScale(d[0]) - yScale(d[1]))
+      .attr('width', xScale.bandwidth())
+      .attr('fill', color)
+      .attr('stroke', '#ffffff')
+      .attr('stroke-width', 1.5)
+      .on('mouseenter', (event, d) => {
+        d3.select(event.currentTarget).attr('fill-opacity', 0.65);
+        const row = d.data;
+        tooltip
+          .style('opacity', 1)
+          .html(
+            `<div class="chart-tooltip__row"><span class="chart-tooltip__label">${xLabel}</span><span>${xAccessor(row)}</span></div>`
+              + `<div class="chart-tooltip__row"><span class="chart-tooltip__label">${seg.label}</span><span>${formatCount(row[seg.countKey] || 0)}</span></div>`
+              + `<div class="chart-tooltip__row chart-tooltip__row--spaced"><span class="chart-tooltip__label">Percent Contribution</span><span>${Number(row[seg.key] || 0).toFixed(2)}%</span></div>`,
+          );
+        moveTooltip(tooltip, container.node(), event);
+      })
+      .on('mousemove', (event) => moveTooltip(tooltip, container.node(), event))
+      .on('mouseleave', (event) => {
+        d3.select(event.currentTarget).attr('fill-opacity', 1);
+        tooltip.style('opacity', 0);
+      });
+  });
 
   const legend = svg
     .append('g')

@@ -5,6 +5,8 @@ import {
   appendChartSvg,
   getChartSize,
   formatPeriod,
+  createTooltip,
+  moveTooltip,
 } from './utils';
 
 const formatCount = d3.format(',');
@@ -52,18 +54,21 @@ function renderLineChart(selector, data, config) {
     xLabel,
     title,
     tableColumns,
+    yTickFormat = formatCount,
   } = config;
 
   const { width, height, margin, innerWidth, innerHeight } = getChartSize(
     container.node(),
   );
 
+  const tooltip = createTooltip(container);
   const { svg } = appendChartSvg(container, width, height, title);
   const g = svg
     .append('g')
     .attr('transform', `translate(${margin.left},${margin.top})`);
 
   const xLabels = data.map(xAccessor);
+  const rotateLabels = xLabels.some((label) => String(label).length > 6);
   const xScale = d3.scalePoint().domain(xLabels).range([0, innerWidth]).padding(0.5);
 
   const yMax = d3.max(data, (d) => d3.max(series, (s) => d[s.key] || 0));
@@ -78,13 +83,15 @@ function renderLineChart(selector, data, config) {
     .call(d3.axisBottom(xScale))
     .selectAll('text')
     .attr('fill', CHART_COLORS.axis)
-    .attr('transform', xLabels.length > 8 ? 'rotate(-35)' : null)
-    .style('text-anchor', xLabels.length > 8 ? 'end' : 'middle');
+    .attr('transform', rotateLabels ? 'rotate(-35)' : null)
+    .style('text-anchor', rotateLabels ? 'end' : 'middle')
+    .style('font-size', '13px');
 
   g.append('g')
-    .call(d3.axisLeft(yScale).ticks(6).tickFormat(formatCount))
+    .call(d3.axisLeft(yScale).ticks(6).tickFormat(yTickFormat))
     .selectAll('text')
-    .attr('fill', CHART_COLORS.axis);
+    .attr('fill', CHART_COLORS.axis)
+    .style('font-size', '13px');
 
   g.append('text')
     .attr('transform', 'rotate(-90)')
@@ -92,6 +99,8 @@ function renderLineChart(selector, data, config) {
     .attr('y', -60)
     .attr('text-anchor', 'middle')
     .attr('fill', CHART_COLORS.axis)
+    .style('font-size', '15px')
+    .style('font-weight', '600')
     .text(yLabel);
 
   g.append('text')
@@ -99,6 +108,8 @@ function renderLineChart(selector, data, config) {
     .attr('y', innerHeight + 48)
     .attr('text-anchor', 'middle')
     .attr('fill', CHART_COLORS.axis)
+    .style('font-size', '15px')
+    .style('font-weight', '600')
     .text(xLabel);
 
   g.selectAll('.grid-line')
@@ -134,6 +145,47 @@ function renderLineChart(selector, data, config) {
     data.forEach((d) => {
       drawMarker(markerG, style.marker, xScale(xAccessor(d)), yScale(d[s.key] || 0), color);
     });
+  });
+
+  const hoverRing = g
+    .append('circle')
+    .attr('r', 7)
+    .attr('fill', 'none')
+    .attr('stroke-width', 2)
+    .style('opacity', 0)
+    .style('pointer-events', 'none');
+
+  series.forEach((s, i) => {
+    const color = s.color || (i === 0 ? CHART_COLORS.primary : CHART_COLORS.secondary);
+
+    g.append('g')
+      .selectAll('circle')
+      .data(data)
+      .enter()
+      .append('circle')
+      .attr('cx', (d) => xScale(xAccessor(d)))
+      .attr('cy', (d) => yScale(d[s.key] || 0))
+      .attr('r', 12)
+      .attr('fill', 'transparent')
+      .on('mouseenter', (event, d) => {
+        hoverRing
+          .attr('cx', xScale(xAccessor(d)))
+          .attr('cy', yScale(d[s.key] || 0))
+          .attr('stroke', color)
+          .style('opacity', 1);
+        tooltip
+          .style('opacity', 1)
+          .html(
+            `<div class="chart-tooltip__row"><span class="chart-tooltip__label">${xLabel}</span><span>${xAccessor(d)}</span></div>`
+              + `<div class="chart-tooltip__row"><span class="chart-tooltip__label">${s.label}</span><span>${formatCount(d[s.key] || 0)}</span></div>`,
+          );
+        moveTooltip(tooltip, container.node(), event);
+      })
+      .on('mousemove', (event) => moveTooltip(tooltip, container.node(), event))
+      .on('mouseleave', () => {
+        hoverRing.style('opacity', 0);
+        tooltip.style('opacity', 0);
+      });
   });
 
   const legend = svg

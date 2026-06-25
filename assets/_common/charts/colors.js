@@ -11,13 +11,19 @@ export const CHART_COLORS = {
   grid: '#d6d7d9',      // --gray
 };
 
+export const SERIES_COLORS = {
+  ffs: '#b85c7e',
+  ma: '#6a4c93',
+  total: '#1b1b1b',
+};
+
 export const LINE_STYLES = [
   { dash: null, marker: 'circle' },
-  { dash: '8 4', marker: 'triangle' },
-  { dash: '2 3', marker: 'square' },
+  { dash: null, marker: 'circle' },
+  { dash: null, marker: 'circle' },
 ];
 
 export const BAR_FILLS = [
-  { fill: CHART_COLORS.primary, pattern: null },
-  { fill: CHART_COLORS.secondary, pattern: 'hatch' },
+  { fill: SERIES_COLORS.ffs, pattern: null },
+  { fill: SERIES_COLORS.ma, pattern: null },
 ];
