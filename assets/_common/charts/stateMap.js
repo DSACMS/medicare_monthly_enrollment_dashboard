@@ -1,6 +1,7 @@
 import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
 import renderSrTable from './accessibility';
+import { createTooltip, moveTooltip } from './utils';
 
 
 
@@ -122,20 +123,10 @@ const PROJECTION_SCALE = 800;
   const path = d3.geoPath(projection);
 
   // ── Tooltip element ──
-  // A plain absolutely-positioned div, hidden by default, moved and filled
-  // in on hover. This lives outside the SVG since it needs real HTML
-  // (a table), not SVG shapes.
-  const tooltip = container
-    .append('div')
-    .style('position', 'absolute')
-    .style('display', 'none')
-    .style('pointer-events', 'none')
-    .style('background', 'white')
-    .style('border-radius', '8px')
-    .style('box-shadow', '0 2px 8px rgba(0,0,0,0.15)')
-    .style('padding', '10px 16px')
-    .style('font-family', 'sans-serif')
-    .style('font-size', '14px');
+  // Uses the shared chart tooltip helper so it receives the same styles
+  // and pointer positioning as other chart tooltips.
+  const tooltip = createTooltip(container)
+    .classed('state-map-tooltip', true);
 
   d3.json('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json').then((us) => {
     const { features } = topojson.feature(us, us.objects.states);
@@ -155,30 +146,25 @@ const PROJECTION_SCALE = 800;
       .on('mousemove', (event, d) => {
         const row = dataByName.get(d.properties.name);
         if (!row) {
-          tooltip.style('display', 'none');
+          tooltip.style('opacity', 0);
           return;
         }
 
-        // event.offsetX/Y are coordinates relative to the SVG element itself,
-        // which — since the container is position:relative — line up with
-        // where the tooltip div should be placed inside that same container.
         tooltip
           .style('display', 'block')
-          .style('left', `${event.offsetX + 14}px`)
-          .style('top', `${event.offsetY + 14}px`)
+          .style('opacity', 1)
           .html(`
-            <table style="border-collapse: collapse;">
-              <tr><td style="padding:2px 12px 2px 0; color:#555;">State</td><td style="text-align:right; font-weight:600;">${row.stateName}</td></tr>
-              <tr><td style="padding:2px 12px 2px 0; color:#555;">${metricLabel} %</td><td style="text-align:right; font-weight:600;">${metricPercent(row)}%</td></tr>
-              <tr><td style="padding:2px 12px 2px 0; color:#555;">${metricLabel}</td><td style="text-align:right; font-weight:600;">${metricCount(row).toLocaleString()}</td></tr>
-              <tr><td style="padding:2px 12px 2px 0; color:#555;">${comparisonLabel} %</td><td style="text-align:right; font-weight:600;">${comparisonPercent(row)}%</td></tr>
-              <tr><td style="padding:2px 12px 2px 0; color:#555;">${comparisonLabel}</td><td style="text-align:right; font-weight:600;">${comparisonCount(row).toLocaleString()}</td></tr>
-              <tr><td style="padding:2px 12px 2px 0; color:#555;">TOTAL</td><td style="text-align:right; font-weight:600;">${row.totalEnrollees.toLocaleString()}</td></tr>
-            </table>
+            <div class="chart-tooltip__row"><span class="chart-tooltip__label">State</span><span>${row.stateName}</span></div>
+            <div class="chart-tooltip__row"><span class="chart-tooltip__label">${metricLabel} %</span><span>${metricPercent(row)}%</span></div>
+            <div class="chart-tooltip__row"><span class="chart-tooltip__label">${metricLabel}</span><span>${metricCount(row).toLocaleString()}</span></div>
+            <div class="chart-tooltip__row"><span class="chart-tooltip__label">${comparisonLabel} %</span><span>${comparisonPercent(row)}%</span></div>
+            <div class="chart-tooltip__row"><span class="chart-tooltip__label">${comparisonLabel}</span><span>${comparisonCount(row).toLocaleString()}</span></div>
+            <div class="chart-tooltip__row chart-tooltip__row--spaced"><span class="chart-tooltip__label">TOTAL</span><span>${row.totalEnrollees.toLocaleString()}</span></div>
           `);
+        moveTooltip(tooltip, container.node(), event);
       })
       .on('mouseleave', () => {
-        tooltip.style('display', 'none');
+        tooltip.style('opacity', 0);
       });
   });
 
