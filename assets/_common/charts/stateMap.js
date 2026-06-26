@@ -8,10 +8,10 @@ import { createTooltip, moveTooltip } from './utils';
 // Breakpoints and colors are the same as previous legend design
 // (5 bands: 1-17%, 17-34%, 34-51%, 51-67%, 67-87%). 
 // If the legend design changes, these two arrays are the only things to update.
-const DEFAULT_MA_PERCENT_BREAKPOINTS = [17, 34, 51, 67];
+const DEFAULT_PERCENT_BREAKPOINTS = [17, 34, 51, 67];
 const DEFAULT_COLORS = ['#f6e8a3', '#e08e6d', '#c0506b', '#7a3a87', '#3d1a5e'];
 
-const NO_DATA_FILL = '#eee';
+const NO_DATA_FILL = '#979595';
 
 // us-atlas's states-10m.json is unprojected (raw lon/lat), so we project it
 // ourselves at render time. 975x610 is the viewport these scale/translate
@@ -25,7 +25,7 @@ const PROJECTION_SCALE = 800;
  * Renders a US state choropleth, colored by a chosen enrollment metric
  * (e.g. MA% or MAPD%) using fixed threshold bands, with a hover tooltip
  * showing the full breakdown, and a visually-hidden accessible data table
- * (see accessibility.js / renderSrTable) — matching the pattern in pieChart.js.
+ * (see accessibility.js / renderSrTable)
  *
  * NOTE: this function assumes data rows shaped like fetchAllStates()'s
  * output (stateName, ffsCount, ffsPercent, totalEnrollees, plus whatever
@@ -49,7 +49,7 @@ const PROJECTION_SCALE = 800;
  * @param {Function} [config.comparisonCount] - (row) => raw count for the
  *   comparison row. Defaults to FFS count (d => d.ffsCount).
  * @param {number[]} [config.breakpoints] - 4 cutoff values defining the 5
- *   color bands (e.g. [17, 34, 51, 67]). Falls back to DEFAULT_MA_PERCENT_BREAKPOINTS.
+ *   color bands (e.g. [17, 34, 51, 67]). Falls back to DEFAULT_PERCENT_BREAKPOINTS.
  * @param {string[]} [config.colors] - 5 hex colors, one per band, low-to-high.
  *   Falls back to DEFAULT_COLORS if omitted or incomplete.
  * @param {string} [config.title] - Accessible name for the chart; used as the
@@ -72,7 +72,7 @@ const PROJECTION_SCALE = 800;
     metricLabel = 'MA',
     metricPercent = (d) => d.maPercent,
     metricCount = (d) => d.maCount,
-    // NEW: generalizes the tooltip's second (non-colored) row, which used
+    // Generalizes the tooltip's second (non-colored) row, which used
     // to hardcode FFS. The MAPD map needs this row to show PDP instead.
     comparisonLabel = 'FFS',
     comparisonPercent = (d) => d.ffsPercent,
@@ -80,7 +80,7 @@ const PROJECTION_SCALE = 800;
     tableColumns = [
       { label: 'State', value: (d) => d.stateName },
       { label: `${metricLabel} %`, value: (d) => `${metricPercent(d)}%` },
-      // NEW: mirrors the tooltip's comparison row (FFS for the MA map, PDP
+      // Mirrors the tooltip's comparison row (FFS for the MA map, PDP
       // for the MAPD map), so screen reader users get the same breakdown
       // sighted users get from hovering, not just the colored metric.
       { label: `${comparisonLabel} %`, value: (d) => `${comparisonPercent(d)}%` },
@@ -90,10 +90,7 @@ const PROJECTION_SCALE = 800;
 
   const resolvedBreakpoints = (breakpoints && breakpoints.length === 4)
     ? breakpoints
-    : DEFAULT_MA_PERCENT_BREAKPOINTS;
-  // scaleThreshold needs N-1 cutoff numbers to define N bands — 4
-  // breakpoints always produce 5 bands, which is why colors needs exactly 5
-  // entries and breakpoints needs exactly 4.
+    : DEFAULT_PERCENT_BREAKPOINTS;
   const resolvedColors = (colors && colors.length === 5) ? colors : DEFAULT_COLORS;
 
   const metricColor = d3.scaleThreshold()
@@ -106,8 +103,6 @@ const PROJECTION_SCALE = 800;
   const width = 975;
   const height = 610;
 
-  // Selected once and reused for the SVG, tooltip, and accessible sr-table
-  // below, so they all end up as siblings inside the same container 
   const container = d3.select(containerSelector);
 
   // The container needs position: relative for the tooltip's absolute
@@ -122,9 +117,7 @@ const PROJECTION_SCALE = 800;
   const projection = d3.geoAlbersUsa().scale(PROJECTION_SCALE).translate([width / 2, height / 2]);
   const path = d3.geoPath(projection);
 
-  // ── Tooltip element ──
-  // Uses the shared chart tooltip helper so it receives the same styles
-  // and pointer positioning as other chart tooltips.
+  
   const tooltip = createTooltip(container)
     .classed('state-map-tooltip', true);
 
@@ -168,7 +161,7 @@ const PROJECTION_SCALE = 800;
       });
   });
 
-  // Visually-hidden table mirroring the chart's data, for screen readers.
+
   renderSrTable(container, title, tableColumns, data);
 }
 
