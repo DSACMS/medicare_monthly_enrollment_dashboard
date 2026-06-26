@@ -1,5 +1,4 @@
 import * as d3 from 'd3';
-import { fetchAllStates, fetchStateEnrollment } from '../../../src/datasets/stateEnrollment'; 
 import requestDataset from '../../../src/router';
 import renderTable from '../tables/renderTable';
 import {
@@ -95,9 +94,9 @@ async function init() {
     });
 
     const loadStateMap = async () => {
-      const recentRows = await fetchStateEnrollment({ state: 'NY', type: 'monthly' });
+      const recentRows = await requestDataset('stateEnrollment', { state: 'NY', type: 'monthly' });
       const latest = recentRows[0];
-      const allStates = await fetchAllStates({ year: latest.year, month: latest.month });
+      const allStates = await requestDataset('allStates', { year: latest.year, month: latest.month });
       
 
       renderStateMap('#medicare-enrollment-state-map', allStates, {
