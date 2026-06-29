@@ -1,11 +1,7 @@
 import cmsGet from '../api/cmsClient';
+import { monthOrder, getPercent } from '../utils/helpers'
 
-const monthOrder = {
-  'January': 1, 'February': 2, 'March': 3, 'April': 4, 'May': 5, 'June': 6,
-  'July': 7, 'August': 8, 'September': 9, 'October': 10, 'November': 11, 'December': 12
-};
-
-async function fetchNationalData(options) {
+async function fetchNationalData(options = {}) {
   const type = options.type || 'monthly';
 
   const queryParams = new URLSearchParams({
@@ -13,55 +9,47 @@ async function fetchNationalData(options) {
     'sort[YEAR]': 'DESC',
     'sort[MONTH]': 'DESC',
     'size': '100',
-    ...(type === 'yearly' && { 'filter[MONTH]': 'Year' })
+    ...(type === 'yearly' && { 'filter[MONTH]': 'Year' }) // spread operator unpacks this object into the outer one
   });
 
-  const rawData = await cmsGet(queryParams);
-  const num = (val) => parseInt(val, 10) || 0;
+  const rawData = await cmsGet(queryParams); // returns an array of data objects 
+  const num = (val) => parseInt(val, 10) || 0; // ,10 (demical) numbering system, this removes the string wrapper from numbers returned by the API
 
-  const parsedRows = rawData.map(row => {
-    const total = num(row.TOT_BENES);
-    const ffs = num(row.ORGNL_MDCR_BENES);
-    const ma = num(row.MA_AND_OTH_BENES);
-
-    // Extract new Prescription Drug raw numbers
-    const drugTotal = num(row.PRSCRPTN_DRUG_TOT_BENES);
-    const pdp = num(row.PRSCRPTN_DRUG_PDP_BENES);
-    const mapd = num(row.PRSCRPTN_DRUG_MAPD_BENES);
+  const parsedRows = rawData.map(row => { // .map takes an array of objects and takes each index (row) and transforms it
+    const total = num(row.TOT_BENES); 
+    const drugTotal = num(row.PRSCRPTN_DRUG_TOT_BENES); 
 
     return {
       year: row.YEAR,
       month: row.MONTH,
       totalEnrollees: total,
-      ffsCount: ffs,
-      maCount: ma,
-      ffsPercent: total > 0 ? parseFloat(((ffs / total) * 100).toFixed(2)) : 0,
-      maPercent: total > 0 ? parseFloat(((ma / total) * 100).toFixed(2)) : 0,
-
-      // Add clean Drug metrics to the mapped objects
+      ffsCount: num(row.ORGNL_MDCR_BENES), 
+      maCount: num(row.MA_AND_OTH_BENES),
+      ffsPercent: getPercent(num(row.ORGNL_MDCR_BENES), total),
+      maPercent: getPercent(num(row.MA_AND_OTH_BENES), total),
       drugTotal,
-      pdpCount: pdp,
-      mapdCount: mapd,
-      pdpPercent: drugTotal > 0 ? parseFloat(((pdp / drugTotal) * 100).toFixed(2)) : 0,
-      mapdPercent: drugTotal > 0 ? parseFloat(((mapd / drugTotal) * 100).toFixed(2)) : 0
+      pdpCount: num(row.PRSCRPTN_DRUG_PDP_BENES), 
+      mapdCount: num(row.PRSCRPTN_DRUG_MAPD_BENES), 
+      pdpPercent: getPercent(num(row.PRSCRPTN_DRUG_PDP_BENES), drugTotal),
+      mapdPercent: getPercent(num(row.PRSCRPTN_DRUG_MAPD_BENES), drugTotal)
     };
-  });
+  }); // parsed rows is now an array of objects containing year, month, medicare data 
 
   if (type === 'yearly') {
-    return parsedRows.sort((a, b) => b.year - a.year);
+    return parsedRows.sort((a, b) => b.year - a.year); // if it returns a negative number put a before b, elif positive put b before a, else leave alone
   }
 
   if (type === 'monthly') {
     return parsedRows
-      .filter(row => row.month !== 'Year')
+      .filter(row => row.month !== 'Year') // remove yearly medicare data rows
       .sort((a, b) => {
-        if (b.year !== a.year) return parseInt(b.year, 10) - parseInt(a.year, 10);
+        if (b.year !== a.year) return b.year - a.year; // string subtraction coerces into nums, no need to use parseInt
         return monthOrder[b.month] - monthOrder[a.month];
       })
-      .slice(0, 12);
+      .slice(0, 12); // inclusive, exclusive. only grabs the first 12 rows 
   }
 
   return parsedRows;
-}
+};
 
 export default fetchNationalData;
