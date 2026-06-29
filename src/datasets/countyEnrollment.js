@@ -1,11 +1,11 @@
 import cmsGet from '../api/cmsClient';
-import { monthOrder, getPercent } from '../utils/helpers'
+import { getPercent } from '../utils/helpers'
 
 async function fetchCountiesForState(options = {}) {
   const {state} = options;
 
   if (!state) {
-    throw new Error(`fetchCountiesForState requires options.state (e.g. 'NY')`);
+    throw new Error('fetchCountiesForState requires options.state (e.g. \'NY\')');
   }
 
   const columns = [

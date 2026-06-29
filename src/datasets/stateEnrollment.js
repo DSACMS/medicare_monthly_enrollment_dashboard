@@ -45,7 +45,7 @@ export async function fetchStateEnrollment(options = {}) {
   const type = options.type || 'monthly';
 
   if (!state) {
-    throw new Error(`fetchStateEnrollment requires options.state (e.g. 'NY')`);
+    throw new Error('fetchCountiesForState requires options.state (e.g. \'NY\')');
   }
 
   const queryParams = new URLSearchParams({
