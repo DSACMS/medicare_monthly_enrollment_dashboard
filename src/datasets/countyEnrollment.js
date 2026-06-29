@@ -1,9 +1,5 @@
 import cmsGet from '../api/cmsClient';
-
-const monthOrder = {
-  January: 1, February: 2, March: 3, April: 4, May: 5, June: 6,
-  July: 7, August: 8, September: 9, October: 10, November: 11, December: 12,
-};
+import { getPercent } from '../utils/helpers'
 
 async function fetchCountiesForState(options = {}) {
   const {state} = options;
@@ -37,16 +33,18 @@ async function fetchCountiesForState(options = {}) {
   });
 
   const rawData = await cmsGet(queryParams);
+  const data = rawData.filter((row) => row.MONTH !== 'Year'); // remove the year option from the array, filter keeps the rest of the data array in its original relative sorted position
+
+  const latestYear = data[0].YEAR; // pull the most recent year since the query params are sorted descending
+  const latestMonth = data[0].MONTH; // pull the most recent month since the query params are sorted descending
+
   const num = (val) => parseInt(val, 10) || 0;
 
-  const rows = rawData
+  return data
+    .filter((row) => row.YEAR === latestYear && row.MONTH === latestMonth) // 
     .map((row) => {
       const total = num(row.TOT_BENES);
-      const ffs = num(row.ORGNL_MDCR_BENES);
-      const ma = num(row.MA_AND_OTH_BENES);
       const drugTotal = num(row.PRSCRPTN_DRUG_TOT_BENES);
-      const pdp = num(row.PRSCRPTN_DRUG_PDP_BENES);
-      const mapd = num(row.PRSCRPTN_DRUG_MAPD_BENES);
 
       return {
         state: row.BENE_STATE_ABRVTN,
@@ -56,27 +54,17 @@ async function fetchCountiesForState(options = {}) {
         year: row.YEAR,
         month: row.MONTH,
         totalEnrollees: total,
-        ffsCount: ffs,
-        maCount: ma,
-        ffsPercent: total > 0 ? parseFloat(((ffs / total) * 100).toFixed(2)) : 0,
-        maPercent: total > 0 ? parseFloat(((ma / total) * 100).toFixed(2)) : 0,
+        ffsCount: num(row.ORGNL_MDCR_BENES), 
+        maCount: num(row.MA_AND_OTH_BENES), 
+        ffsPercent: getPercent(num(row.ORGNL_MDCR_BENES), total),
+        maPercent: getPercent(num(row.MA_AND_OTH_BENES), total),
         drugTotal,
-        pdpCount: pdp,
-        mapdCount: mapd,
-        pdpPercent: drugTotal > 0 ? parseFloat(((pdp / drugTotal) * 100).toFixed(2)) : 0,
-        mapdPercent: drugTotal > 0 ? parseFloat(((mapd / drugTotal) * 100).toFixed(2)) : 0,
+        pdpCount: num(row.PRSCRPTN_DRUG_PDP_BENES), 
+        mapdCount: num(row.PRSCRPTN_DRUG_MAPD_BENES), 
+        pdpPercent: getPercent(num(row.PRSCRPTN_DRUG_PDP_BENES), drugTotal),
+        mapdPercent: getPercent(num(row.PRSCRPTN_DRUG_MAPD_BENES), drugTotal)
       };
     })
-    .filter((row) => row.month !== 'Year');
-
-  const latestYear = rows.reduce((max, row) => (row.year > max ? row.year : max), '0');
-  const inYear = rows.filter((row) => row.year === latestYear);
-  const latestMonth = inYear.reduce(
-    (max, row) => (monthOrder[row.month] > monthOrder[max] ? row.month : max),
-    inYear[0]?.month
-  );
-
-  return inYear.filter((row) => row.month === latestMonth);
 }
 
 export default fetchCountiesForState;
