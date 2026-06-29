@@ -2,15 +2,13 @@ import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
 import renderSrTable from './accessibility';
 import { createTooltip, moveTooltip } from './utils';
+import renderCountyMap from './renderCountyMap';
+import requestDataset from '../../../src/router';
 
-
-
-// Breakpoints and colors are the same as previous legend design
-// (5 bands: 1-17%, 17-34%, 34-51%, 51-67%, 67-87%). 
-// If the legend design changes, these two arrays are the only things to update.
+// These are the breakpoints and colors for the legend design
+// (5 bands: 1-17%, 17-34%, 34-51%, 51-67%, 67-87%).
 const DEFAULT_PERCENT_BREAKPOINTS = [17, 34, 51, 67];
 const DEFAULT_COLORS = ['#f6e8a3', '#e08e6d', '#c0506b', '#7a3a87', '#3d1a5e'];
-
 const NO_DATA_FILL = '#979595';
 
 // us-atlas's states-10m.json is unprojected (raw lon/lat), so we project it
@@ -20,6 +18,27 @@ const NO_DATA_FILL = '#979595';
 // inside the frame at this viewport size — bump it up if you want the
 // mainland states larger and don't mind clipping the insets.
 const PROJECTION_SCALE = 800;
+
+let currentCountyRequestId = 0;
+let cachedCountyFeatures = null;
+
+async function getCountyFeatures() {
+  if (!cachedCountyFeatures) {
+    const us = await d3.json('https://cdn.jsdelivr.net/npm/us-atlas@3/counties-10m.json');
+    cachedCountyFeatures = topojson.feature(us, us.objects.counties).features;
+  }
+  return cachedCountyFeatures;
+}
+
+let cachedStateFeatures = null;
+
+async function getStateFeatures() {
+  if (!cachedStateFeatures) {
+    const us = await d3.json('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json');
+    cachedStateFeatures = topojson.feature(us, us.objects.states).features;
+  }
+  return cachedStateFeatures;
+}
 
 /**
  * Renders a US state choropleth, colored by a chosen enrollment metric
@@ -59,7 +78,8 @@ const PROJECTION_SCALE = 800;
  *   config.tableColumns. Falls back to a State/<metric>%/<comparison>%/Total
  *   table if omitted.
  */
- function renderStateMap(containerSelector, data, config = {}) {
+
+function renderStateMap(containerSelector, data, config = {}) {
   if (!data?.length) {
     console.warn('renderStateMap: no data provided, skipping render.');
     return;
@@ -72,30 +92,22 @@ const PROJECTION_SCALE = 800;
     metricLabel = 'MA',
     metricPercent = (d) => d.maPercent,
     metricCount = (d) => d.maCount,
-    // Generalizes the tooltip's second (non-colored) row, which used
-    // to hardcode FFS. The MAPD map needs this row to show PDP instead.
     comparisonLabel = 'FFS',
     comparisonPercent = (d) => d.ffsPercent,
     comparisonCount = (d) => d.ffsCount,
     tableColumns = [
       { label: 'State', value: (d) => d.stateName },
       { label: `${metricLabel} %`, value: (d) => `${metricPercent(d)}%` },
-      // Mirrors the tooltip's comparison row (FFS for the MA map, PDP
-      // for the MAPD map), so screen reader users get the same breakdown
-      // sighted users get from hovering, not just the colored metric.
       { label: `${comparisonLabel} %`, value: (d) => `${comparisonPercent(d)}%` },
       { label: 'Total enrollees', value: (d) => d.totalEnrollees.toLocaleString() },
     ],
   } = config;
 
-  const resolvedBreakpoints = (breakpoints && breakpoints.length === 4)
-    ? breakpoints
-    : DEFAULT_PERCENT_BREAKPOINTS;
-  const resolvedColors = (colors && colors.length === 5) ? colors : DEFAULT_COLORS;
+  const resolvedBreakpoints =
+    breakpoints && breakpoints.length === 4 ? breakpoints : DEFAULT_PERCENT_BREAKPOINTS;
+  const resolvedColors = colors && colors.length === 5 ? colors : DEFAULT_COLORS;
 
-  const metricColor = d3.scaleThreshold()
-    .domain(resolvedBreakpoints)
-    .range(resolvedColors);
+  const metricColor = d3.scaleThreshold().domain(resolvedBreakpoints).range(resolvedColors);
 
   // Lookup by full state name (matches us-atlas's properties.name field).
   const dataByName = new Map(data.map((d) => [d.stateName, d]));
@@ -105,48 +117,41 @@ const PROJECTION_SCALE = 800;
 
   const container = d3.select(containerSelector);
 
-  // The container needs position: relative for the tooltip's absolute
-  // positioning (below) to be measured relative to the map, not the whole page.
   container.style('position', 'relative');
+  container.selectAll('*').remove();
 
-  const svg = container
-    .append('svg')
-    .attr('width', '100%')
-    .attr('viewBox', [0, 0, width, height]);
+  const svg = container.append('svg').attr('width', '100%').attr('viewBox', [0, 0, width, height]);
 
-  const projection = d3.geoAlbersUsa().scale(PROJECTION_SCALE).translate([width / 2, height / 2]);
+  const projection = d3
+    .geoAlbersUsa()
+    .scale(PROJECTION_SCALE)
+    .translate([width / 2, height / 2]);
   const path = d3.geoPath(projection);
 
-  
-  const tooltip = createTooltip(container)
-    .classed('state-map-tooltip', true);
+  const tooltip = createTooltip(container).classed('state-map-tooltip', true);
 
-  d3.json('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json').then((us) => {
-    const { features } = topojson.feature(us, us.objects.states);
+  getStateFeatures()
+    .then((features) => {
+      svg
+        .append('g')
+        .selectAll('path')
+        .data(features)
+        .join('path')
+        .attr('d', path)
+        .attr('fill', (d) => {
+          const row = dataByName.get(d.properties.name);
+          return row === undefined ? NO_DATA_FILL : metricColor(metricPercent(row));
+        })
+        .attr('stroke', '#fff')
+        .style('cursor', 'pointer')
+        .on('mousemove', (event, d) => {
+          const row = dataByName.get(d.properties.name);
+          if (!row) {
+            tooltip.style('opacity', 0).style('display', 'none');
+            return;
+          }
 
-    svg.append('g')
-      .selectAll('path')
-      .data(features)
-      .join('path')
-      .attr('d', path)
-      .attr('fill', (d) => {
-        const row = dataByName.get(d.properties.name);
-        return row === undefined ? NO_DATA_FILL : metricColor(metricPercent(row));
-      })
-      .attr('stroke', '#fff')
-      .style('cursor', 'pointer')
-      // ── Hover handlers ──
-      .on('mousemove', (event, d) => {
-        const row = dataByName.get(d.properties.name);
-        if (!row) {
-          tooltip.style('opacity', 0);
-          return;
-        }
-
-        tooltip
-          .style('display', 'block')
-          .style('opacity', 1)
-          .html(`
+          tooltip.style('display', 'block').style('opacity', 1).html(`
             <div class="chart-tooltip__row"><span class="chart-tooltip__label">State</span><span>${row.stateName}</span></div>
             <div class="chart-tooltip__row"><span class="chart-tooltip__label">${metricLabel} %</span><span>${metricPercent(row)}%</span></div>
             <div class="chart-tooltip__row"><span class="chart-tooltip__label">${metricLabel}</span><span>${metricCount(row).toLocaleString()}</span></div>
@@ -154,13 +159,54 @@ const PROJECTION_SCALE = 800;
             <div class="chart-tooltip__row"><span class="chart-tooltip__label">${comparisonLabel}</span><span>${comparisonCount(row).toLocaleString()}</span></div>
             <div class="chart-tooltip__row chart-tooltip__row--spaced"><span class="chart-tooltip__label">TOTAL</span><span>${row.totalEnrollees.toLocaleString()}</span></div>
           `);
-        moveTooltip(tooltip, container.node(), event);
-      })
-      .on('mouseleave', () => {
-        tooltip.style('opacity', 0);
-      });
-  });
+          moveTooltip(tooltip, container.node(), event);
+        })
+        .on('mouseleave', () => {
+          tooltip.style('opacity', 0).style('display', 'none');
+        })
+        .on('click', async (event, d) => {
+          currentCountyRequestId += 1;
+          const requestId = currentCountyRequestId;
 
+          const row = dataByName.get(d.properties.name);
+          if (!row) return;
+
+          tooltip.style('opacity', 0).style('display', 'none');
+
+          try {
+            const [countyFeatures, countyRows] = await Promise.all([
+              getCountyFeatures(),
+              requestDataset('countyEnrollment', { state: row.state }),
+            ]);
+
+            if (requestId !== currentCountyRequestId) return;
+
+            renderCountyMap(
+              containerSelector,
+              countyFeatures,
+              d,
+              countyRows,
+              () => renderStateMap(containerSelector, data, config),
+              {
+                metricLabel,
+                metricPercent,
+                metricCount,
+                breakpoints: resolvedBreakpoints,
+                colors: resolvedColors,
+              },
+            );
+          } catch (error) {
+            if (requestId !== currentCountyRequestId) return;
+
+            console.error('renderStateMap: failed to load county map data', error);
+            container.append('p').attr('role', 'alert').text('County map could not be loaded.');
+          }
+        });
+    })
+    .catch((error) => {
+      console.error('renderStateMap: failed to load state features', error);
+      container.append('p').attr('role', 'alert').text('State map could not be loaded.');
+    });
 
   renderSrTable(container, title, tableColumns, data);
 }

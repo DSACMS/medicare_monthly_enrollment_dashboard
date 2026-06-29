@@ -1,7 +1,7 @@
 export { default as renderLineChart } from './lineChart';
 export { default as renderStackedBarChart } from './stackedBarChart';
 export { default as renderPieChart } from './pieChart';
-export { default as renderStateMap } from './stateMap';
+export { default as renderStateMap } from './renderStateMap';
 
 export {
   renderHospitalYearlyLineChart,
