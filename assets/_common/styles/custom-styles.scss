@@ -3,6 +3,31 @@
 
 $bullet-spacing: 1.25rem;
 
+// Custom styles for the Medicare Enrollment Dashboard
+.title-bar {
+  background-color: color('primary-lighter');
+  border: 2.5px solid color('primary-dark');
+  border-radius: 15px;
+  padding: units(1);
+  margin-bottom: units(3);
+  
+  /* Center the heading inside */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: units(3);
+  
+}
+.title-bar__heading {
+  font-size: $theme-h1-font-size;
+  color: color('primary-dark');
+  font-weight: 700;
+  margin: 0;
+  text-align: center;
+}
+
+
+
 // Highlight TODO links to make them visually standout
 .todo-link,
 a[href*="/TODO/"] {
