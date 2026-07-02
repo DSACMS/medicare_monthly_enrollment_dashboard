@@ -16,6 +16,7 @@ $bullet-spacing: 1.25rem;
   justify-content: center;
   align-items: center;
   min-height: units(3);
+  min-width: 280px;
   
 }
 .title-bar__heading {
@@ -24,6 +25,14 @@ $bullet-spacing: 1.25rem;
   font-weight: 700;
   margin: 0;
   text-align: center;
+}
+
+.usa-button svg {
+  fill: white;
+  width: 1em;
+  height: 1em;
+  vertical-align: middle;
+  flex-shrink: 0;
 }
 
 
