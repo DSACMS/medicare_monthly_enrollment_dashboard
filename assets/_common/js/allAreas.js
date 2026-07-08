@@ -11,7 +11,8 @@ import {
   renderDrugYearlyStackedBarChart,
   renderDrugMonthlyStackedBarChart,
   renderPieChart,
-  renderStateMap
+  renderStateMap,
+  mergeLatestMonthlyIntoYearly
 } from '../charts/index';
 
 const formatNum = d3.format(',');
@@ -45,12 +46,15 @@ async function init() {
       requestDataset('nationalEnrollment', { type: 'monthly' }),
     ]);
 
-    renderTable('#medicare-table', columns, yearly);
+    const yearlyWithLatest = mergeLatestMonthlyIntoYearly(yearly, monthly);
+    console.log('MERGED MONTHLY + YEARLY DATA', yearlyWithLatest);
 
-    renderHospitalYearlyLineChart('#national-hospital-yearly-line', yearly);
-    renderHospitalYearlyStackedBarChart('#national-hospital-yearly-bar', yearly);
-    renderDrugYearlyLineChart('#national-drug-yearly-line', yearly);
-    renderDrugYearlyStackedBarChart('#national-drug-yearly-bar', yearly);
+    renderTable('#medicare-table', columns, yearlyWithLatest);
+
+    renderHospitalYearlyLineChart('#national-hospital-yearly-line', yearlyWithLatest);
+    renderHospitalYearlyStackedBarChart('#national-hospital-yearly-bar', yearlyWithLatest);
+    renderDrugYearlyLineChart('#national-drug-yearly-line', yearlyWithLatest);
+    renderDrugYearlyStackedBarChart('#national-drug-yearly-bar', yearlyWithLatest);
 
     renderHospitalMonthlyLineChart('#national-hospital-monthly-line', monthly);
     renderHospitalMonthlyStackedBarChart('#national-hospital-monthly-bar', monthly);
@@ -63,8 +67,8 @@ async function init() {
     // program type, double-check pieChart.js's xPosition logic still does
     // what you expect.
     //
-    // currentYear assumes `yearly` is sorted newest-first
-    const currentYear = yearly[0];
+    // currentYear assumes `yearlyWithLatest` has the latest year appearing first.
+    const currentYear = yearlyWithLatest[0];
  
     const medicareEnrollmentPieData = [
       { name: 'FFS', value: currentYear.ffsPercent },
