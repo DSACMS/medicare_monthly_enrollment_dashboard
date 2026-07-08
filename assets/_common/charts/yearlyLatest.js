@@ -1,6 +1,7 @@
-//This function simply merges the first row of the monthly dataset onto the yearly dataset
-//Reasoning for this is that yearly dataset lags behind a year and some months until data is finalized
-//Only by using monthly data we are able to get current year data. 
+// This function simply merges the first row of the monthly dataset onto the yearly dataset
+// Reasoning for this is that yearly dataset lags behind a year and some months until data is finalized
+// Only by using monthly data we are able to get current year data. 
+
 
 function mergeLatestMonthlyIntoYearly(yearly, monthly) {
   const latestMonthly = monthly[0];
