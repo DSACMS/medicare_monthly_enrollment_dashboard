@@ -7,9 +7,13 @@ function mergeLatestMonthlyIntoYearly(yearly, monthly) {
   const latestMonthly = monthly[0];
   const latestYearly = yearly[0];
 
-  if (!latestMonthly || !latestYearly) {
-    return yearly;
-  }
+  if (!latestMonthly) {
+  return yearly;
+}
+
+if (!latestYearly) {
+  return monthly;
+}
 
   if (Number(latestMonthly.year) > Number(latestYearly.year)) {
     return [latestMonthly, ...yearly];

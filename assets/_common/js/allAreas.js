@@ -12,7 +12,7 @@ import {
   renderDrugMonthlyStackedBarChart,
   renderPieChart,
   renderStateMap,
-  mergeLatestMonthlyIntoYearly
+  mergeLatestMonthlyIntoYearly,
 } from '../charts/index';
 
 const formatNum = d3.format(',');
@@ -47,7 +47,6 @@ async function init() {
     ]);
 
     const yearlyWithLatest = mergeLatestMonthlyIntoYearly(yearly, monthly);
-    console.log('MERGED MONTHLY + YEARLY DATA', yearlyWithLatest);
 
     renderTable('#medicare-table', columns, yearlyWithLatest);
 
@@ -69,25 +68,30 @@ async function init() {
     //
     // currentYear assumes `yearlyWithLatest` has the latest year appearing first.
     const currentYear = yearlyWithLatest[0];
- 
+
     const medicareEnrollmentPieData = [
       { name: 'FFS', value: currentYear.ffsPercent },
-      { name: 'MA', value: currentYear.maPercent }, 
+      { name: 'MA', value: currentYear.maPercent },
     ];
-    renderPieChart('#medicare-enrollment-pie', medicareEnrollmentPieData, currentYear.totalEnrollees, {
-      colors: ['#961d56', '#7928c9'],
-      title: `Medicare enrollment by program type, ${currentYear.year}`,
-      tableColumns: [
-        { label: 'Program', value: (d) => d.name },
-        { label: 'Percent of total', value: (d) => `${Math.round(d.value)}%` },
-      ],
-    });
- 
+    renderPieChart(
+      '#medicare-enrollment-pie',
+      medicareEnrollmentPieData,
+      currentYear.totalEnrollees,
+      {
+        colors: ['#961d56', '#7928c9'],
+        title: `Medicare enrollment by program type, ${currentYear.year}`,
+        tableColumns: [
+          { label: 'Program', value: (d) => d.name },
+          { label: 'Percent of total', value: (d) => `${Math.round(d.value)}%` },
+        ],
+      },
+    );
+
     const drugEnrollmentPieData = [
       { name: 'PDP', value: currentYear.pdpPercent },
       { name: 'MA-PD', value: currentYear.mapdPercent },
     ];
-    
+
     renderPieChart('#drug-enrollment-pie', drugEnrollmentPieData, currentYear.drugTotal, {
       colors: ['#89cc9e', '#009ad0'],
       title: `Medicare Part D enrollment by plan type, ${currentYear.year}`,
@@ -100,8 +104,10 @@ async function init() {
     const loadStateMap = async () => {
       const recentRows = await requestDataset('stateEnrollment', { state: 'NY', type: 'monthly' });
       const latest = recentRows[0];
-      const allStates = await requestDataset('allStates', { year: latest.year, month: latest.month });
-      
+      const allStates = await requestDataset('allStates', {
+        year: latest.year,
+        month: latest.month,
+      });
 
       renderStateMap('#medicare-enrollment-state-map', allStates, {
         title: 'Medicare Advantage enrollment by state',
@@ -117,14 +123,11 @@ async function init() {
         comparisonPercent: (d) => d.pdpPercent,
         comparisonCount: (d) => d.pdpCount,
       });
-    }
-
+    };
 
     await loadStateMap();
-
-
   } catch (error) {
-    console.error('Failed to load national data:', error.message);
+    throw new Error(`Failed to load national data: ${error.message}`);
   }
 }
 
