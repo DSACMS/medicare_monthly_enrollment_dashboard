@@ -81,8 +81,10 @@ async function getStateFeatures() {
 
 function renderStateMap(containerSelector, data, config = {}) {
   if (!data?.length) {
-    console.warn('renderStateMap: no data provided, skipping render.');
-    return;
+    return {
+      success: false,
+      error: 'renderStateMap: no data provided, skipping render.',
+    };
   }
 
   const {
@@ -197,18 +199,16 @@ function renderStateMap(containerSelector, data, config = {}) {
             );
           } catch (error) {
             if (requestId !== currentCountyRequestId) return;
-
-            console.error('renderStateMap: failed to load county map data', error);
             container.append('p').attr('role', 'alert').text('County map could not be loaded.');
           }
         });
     })
-    .catch((error) => {
-      console.error('renderStateMap: failed to load state features', error);
+    .catch(() => {
       container.append('p').attr('role', 'alert').text('State map could not be loaded.');
     });
 
   renderSrTable(container, title, tableColumns, data);
+  return { success: true };
 }
 
 export default renderStateMap;
