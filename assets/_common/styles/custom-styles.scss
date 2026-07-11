@@ -3,28 +3,200 @@
 
 $bullet-spacing: 1.25rem;
 
+// Shared label-text style (dashboard buttons label, pie legend, etc).
+%dashboard-label-text {
+  font-size: 20px;
+}
+
+// Self-hosted (not USWDS-bundled); used only by .title-bar__heading below.
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../_fonts/montserrat/montserrat-semibold.woff2') format('woff2');
+}
+
 // Custom styles for the Medicare Enrollment Dashboard
+
+.dashboard-type-button {
+  width: 250px;
+  height: 60px;
+  padding: 2px;
+  font-size: 22px;
+}
 .title-bar {
-  background-color: color('primary-lighter');
-  border: 2.5px solid color('primary-dark');
-  border-radius: 15px;
+  background-color: color('primary');
   padding: units(1);
-  margin-bottom: units(3);
-  
+  margin: 10px;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.25);
+
   /* Center the heading inside */
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: units(3);
   min-width: 280px;
-  
+
 }
 .title-bar__heading {
-  font-size: $theme-h1-font-size;
-  color: color('primary-dark');
-  font-weight: 700;
+  // font-size() resolves the 'heading' scale token to a usable rem value.
+  font-size: font-size('heading', $theme-h1-font-size);
+  font-family: 'Montserrat', sans-serif;
+  color: color('white');
+  font-weight: 600;
   margin: 0;
   text-align: center;
+}
+
+// Reusable card: centers content, contains overflow, spans width minus margin.
+.dashboard-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 300px;
+  margin: 10px;
+  overflow: hidden;
+  container-type: inline-size;
+  background-color: var(--card-background);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.25);
+}
+
+// Buttons | chart | legend: stacks on mobile, grid once the card is wide enough.
+.pie-chart-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+
+  // Stacks below ~1130px (buttons 250 + chart 540 + legend ~330 + gaps).
+  @container (min-width: 1130px) {
+    display: grid;
+    grid-template-columns: 1fr minmax(0, 540px) 1fr;
+    align-items: center;
+    gap: clamp(5px, 2cqi, 20px);
+  }
+
+  // Lets columns shrink below their content's default min-width.
+  > * {
+    min-width: 0;
+  }
+}
+
+.pie-chart-row__buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 0;
+}
+
+.pie-chart-row__buttons-label {
+  @extend %dashboard-label-text;
+  margin: 0;
+}
+
+// Hosts pieChart.js's label/circle/label grid (.pie-chart-inner).
+.pie-chart-row__chart {
+  display: flex;
+  justify-content: center;
+
+  svg {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+// 275/540 must match pieChart.js's DEFAULT_HEIGHT/DEFAULT_WIDTH.
+.pie-chart-inner {
+  display: grid;
+  grid-template-columns: 1fr minmax(0, 275px) 1fr;
+  align-items: center;
+  gap: 5px;
+  width: 540px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+// Lets the circle shrink below the svg's intrinsic size.
+.pie-chart-svg-host {
+  min-width: 0;
+}
+
+.pie-chart-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  font-family: family('cond');
+  font-size: 20px;
+}
+
+.pie-chart-label__line {
+  font-weight: bold;
+  font-size: 20px;
+}
+
+// Centers .pie-legend as one block instead of each child separately.
+.pie-chart-row__legend {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 5px;
+}
+
+// Shrink-wraps to its widest child so both lines share a left edge.
+.pie-legend {
+  display: flex;
+  flex-direction: column;
+  gap: units(1);
+  width: fit-content;
+  text-align: left;
+}
+
+.pie-legend__date {
+  @extend %dashboard-label-text;
+  margin: 0;
+}
+
+// FFS/MA colors come from _dashboard.scss's --pie-medicare-* variables.
+.pie-legend__list {
+  @extend %dashboard-label-text;
+  display: flex;
+  flex-direction: column;
+  gap: units(1.5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pie-legend__item {
+  display: flex;
+  align-items: center;
+  gap: units(1);
+}
+
+.pie-legend__swatch {
+  width: units(2);
+  height: units(2);
+  flex-shrink: 0;
+}
+
+.pie-legend__swatch--ffs {
+  background-color: var(--pie-medicare-ffs-color);
+}
+
+.pie-legend__swatch--ma {
+  background-color: var(--pie-medicare-ma-color);
+}
+
+// Matches the dashboard button's typeface token.
+.pie-chart-text {
+  font-family: family('cond');
+  font-size: 20px;
 }
 
 .usa-button svg {

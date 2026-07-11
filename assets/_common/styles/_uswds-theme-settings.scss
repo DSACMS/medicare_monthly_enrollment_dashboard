@@ -19,6 +19,7 @@
   # Typography Settings
   ----------------------------------------------------------*/
   $theme-font-type-sans: 'public-sans',
+  $theme-font-type-cond: 'source-sans-pro',
   $theme-font-role-heading: 'sans',
   $theme-body-font-size: 'md',
   $theme-font-weight-semibold: 700,
@@ -32,9 +33,9 @@
   ## Primary color
   -------------------------------------------------*/
   $theme-color-primary-darkest: 'blue-warm-80v',
-  $theme-color-primary-darker: $brand-color-dark,
+  $theme-color-primary-darker: 'blue-warm-80v',
   $theme-color-primary-dark: 'blue-warm-70v',
-  $theme-color-primary: 'blue-warm-60v',
+  $theme-color-primary: 'blue-60v',
   $theme-color-primary-light: 'blue-cool-40v',
   $theme-color-primary-lighter: 'blue-10v',
   $theme-color-primary-lightest: $brand-color-light,
@@ -66,8 +67,13 @@
 
   /*------------------------------------------------
   ## Header width
-  -------------------------------------------------*/ 
+  -------------------------------------------------*/
   $theme-header-logo-text-width: 70%,
+
+  /*------------------------------------------------
+  ## Buttons
+  -------------------------------------------------*/
+  $theme-button-font-family: 'cond',
 
   /*---------------------------------------------------------
   # Utility Settings

@@ -1,6 +1,7 @@
 import * as d3 from 'd3';
 import requestDataset from '../../../src/router';
 import renderTable from '../tables/renderTable';
+import { getCssVar, sortMonthlyAscending } from '../charts/utils';
 import {
   renderHospitalYearlyLineChart,
   renderHospitalMonthlyLineChart,
@@ -71,14 +72,23 @@ async function init() {
       { name: 'MA', value: currentYear.maPercent }, 
     ];
     renderPieChart('#medicare-enrollment-pie', medicareEnrollmentPieData, currentYear.totalEnrollees, {
-      colors: ['#961d56', '#7928c9'],
+      colors: [
+        getCssVar('--pie-medicare-ffs-color', '#961d56'),
+        getCssVar('--pie-medicare-ma-color', '#7928c9'),
+      ],
       title: `Medicare enrollment by program type, ${currentYear.year}`,
       tableColumns: [
         { label: 'Program', value: (d) => d.name },
         { label: 'Percent of total', value: (d) => `${Math.round(d.value)}%` },
       ],
     });
- 
+
+    const latestMonth = sortMonthlyAscending(monthly).at(-1);
+    d3.select('#medicare-enrollment-pie-legend-label')
+      .text(`*Total Enrollment as of ${latestMonth.month} ${latestMonth.year}`);
+    d3.select('#dashboard-title-date')
+      .text(`${latestMonth.month} ${latestMonth.year}`);
+
     const drugEnrollmentPieData = [
       { name: 'PDP', value: currentYear.pdpPercent },
       { name: 'MA-PD', value: currentYear.mapdPercent },

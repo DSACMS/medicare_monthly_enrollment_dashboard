@@ -1,0 +1,31 @@
+<div class="dashboard-card" id="medicare-enrollment-pie-card">
+  <div class="pie-chart-row">
+    <div class="pie-chart-row__buttons">
+      <p class="pie-chart-row__buttons-label">Click to swap dashboards:</p>
+      <button type="button" class="usa-button usa-button--active dashboard-type-button">
+        {% usa_icons 'location_city' %}
+        Hospital / Medical
+      </button>
+      <button type="button" class="usa-button dashboard-type-button">
+        {% usa_icons 'local_pharmacy' %}
+        Prescription Drug
+      </button>
+    </div>
+    <div class="pie-chart-row__chart" id="medicare-enrollment-pie"></div>
+    <div class="pie-chart-row__legend">
+      <div class="pie-legend">
+        <p class="pie-legend__date" id="medicare-enrollment-pie-legend-label"></p>
+        <ul class="pie-legend__list" id="medicare-enrollment-pie-legend">
+          <li class="pie-legend__item">
+            <span class="pie-legend__swatch pie-legend__swatch--ma"></span>
+            <span>Medicare Advantage (MA)</span>
+          </li>
+          <li class="pie-legend__item">
+            <span class="pie-legend__swatch pie-legend__swatch--ffs"></span>
+            <span>Fee-For-Service (FFS)</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
