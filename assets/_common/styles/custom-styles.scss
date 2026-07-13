@@ -3,9 +3,11 @@
 
 $bullet-spacing: 1.25rem;
 
-// Shared label-text style (dashboard buttons label, pie legend, etc).
+// Shared responsive text size: 18px normally, shrinking to 15px as the
+// containing card narrows. Used by dashboard button labels, pie chart
+// labels, and pie/map legend text so they all resize in lockstep.
 %dashboard-label-text {
-  font-size: 20px;
+  font-size: clamp(15px, 4cqi, 18px);
 }
 
 // Self-hosted (not USWDS-bundled); used only by .title-bar__heading below.
@@ -30,8 +32,6 @@ $bullet-spacing: 1.25rem;
   padding: units(1);
   margin: 10px;
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.25);
-
-  /* Center the heading inside */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -49,7 +49,6 @@ $bullet-spacing: 1.25rem;
   text-align: center;
 }
 
-// Reusable card: centers content, contains overflow, spans width minus margin.
 .dashboard-card {
   display: flex;
   flex-direction: column;
@@ -62,7 +61,6 @@ $bullet-spacing: 1.25rem;
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.25);
 }
 
-// Buttons | chart | legend: stacks on mobile, grid once the card is wide enough.
 .pie-chart-row {
   display: flex;
   flex-direction: column;
@@ -99,7 +97,6 @@ $bullet-spacing: 1.25rem;
   margin: 0;
 }
 
-// Hosts pieChart.js's label/circle/label grid (.pie-chart-inner).
 .pie-chart-row__chart {
   display: flex;
   justify-content: center;
@@ -110,10 +107,10 @@ $bullet-spacing: 1.25rem;
   }
 }
 
-// 275/540 must match pieChart.js's DEFAULT_HEIGHT/DEFAULT_WIDTH.
 .pie-chart-inner {
   display: grid;
-  grid-template-columns: 1fr minmax(0, 275px) 1fr;
+  grid-template-columns: minmax(0, max-content) minmax(0, clamp(120px, 42cqi, 275px)) minmax(0, max-content);
+  justify-content: center;
   align-items: center;
   gap: 5px;
   width: 540px;
@@ -127,28 +124,30 @@ $bullet-spacing: 1.25rem;
 }
 
 .pie-chart-label {
+  @extend %dashboard-label-text;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   font-family: family('cond');
-  font-size: 20px;
 }
 
 .pie-chart-label__line {
+  @extend %dashboard-label-text;
   font-weight: bold;
-  font-size: 20px;
 }
 
-// Centers .pie-legend as one block instead of each child separately.
 .pie-chart-row__legend {
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 5px;
+
+  @container (min-width: 1130px) {
+    justify-content: flex-start;
+  }
 }
 
-// Shrink-wraps to its widest child so both lines share a left edge.
 .pie-legend {
   display: flex;
   flex-direction: column;
@@ -162,7 +161,6 @@ $bullet-spacing: 1.25rem;
   margin: 0;
 }
 
-// FFS/MA colors come from _dashboard.scss's --pie-medicare-* variables.
 .pie-legend__list {
   @extend %dashboard-label-text;
   display: flex;
@@ -193,7 +191,14 @@ $bullet-spacing: 1.25rem;
   background-color: var(--pie-medicare-ma-color);
 }
 
-// Matches the dashboard button's typeface token.
+.pie-legend__swatch--pdp {
+  background-color: var(--pie-drug-pdp-color);
+}
+
+.pie-legend__swatch--mapd {
+  background-color: var(--pie-drug-mapd-color);
+}
+
 .pie-chart-text {
   font-family: family('cond');
   font-size: 20px;
