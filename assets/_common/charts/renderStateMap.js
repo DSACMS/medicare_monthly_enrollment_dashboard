@@ -132,6 +132,42 @@ function renderStateMap(containerSelector, data, config = {}) {
 
   const tooltip = createTooltip(container).classed('state-map-tooltip', true);
 
+  const showCountyView = async (stateFeature, stateData) => {
+
+    currentCountyRequestId += 1;
+    const requestId = currentCountyRequestId;
+
+    tooltip.style('opacity', 0).style('display', 'none');
+
+    try {
+      const [countyFeatures, countyRows] = await Promise.all([
+        getCountyFeatures(),
+        requestDataset('countyEnrollment', { state: stateData.state }),
+      ]);
+
+      if (requestId !== currentCountyRequestId) return;
+
+      renderCountyMap(
+        containerSelector,
+        countyFeatures,
+        stateFeature,
+        countyRows,
+        () => renderStateMap(containerSelector, data, config),
+        {
+          metricLabel,
+          metricPercent,
+          metricCount,
+          breakpoints: resolvedBreakpoints,
+          colors: resolvedColors,
+        },
+      );
+    } catch (error) {
+      if (requestId !== currentCountyRequestId) return;
+      container.append('p').attr('role', 'alert').text('County map could not be loaded.');
+    }
+
+  }
+
   getStateFeatures()
     .then((features) => {
       svg
@@ -167,40 +203,11 @@ function renderStateMap(containerSelector, data, config = {}) {
           tooltip.style('opacity', 0).style('display', 'none');
         })
         .on('click', async (event, d) => {
-          currentCountyRequestId += 1;
-          const requestId = currentCountyRequestId;
+          const stateData = dataByName.get(d.properties.name);
+          if (!stateData) return;
 
-          const row = dataByName.get(d.properties.name);
-          if (!row) return;
+          await showCountyView(d, stateData);
 
-          tooltip.style('opacity', 0).style('display', 'none');
-
-          try {
-            const [countyFeatures, countyRows] = await Promise.all([
-              getCountyFeatures(),
-              requestDataset('countyEnrollment', { state: row.state }),
-            ]);
-
-            if (requestId !== currentCountyRequestId) return;
-
-            renderCountyMap(
-              containerSelector,
-              countyFeatures,
-              d,
-              countyRows,
-              () => renderStateMap(containerSelector, data, config),
-              {
-                metricLabel,
-                metricPercent,
-                metricCount,
-                breakpoints: resolvedBreakpoints,
-                colors: resolvedColors,
-              },
-            );
-          } catch (error) {
-            if (requestId !== currentCountyRequestId) return;
-            container.append('p').attr('role', 'alert').text('County map could not be loaded.');
-          }
         });
     })
     .catch(() => {
