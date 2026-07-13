@@ -4,10 +4,10 @@ layout: layouts/default
 title: Home
 tags: website
 eleventyNavigation:
-  parent: website
-  key: website-home
-  order: 1
-  title: About this guide
+parent: website
+key: website-home
+order: 1
+title: About this guide
 description: Medicare National & State Enrollment Trends (2018 - 2026)
 eleventyExcludeFromCollections: true
 ---
@@ -54,50 +54,173 @@ eleventyExcludeFromCollections: true
 
       <h3>Data Table</h3>
       <div class="table-container" id="medicare-table"></div>
-      
+
       <h3>Enrollment Breakdown — Current Year</h3>
       <div class="table-container" id="medicare-enrollment-pie"></div>
       <div class="table-container" id="drug-enrollment-pie"></div>
-      <div class="table-container" id="medicare-enrollment-state-map"></div>
-      <div class="table-container" id="medicare-mapd-state-map"></div>
-    </section>
 
-    <!-- State Enrollment -->
-    <section id="state">
-      <h2>State Enrollment — Hospital / Medical</h2>
-      <h3>Yearly Trend</h3>
-      <h4>Enrollment Count</h4>
-      <div class="table-container" id="state-hospital-yearly-line"></div>
-      <h4>Percent of Total Enrollment</h4>
-      <div class="table-container" id="state-hospital-yearly-bar"></div>
-      <h4>Data Table</h4>
-      <div class="table-container" id="state-hospital-yearly"></div>
+      <div class="state-map-section">
 
-      <h3>12-Month Trend</h3>
-      <h4>Enrollment Count</h4>
-      <div class="table-container" id="state-hospital-monthly-line"></div>
-      <h4>Percent of Total Enrollment</h4>
-      <div class="table-container" id="state-hospital-monthly-bar"></div>
-      <h4>Data Table</h4>
-      <div class="table-container" id="state-hospital-monthly"></div>
+        <label class="usa-label" for="medicare-state-selector">Select a state</label>
+        <div class="usa-combo-box">
+          <select class="usa-select" name="medicare-state" id="medicare-state-selector">
+            <option value="">Select a state</option>
+            <option value="Alabama">Alabama</option>
+            <option value="Alaska">Alaska</option>
+            <option value="Arizona">Arizona</option>
+            <option value="Arkansas">Arkansas</option>
+            <option value="California">California</option>
+            <option value="Colorado">Colorado</option>
+            <option value="Connecticut">Connecticut</option>
+            <option value="Delaware">Delaware</option>
+            <option value="District of Columbia">District of Columbia</option>
+            <option value="Florida">Florida</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Hawaii">Hawaii</option>
+            <option value="Idaho">Idaho</option>
+            <option value="Illinois">Illinois</option>
+            <option value="Indiana">Indiana</option>
+            <option value="Iowa">Iowa</option>
+            <option value="Kansas">Kansas</option>
+            <option value="Kentucky">Kentucky</option>
+            <option value="Louisiana">Louisiana</option>
+            <option value="Maine">Maine</option>
+            <option value="Maryland">Maryland</option>
+            <option value="Massachusetts">Massachusetts</option>
+            <option value="Michigan">Michigan</option>
+            <option value="Minnesota">Minnesota</option>
+            <option value="Mississippi">Mississippi</option>
+            <option value="Missouri">Missouri</option>
+            <option value="Montana">Montana</option>
+            <option value="Nebraska">Nebraska</option>
+            <option value="Nevada">Nevada</option>
+            <option value="New Hampshire">New Hampshire</option>
+            <option value="New Jersey">New Jersey</option>
+            <option value="New Mexico">New Mexico</option>
+            <option value="New York">New York</option>
+            <option value="North Carolina">North Carolina</option>
+            <option value="North Dakota">North Dakota</option>
+            <option value="Ohio">Ohio</option>
+            <option value="Oklahoma">Oklahoma</option>
+            <option value="Oregon">Oregon</option>
+            <option value="Pennsylvania">Pennsylvania</option>
+            <option value="Rhode Island">Rhode Island</option>
+            <option value="South Carolina">South Carolina</option>
+            <option value="South Dakota">South Dakota</option>
+            <option value="Tennessee">Tennessee</option>
+            <option value="Texas">Texas</option>
+            <option value="Utah">Utah</option>
+            <option value="Vermont">Vermont</option>
+            <option value="Virginia">Virginia</option>
+            <option value="Washington">Washington</option>
+            <option value="West Virginia">West Virginia</option>
+            <option value="Wisconsin">Wisconsin</option>
+            <option value="Wyoming">Wyoming</option>
+          </select>
+        </div>
 
-      <h2>State Enrollment — Prescription Drug</h2>
-      <h3>Yearly Trend</h3>
-      <h4>Enrollment Count</h4>
-      <div class="table-container" id="state-drug-yearly-line"></div>
-      <h4>Percent of Total Enrollment</h4>
-      <div class="table-container" id="state-drug-yearly-bar"></div>
-      <h4>Data Table</h4>
-      <div class="table-container" id="state-drug-yearly"></div>
+        <div class="table-container" id="medicare-enrollment-state-map"></div>
+      </div>
+      <div class="state-map-section">
+        <label class="usa-label" for="drug-state-selector">Select a state</label>
+        <div class="usa-combo-box">
+          <select class="usa-select" name="drug-state" id="drug-state-selector">
+            <option value="">Select a state</option>
+            <option value="Alabama">Alabama</option>
+            <option value="Alaska">Alaska</option>
+            <option value="Arizona">Arizona</option>
+            <option value="Arkansas">Arkansas</option>
+            <option value="California">California</option>
+            <option value="Colorado">Colorado</option>
+            <option value="Connecticut">Connecticut</option>
+            <option value="Delaware">Delaware</option>
+            <option value="District of Columbia">District of Columbia</option>
+            <option value="Florida">Florida</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Hawaii">Hawaii</option>
+            <option value="Idaho">Idaho</option>
+            <option value="Illinois">Illinois</option>
+            <option value="Indiana">Indiana</option>
+            <option value="Iowa">Iowa</option>
+            <option value="Kansas">Kansas</option>
+            <option value="Kentucky">Kentucky</option>
+            <option value="Louisiana">Louisiana</option>
+            <option value="Maine">Maine</option>
+            <option value="Maryland">Maryland</option>
+            <option value="Massachusetts">Massachusetts</option>
+            <option value="Michigan">Michigan</option>
+            <option value="Minnesota">Minnesota</option>
+            <option value="Mississippi">Mississippi</option>
+            <option value="Missouri">Missouri</option>
+            <option value="Montana">Montana</option>
+            <option value="Nebraska">Nebraska</option>
+            <option value="Nevada">Nevada</option>
+            <option value="New Hampshire">New Hampshire</option>
+            <option value="New Jersey">New Jersey</option>
+            <option value="New Mexico">New Mexico</option>
+            <option value="New York">New York</option>
+            <option value="North Carolina">North Carolina</option>
+            <option value="North Dakota">North Dakota</option>
+            <option value="Ohio">Ohio</option>
+            <option value="Oklahoma">Oklahoma</option>
+            <option value="Oregon">Oregon</option>
+            <option value="Pennsylvania">Pennsylvania</option>
+            <option value="Rhode Island">Rhode Island</option>
+            <option value="South Carolina">South Carolina</option>
+            <option value="South Dakota">South Dakota</option>
+            <option value="Tennessee">Tennessee</option>
+            <option value="Texas">Texas</option>
+            <option value="Utah">Utah</option>
+            <option value="Vermont">Vermont</option>
+            <option value="Virginia">Virginia</option>
+            <option value="Washington">Washington</option>
+            <option value="West Virginia">West Virginia</option>
+            <option value="Wisconsin">Wisconsin</option>
+            <option value="Wyoming">Wyoming</option>
+          </select>
+        </div>
 
-      <h3>12-Month Trend</h3>
-      <h4>Enrollment Count</h4>
-      <div class="table-container" id="state-drug-monthly-line"></div>
-      <h4>Percent of Total Enrollment</h4>
-      <div class="table-container" id="state-drug-monthly-bar"></div>
-      <h4>Data Table</h4>
-      <div class="table-container" id="state-drug-monthly"></div>
-    </section>
+        <div class="table-container" id="medicare-mapd-state-map"></div>
+      </div>
 
-  </div>
+  </section>
+
+  <!-- State Enrollment -->
+  <section id="state">
+    <h2>State Enrollment — Hospital / Medical</h2>
+    <h3>Yearly Trend</h3>
+    <h4>Enrollment Count</h4>
+    <div class="table-container" id="state-hospital-yearly-line"></div>
+    <h4>Percent of Total Enrollment</h4>
+    <div class="table-container" id="state-hospital-yearly-bar"></div>
+    <h4>Data Table</h4>
+    <div class="table-container" id="state-hospital-yearly"></div>
+
+    <h3>12-Month Trend</h3>
+    <h4>Enrollment Count</h4>
+    <div class="table-container" id="state-hospital-monthly-line"></div>
+    <h4>Percent of Total Enrollment</h4>
+    <div class="table-container" id="state-hospital-monthly-bar"></div>
+    <h4>Data Table</h4>
+    <div class="table-container" id="state-hospital-monthly"></div>
+
+    <h2>State Enrollment — Prescription Drug</h2>
+    <h3>Yearly Trend</h3>
+    <h4>Enrollment Count</h4>
+    <div class="table-container" id="state-drug-yearly-line"></div>
+    <h4>Percent of Total Enrollment</h4>
+    <div class="table-container" id="state-drug-yearly-bar"></div>
+    <h4>Data Table</h4>
+    <div class="table-container" id="state-drug-yearly"></div>
+
+    <h3>12-Month Trend</h3>
+    <h4>Enrollment Count</h4>
+    <div class="table-container" id="state-drug-monthly-line"></div>
+    <h4>Percent of Total Enrollment</h4>
+    <div class="table-container" id="state-drug-monthly-bar"></div>
+    <h4>Data Table</h4>
+    <div class="table-container" id="state-drug-monthly"></div>
+  </section>
+
+</div>
 </div>

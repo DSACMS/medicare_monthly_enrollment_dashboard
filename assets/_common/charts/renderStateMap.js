@@ -103,6 +103,7 @@ function renderStateMap(containerSelector, data, config = {}) {
       { label: `${comparisonLabel} %`, value: (d) => `${comparisonPercent(d)}%` },
       { label: 'Total enrollees', value: (d) => d.totalEnrollees.toLocaleString() },
     ],
+    comboBoxSelector,
   } = config;
 
   const resolvedBreakpoints =
@@ -166,10 +167,32 @@ function renderStateMap(containerSelector, data, config = {}) {
       container.append('p').attr('role', 'alert').text('County map could not be loaded.');
     }
 
-  }
+  };
 
   getStateFeatures()
     .then((features) => {
+      const featureByStateName = new Map(
+        features.map((stateFeature) => [
+          stateFeature.properties.name,
+          stateFeature,
+        ]),
+      );
+
+      d3.select(comboBoxSelector).on('change.state-map', async (event) => {
+        const selectedStateName = event.target.value;
+
+        if (!selectedStateName) return;
+
+        const stateData = dataByName.get(selectedStateName);
+
+        if (!stateData) return;
+
+        const stateFeature = featureByStateName.get(selectedStateName);
+
+        if (!stateFeature) return;
+
+        await showCountyView(stateFeature, stateData);
+      });
       svg
         .append('g')
         .selectAll('path')

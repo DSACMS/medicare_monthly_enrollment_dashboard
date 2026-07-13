@@ -83,7 +83,7 @@ async function init() {
         tableColumns: [
           { label: 'Program', value: (d) => d.name },
           { label: 'Percent of total', value: (d) => `${Math.round(d.value)}%` },
-        ],
+        ],        
       },
     );
 
@@ -111,6 +111,7 @@ async function init() {
 
       renderStateMap('#medicare-enrollment-state-map', allStates, {
         title: 'Medicare Advantage enrollment by state',
+        comboBoxSelector: '#medicare-state-selector',
       });
 
       renderStateMap('#medicare-mapd-state-map', allStates, {
@@ -122,6 +123,7 @@ async function init() {
         comparisonLabel: 'PDP',
         comparisonPercent: (d) => d.pdpPercent,
         comparisonCount: (d) => d.pdpCount,
+        comboBoxSelector: '#drug-state-selector',
       });
     };
 
