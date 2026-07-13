@@ -12,7 +12,8 @@ import {
   renderDrugYearlyStackedBarChart,
   renderDrugMonthlyStackedBarChart,
   renderPieChart,
-  renderStateMap
+  renderStateMap,
+  mergeLatestMonthlyIntoYearly,
 } from '../charts/index';
 
 const formatNum = d3.format(',');
@@ -46,21 +47,28 @@ async function init() {
       requestDataset('nationalEnrollment', { type: 'monthly' }),
     ]);
 
-    renderTable('#medicare-table', columns, yearly);
+    const yearlyWithLatest = mergeLatestMonthlyIntoYearly(yearly, monthly);
 
-    renderHospitalYearlyLineChart('#national-hospital-yearly-line', yearly);
-    renderHospitalYearlyStackedBarChart('#national-hospital-yearly-bar', yearly);
-    renderDrugYearlyLineChart('#national-drug-yearly-line', yearly);
-    renderDrugYearlyStackedBarChart('#national-drug-yearly-bar', yearly);
+    renderTable('#medicare-table', columns, yearlyWithLatest);
+
+    renderHospitalYearlyLineChart('#national-hospital-yearly-line', yearlyWithLatest);
+    renderHospitalYearlyStackedBarChart('#national-hospital-yearly-bar', yearlyWithLatest);
+    renderDrugYearlyLineChart('#national-drug-yearly-line', yearlyWithLatest);
+    renderDrugYearlyStackedBarChart('#national-drug-yearly-bar', yearlyWithLatest);
 
     renderHospitalMonthlyLineChart('#national-hospital-monthly-line', monthly);
     renderHospitalMonthlyStackedBarChart('#national-hospital-monthly-bar', monthly);
     renderDrugMonthlyLineChart('#national-drug-monthly-line', monthly);
     renderDrugMonthlyStackedBarChart('#national-drug-monthly-bar', monthly);
 
-
-    // currentYear assumes `yearly` is sorted newest-first
-    const currentYear = yearly[0];
+    // IMPORTANT: keep MA/MA-PD as the SECOND item in each array below.
+    // pieChart.js renders index 1 on the left side of the donut (both the
+    // arc and its label). If you reorder these or add a third Medicare
+    // program type, double-check pieChart.js's xPosition logic still does
+    // what you expect.
+    //
+    // currentYear assumes `yearlyWithLatest` has the latest year appearing first.
+    const currentYear = yearlyWithLatest[0];
 
     // Config for the swappable card at #medicare-enrollment-pie, keyed by
     // the button's data-dashboard-type
@@ -161,8 +169,10 @@ async function init() {
     const loadStateMap = async () => {
       const recentRows = await requestDataset('stateEnrollment', { state: 'NY', type: 'monthly' });
       const latest = recentRows[0];
-      const allStates = await requestDataset('allStates', { year: latest.year, month: latest.month });
-      
+      const allStates = await requestDataset('allStates', {
+        year: latest.year,
+        month: latest.month,
+      });
 
       renderStateMap('#medicare-enrollment-state-map', allStates, {
         title: 'Medicare Advantage enrollment by state',
@@ -178,14 +188,11 @@ async function init() {
         comparisonPercent: (d) => d.pdpPercent,
         comparisonCount: (d) => d.pdpCount,
       });
-    }
-
+    };
 
     await loadStateMap();
-
-
   } catch (error) {
-    console.error('Failed to load national data:', error.message);
+    throw new Error(`Failed to load national data: ${error.message}`);
   }
 }
 

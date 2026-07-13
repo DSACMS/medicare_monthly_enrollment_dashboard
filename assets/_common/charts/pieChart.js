@@ -21,14 +21,15 @@ const DEFAULT_HEIGHT = 275;
  */
 
 function drawArcs(svg, pieData, arc, colors) {
-  svg.append('g')
+  svg
+    .append('g')
     .selectAll('path')
     .data(pieData)
     .join('path')
     .attr('fill', (d, i) => colors[i])
     .attr('d', arc)
     .append('title') // adding "title" allows the labeling to appear when hovering over
-    .text(d => `${d.data.name}: ${Math.round(d.data.value)}%`);
+    .text((d) => `${d.data.name}: ${Math.round(d.data.value)}%`);
 }
 
 /**
@@ -98,11 +99,16 @@ function renderValueLabel(parent, datum, enrollmentInMillions) {
 
 function renderPieChart(containerSelector, data, totalEnrollment, config = {}) {
   if (!data?.length) {
-    console.warn('renderPieChart: no data provided, skipping render.');
-    return;
+    return {
+      success: false,
+      error: 'renderPieChart: no data provided, skipping render.',
+    };
   }
   if (!totalEnrollment) {
-    console.warn('renderPieChart: totalEnrollment is missing or zero.');
+    return {
+      success: false,
+      error: 'renderPieChart: totalEnrollment is missing or zero.',
+    };
   }
 
   const {
@@ -116,7 +122,7 @@ function renderPieChart(containerSelector, data, totalEnrollment, config = {}) {
   } = config;
 
   // Fall back to default colors if colors weren't passed in, or don't cover both slices.
-  const resolvedColors = (colors && colors.length >= data.length) ? colors : DEFAULT_COLORS;
+  const resolvedColors = colors && colors.length >= data.length ? colors : DEFAULT_COLORS;
 
   const radius = height / 2;
   const innerRadius = radius * 0.7;
@@ -167,6 +173,8 @@ function renderPieChart(containerSelector, data, totalEnrollment, config = {}) {
 
   // Visually-hidden table mirroring the chart's data, for screen readers.
   renderSrTable(container, title, tableColumns, data);
+
+  return { success: true };
 }
 
 export default renderPieChart;
