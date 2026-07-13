@@ -119,7 +119,7 @@ async function init() {
       },
     };
 
-    function renderEnrollmentPieCard(type) {
+    const renderEnrollmentPieCard = (type) => {
       const config = pieCardConfigs[type];
       if (!config) {
         console.warn(`renderEnrollmentPieCard: unknown dashboard type "${type}"`);
@@ -139,7 +139,7 @@ async function init() {
       document.querySelectorAll('.dashboard-type-button').forEach((btn) => {
         btn.classList.toggle('usa-button--active', btn.dataset.dashboardType === type);
       });
-    }
+    };
 
     renderEnrollmentPieCard('hospital');
 
