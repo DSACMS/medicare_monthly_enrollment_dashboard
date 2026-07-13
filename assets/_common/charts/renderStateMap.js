@@ -19,7 +19,7 @@ const NO_DATA_FILL = '#979595';
 // mainland states larger and don't mind clipping the insets.
 const PROJECTION_SCALE = 800;
 
-let currentCountyRequestId = 0;
+
 let cachedCountyFeatures = null;
 
 async function getCountyFeatures() {
@@ -80,6 +80,7 @@ async function getStateFeatures() {
  */
 
 function renderStateMap(containerSelector, data, config = {}) {
+  let currentCountyRequestId = 0;
   if (!data?.length) {
     return {
       success: false,
