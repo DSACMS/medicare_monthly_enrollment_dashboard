@@ -19,7 +19,7 @@ const NO_DATA_FILL = '#979595';
 // mainland states larger and don't mind clipping the insets.
 const PROJECTION_SCALE = 800;
 
-let currentCountyRequestId = 0;
+
 let cachedCountyFeatures = null;
 
 async function getCountyFeatures() {
@@ -80,6 +80,7 @@ async function getStateFeatures() {
  */
 
 function renderStateMap(containerSelector, data, config = {}) {
+  let currentCountyRequestId = 0;
   if (!data?.length) {
     return {
       success: false,
@@ -103,6 +104,7 @@ function renderStateMap(containerSelector, data, config = {}) {
       { label: `${comparisonLabel} %`, value: (d) => `${comparisonPercent(d)}%` },
       { label: 'Total enrollees', value: (d) => d.totalEnrollees.toLocaleString() },
     ],
+    comboBoxSelector,
   } = config;
 
   const resolvedBreakpoints =
@@ -132,8 +134,66 @@ function renderStateMap(containerSelector, data, config = {}) {
 
   const tooltip = createTooltip(container).classed('state-map-tooltip', true);
 
+  const showCountyView = async (stateFeature, stateData) => {
+
+    currentCountyRequestId += 1;
+    const requestId = currentCountyRequestId;
+
+    tooltip.style('opacity', 0).style('display', 'none');
+
+    try {
+      const [countyFeatures, countyRows] = await Promise.all([
+        getCountyFeatures(),
+        requestDataset('countyEnrollment', { state: stateData.state }),
+      ]);
+
+      if (requestId !== currentCountyRequestId) return;
+
+      renderCountyMap(
+        containerSelector,
+        countyFeatures,
+        stateFeature,
+        countyRows,
+        () => renderStateMap(containerSelector, data, config),
+        {
+          metricLabel,
+          metricPercent,
+          metricCount,
+          breakpoints: resolvedBreakpoints,
+          colors: resolvedColors,
+        },
+      );
+    } catch (error) {
+      if (requestId !== currentCountyRequestId) return;
+      container.append('p').attr('role', 'alert').text('County map could not be loaded.');
+    }
+
+  };
+
   getStateFeatures()
     .then((features) => {
+      const featureByStateName = new Map(
+        features.map((stateFeature) => [
+          stateFeature.properties.name,
+          stateFeature,
+        ]),
+      );
+
+      d3.select(comboBoxSelector).on('change.state-map', async (event) => {
+        const selectedStateName = event.target.value;
+
+        if (!selectedStateName) return;
+
+        const stateData = dataByName.get(selectedStateName);
+
+        if (!stateData) return;
+
+        const stateFeature = featureByStateName.get(selectedStateName);
+
+        if (!stateFeature) return;
+
+        await showCountyView(stateFeature, stateData);
+      });
       svg
         .append('g')
         .selectAll('path')
@@ -167,40 +227,11 @@ function renderStateMap(containerSelector, data, config = {}) {
           tooltip.style('opacity', 0).style('display', 'none');
         })
         .on('click', async (event, d) => {
-          currentCountyRequestId += 1;
-          const requestId = currentCountyRequestId;
+          const stateData = dataByName.get(d.properties.name);
+          if (!stateData) return;
 
-          const row = dataByName.get(d.properties.name);
-          if (!row) return;
+          await showCountyView(d, stateData);
 
-          tooltip.style('opacity', 0).style('display', 'none');
-
-          try {
-            const [countyFeatures, countyRows] = await Promise.all([
-              getCountyFeatures(),
-              requestDataset('countyEnrollment', { state: row.state }),
-            ]);
-
-            if (requestId !== currentCountyRequestId) return;
-
-            renderCountyMap(
-              containerSelector,
-              countyFeatures,
-              d,
-              countyRows,
-              () => renderStateMap(containerSelector, data, config),
-              {
-                metricLabel,
-                metricPercent,
-                metricCount,
-                breakpoints: resolvedBreakpoints,
-                colors: resolvedColors,
-              },
-            );
-          } catch (error) {
-            if (requestId !== currentCountyRequestId) return;
-            container.append('p').attr('role', 'alert').text('County map could not be loaded.');
-          }
         });
     })
     .catch(() => {
