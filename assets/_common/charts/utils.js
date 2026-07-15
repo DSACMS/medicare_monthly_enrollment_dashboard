@@ -11,6 +11,14 @@ export function clearContainer(selector) {
   return d3.select(selector).html('');
 }
 
+// Reads a color (or any value) from a CSS custom property defined on :root,
+// e.g. getCssVar('--pie-medicare-ffs-color'), so chart colors set in JS stay
+// in sync with the stylesheet instead of being duplicated as hex literals.
+export function getCssVar(name, fallback) {
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return value || fallback;
+}
+
 export function sortYearlyAscending(data) {
   return [...data].sort((a, b) => Number(a.year) - Number(b.year));
 }

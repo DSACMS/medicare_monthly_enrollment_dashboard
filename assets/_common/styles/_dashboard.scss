@@ -19,6 +19,18 @@
   --gray-dark: #323a45;
   --text: #212121;
 
+  /* Page/card theme */
+  --page-background: #ebebeb;
+  --card-background: #f8f9fa;
+
+  /* Medicare enrollment pie chart (FFS / MA slices + legend swatches) */
+  --pie-medicare-ffs-color: var(--cms-magenta);
+  --pie-medicare-ma-color: #7928c9;
+
+  /* Medicare Prescription Drug enrollment pie chart (PDP / MA-PD slices + legend swatches) */
+  --pie-drug-pdp-color: #89cc9e;
+  --pie-drug-mapd-color: var(--cms-bright-blue);
+
   /* Functional Colors */
   --primary: var(--cms-blue);
   --primary-dark: var(--cms-dark-blue);
@@ -41,7 +53,7 @@ body {
   font-family: 'Public Sans', 'Segoe UI', sans-serif;
   line-height: 1.6;
   color: var(--text);
-  background-color: #f9f9fa;
+  background-color: var(--page-background);
 }
 
 .container,
@@ -365,6 +377,9 @@ nav ul li a[aria-current="page"] {
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   transition: transform 0.3s, box-shadow 0.3s;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .feature-card:hover {
@@ -391,6 +406,9 @@ nav ul li a[aria-current="page"] {
 
 .feature-content {
   padding: 24px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .feature-content h3 {
@@ -403,31 +421,6 @@ nav ul li a[aria-current="page"] {
   font-size: 1rem;
   line-height: 1.6;
   color: var(--gray-dark);
-}
-
-/* Card styles */
-
-.feature-card {
-  background-color: var(--white);
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transition: transform 0.3s, box-shadow 0.3s;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.feature-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-}
-
-.feature-content {
-  padding: 24px;
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
 }
 
 .doc-grid {
@@ -678,14 +671,6 @@ nav ul li a[aria-current="page"] {
 }
 
 /* ── Table Base (shared across all dashboard tables) ────────────────── */
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  margin: 40px;
-  background-color: #f8f9fa;
-}
-
-h2 { color: #2c3e50; }
 
 .table-container {
   overflow-x: auto;
