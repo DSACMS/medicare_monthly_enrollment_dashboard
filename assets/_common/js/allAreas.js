@@ -119,6 +119,17 @@ async function init() {
       },
     };
 
+    const mapPanels = Array.from(document.querySelectorAll('.dashboard-map-panel'));
+
+    const setMapPanelVisibility = (type) => {
+      mapPanels.forEach((panel) => {
+        const isActive = panel.dataset.mapDashboardType === type;
+        panel.classList.toggle('is-active', isActive);
+        panel.hidden = !isActive;
+        panel.setAttribute('aria-hidden', String(!isActive));
+      });
+    };
+
     const renderEnrollmentPieCard = (type) => {
       const config = pieCardConfigs[type];
       if (!config) {
@@ -141,7 +152,15 @@ async function init() {
       });
     };
 
+    setMapPanelVisibility('hospital');
     renderEnrollmentPieCard('hospital');
+
+    document.addEventListener('dashboard:typechange', (event) => {
+      const { type } = event.detail || {};
+      if (type) {
+        setMapPanelVisibility(type);
+      }
+    });
 
     document.querySelectorAll('.dashboard-type-button').forEach((btn) => {
       btn.addEventListener('click', () => {
