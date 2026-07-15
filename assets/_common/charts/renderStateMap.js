@@ -17,7 +17,7 @@ const NO_DATA_FILL = '#979595';
 // suggested 1300) was chosen here specifically to keep Alaska/Hawaii fully
 // inside the frame at this viewport size — bump it up if you want the
 // mainland states larger and don't mind clipping the insets.
-const PROJECTION_SCALE = 800;
+const PROJECTION_SCALE = 1300;
 
 
 let cachedCountyFeatures = null;
@@ -117,7 +117,7 @@ function renderStateMap(containerSelector, data, config = {}) {
   const dataByName = new Map(data.map((d) => [d.stateName, d]));
 
   const width = 975;
-  const height = 610;
+  const height = 800;
 
   const container = d3.select(containerSelector);
 
