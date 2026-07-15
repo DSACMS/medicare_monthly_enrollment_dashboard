@@ -11,6 +11,13 @@ description: Medicare National & State Enrollment Trends (2018 - 2026)
 eleventyExcludeFromCollections: true
 ---
 
+<div class="dashboard-root">
+  {% include "title-bar.njk" %}
+  {% include "pie-card.njk" %}
+</div>
+
+
+
 <!-- 1. Keep the template header section -->
 <div class="usa-section intro-header">
   <div class="grid-container">
@@ -21,7 +28,8 @@ eleventyExcludeFromCollections: true
 
 <!-- 2. Your Dashboard Sections go inside the main container layout -->
 <div class="usa-section layout--sections">
-  <div class="grid-container"> <!-- Added to match USWDS layout system padding -->
+  <div class="grid-container"> 
+    <!-- Added to match USWDS layout system padding -->
 
     <!-- National Enrollment Trends -->
     <section id="national">
@@ -55,7 +63,6 @@ eleventyExcludeFromCollections: true
       <div class="table-container" id="medicare-table"></div>
 
       <h3>Enrollment Breakdown — Current Year</h3>
-      <div class="table-container" id="medicare-enrollment-pie"></div>
       <div class="table-container" id="drug-enrollment-pie"></div>
 
       <div class="state-map-section">

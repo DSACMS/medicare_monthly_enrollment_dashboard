@@ -1,6 +1,7 @@
 import * as d3 from 'd3';
 import requestDataset from '../../../src/router';
 import renderTable from '../tables/renderTable';
+import { getCssVar, sortMonthlyAscending } from '../charts/utils';
 import {
   renderHospitalYearlyLineChart,
   renderHospitalMonthlyLineChart,
@@ -28,13 +29,13 @@ const columns = [
     label: 'Medicare Advantage (MA)',
     value: (d) => `${formatNum(d.maCount)} (${d.maPercent}%)`,
   },
-  { label: 'Part D Total', value: (d) => formatNum(d.drugTotal) },
+  { label: 'Prescription Drug Enrollment Total', value: (d) => formatNum(d.drugTotal) },
   {
-    label: 'Standalone PDP',
+    label: 'Stand-Alone Prescription Drug Plans (PDP)',
     value: (d) => `${formatNum(d.pdpCount)} (${d.pdpPercent}%)`,
   },
   {
-    label: 'MA-PD Bundled',
+    label: 'Medicare Advantage Prescription Drug Plans (MAPD)',
     value: (d) => `${formatNum(d.mapdCount)} (${d.mapdPercent}%)`,
   },
 ];
@@ -69,37 +70,101 @@ async function init() {
     // currentYear assumes `yearlyWithLatest` has the latest year appearing first.
     const currentYear = yearlyWithLatest[0];
 
-    const medicareEnrollmentPieData = [
-      { name: 'FFS', value: currentYear.ffsPercent },
-      { name: 'MA', value: currentYear.maPercent },
-    ];
-    renderPieChart(
-      '#medicare-enrollment-pie',
-      medicareEnrollmentPieData,
-      currentYear.totalEnrollees,
-      {
-        colors: ['#961d56', '#7928c9'],
-        title: `Medicare enrollment by program type, ${currentYear.year}`,
-        tableColumns: [
-          { label: 'Program', value: (d) => d.name },
-          { label: 'Percent of total', value: (d) => `${Math.round(d.value)}%` },
-        ],        
+    // Config for the swappable card at #medicare-enrollment-pie, keyed by
+    // the button's data-dashboard-type
+    const pieCardConfigs = {
+      hospital: {
+        data: [
+          { name: 'FFS', value: currentYear.ffsPercent },
+          { name: 'MA', value: currentYear.maPercent },
+        ],
+        total: currentYear.totalEnrollees,
+        options: {
+          colors: [
+            getCssVar('--pie-medicare-ffs-color', '#961d56'),
+            getCssVar('--pie-medicare-ma-color', '#7928c9'),
+          ],
+          title: `Medicare enrollment by program type, ${currentYear.year}`,
+          tableColumns: [
+            { label: 'Program', value: (d) => d.name },
+            { label: 'Percent of total', value: (d) => `${Math.round(d.value)}%` },
+          ],
+        },
+        legend: [
+          { swatchClass: 'pie-legend__swatch--ma', label: 'Medicare Advantage (MA)' },
+          { swatchClass: 'pie-legend__swatch--ffs', label: 'Fee-For-Service (FFS)' },
+        ],
       },
-    );
+      drug: {
+        data: [
+          { name: 'PDP', value: currentYear.pdpPercent },
+          { name: 'MAPD', value: currentYear.mapdPercent },
+        ],
+        total: currentYear.drugTotal,
+        options: {
+          colors: [
+            getCssVar('--pie-drug-pdp-color', '#89cc9e'),
+            getCssVar('--pie-drug-mapd-color', '#009ad0'),
+          ],
+          title: `Medicare Prescription Drug enrollment by plan type, ${currentYear.year}`,
+          tableColumns: [
+            { label: 'Plan type', value: (d) => d.name },
+            { label: 'Percent of total', value: (d) => `${Math.round(d.value)}%` },
+          ],
+        },
+        legend: [
+          { swatchClass: 'pie-legend__swatch--mapd', label: 'Medicare Advantage Prescription Drug Plans (MAPD)' },
+          { swatchClass: 'pie-legend__swatch--pdp', label: 'Stand-Alone Prescription Drug Plans (PDP)' },
+        ],
+      },
+    };
 
-    const drugEnrollmentPieData = [
-      { name: 'PDP', value: currentYear.pdpPercent },
-      { name: 'MA-PD', value: currentYear.mapdPercent },
-    ];
+    const renderEnrollmentPieCard = (type) => {
+      const config = pieCardConfigs[type];
+      if (!config) {
+        console.warn(`renderEnrollmentPieCard: unknown dashboard type "${type}"`);
+        return;
+      }
 
-    renderPieChart('#drug-enrollment-pie', drugEnrollmentPieData, currentYear.drugTotal, {
-      colors: ['#89cc9e', '#009ad0'],
-      title: `Medicare Part D enrollment by plan type, ${currentYear.year}`,
-      tableColumns: [
-        { label: 'Plan type', value: (d) => d.name },
-        { label: 'Percent of total', value: (d) => `${Math.round(d.value)}%` },
-      ],
+      renderPieChart('#medicare-enrollment-pie', config.data, config.total, config.options);
+
+      const legendList = d3.select('#medicare-enrollment-pie-legend');
+      legendList.html('');
+      config.legend.forEach((item) => {
+        const li = legendList.append('li').attr('class', 'pie-legend__item');
+        li.append('span').attr('class', `pie-legend__swatch ${item.swatchClass}`);
+        li.append('span').text(item.label);
+      });
+
+      document.querySelectorAll('.dashboard-type-button').forEach((btn) => {
+        btn.classList.toggle('usa-button--active', btn.dataset.dashboardType === type);
+      });
+    };
+
+    renderEnrollmentPieCard('hospital');
+
+    document.querySelectorAll('.dashboard-type-button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const { dashboardType } = btn.dataset;
+        renderEnrollmentPieCard(dashboardType);
+        // Lets future features (state maps, tables, etc.) react to the
+        // dataset swap without this handler needing to know about them.
+        document.dispatchEvent(new CustomEvent('dashboard:typechange', { detail: { type: dashboardType } }));
+      });
     });
+
+    const latestMonth = sortMonthlyAscending(monthly).at(-1);
+    d3.select('#medicare-enrollment-pie-legend-label')
+      .text(`*Total Enrollment as of ${latestMonth.month} ${latestMonth.year}`);
+    d3.select('#dashboard-title-date')
+      .text(`${latestMonth.month} ${latestMonth.year}`);
+
+    renderPieChart(
+      '#drug-enrollment-pie',
+      pieCardConfigs.drug.data,
+      pieCardConfigs.drug.total,
+      pieCardConfigs.drug.options,
+    );
 
     const loadStateMap = async () => {
       const recentRows = await requestDataset('stateEnrollment', { state: 'NY', type: 'monthly' });

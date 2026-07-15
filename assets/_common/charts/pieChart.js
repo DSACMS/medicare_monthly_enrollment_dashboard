@@ -5,6 +5,13 @@ import renderSrTable from './accessibility';
 // Default colors used if the caller doesn't supply both colors for the two slices.
 const DEFAULT_COLORS = [CHART_COLORS.primary, CHART_COLORS.secondary];
 
+// The circle's diameter. Its container lays the circle out in a real CSS
+// grid alongside its two value labels (see .pie-chart-inner in
+// custom-styles.scss: grid-template-columns: 1fr auto 1fr), so this is the
+// only size this module needs — the overall width is however much room
+// that label/circle/label grid takes, not a guessed SVG pixel width.
+const DEFAULT_HEIGHT = 275;
+
 /**
  * Draws the colored arcs (slices) of the donut chart, with a hover tooltip per slice.
  * @param {d3.Selection} svg - the SVG selection to draw into.
@@ -32,26 +39,42 @@ function drawArcs(svg, pieData, arc, colors) {
  */
 
 function drawCenterText(svg, enrollmentInMillions) {
-  const centerText = svg
-    .append('text')
+  const centerText = svg.append('text')
+    .attr('class', 'pie-chart-text')
     .attr('text-anchor', 'middle')
-    .attr('dominant-baseline', 'middle')
-    .attr('font-family', 'sans-serif');
-  centerText
-    .append('tspan')
+    .attr('dominant-baseline', 'middle');
+  centerText.append('tspan')
     .attr('x', 0)
     .attr('y', '-0.2em')
     .attr('font-weight', 'bold')
-    .attr('font-size', 60)
+    .attr('font-size', 40)
     .text(`${enrollmentInMillions}M`);
-  centerText
-    .append('tspan')
+  centerText.append('tspan')
     .attr('x', 0)
     .attr('y', '1em')
     .attr('font-weight', 'bold')
-    .attr('font-size', 30)
-    .text('Total Enrollment');
-  centerText.append('title').text(`Total Enrollment: ${enrollmentInMillions} Million`);
+    .attr('font-size', 20)
+    .text('Total Enrollment*');
+  centerText.append('title')
+    .text(`Total Enrollment: ${enrollmentInMillions} Million`);
+}
+
+/**
+ * Renders one side value label ("FFS: 28.4M" / "(62% of total)") as plain
+ * HTML rather than positioned SVG text, so it becomes a real CSS grid
+ * column (see .pie-chart-label) instead of a hand-computed x-offset.
+ * @param {d3.Selection} parent - the column <div> to render into.
+ * @param {Object} datum - one entry from d3.pie()(data).
+ * @param {string|number} enrollmentInMillions - total enrollment, already converted to millions.
+ */
+
+function renderValueLabel(parent, datum, enrollmentInMillions) {
+  parent.append('span')
+    .attr('class', 'pie-chart-label__line')
+    .text(`${datum.data.name}: ${((datum.data.value / 100) * enrollmentInMillions).toFixed(1)}M`);
+  parent.append('span')
+    .attr('class', 'pie-chart-label__line')
+    .text(`(${Math.round(datum.data.value)}% of total)`);
 }
 
 /**
@@ -65,6 +88,7 @@ function drawCenterText(svg, enrollmentInMillions) {
  * @param {Object} [config]
  * @param {string[]} [config.colors] - two hex colors, indexed to match `data` order.
  *   Falls back to DEFAULT_COLORS if omitted or incomplete.
+ * @param {number} [config.height] - diameter of the circle in px. Defaults to DEFAULT_HEIGHT.
  * @param {string} [config.title] - Accessible name for the chart; used as the
  *   sr-only table's <caption>. Falls back to containerSelector if omitted.
  * @param {{label: string, value: Function}[]} [config.tableColumns] - Column
@@ -89,6 +113,7 @@ function renderPieChart(containerSelector, data, totalEnrollment, config = {}) {
 
   const {
     colors,
+    height = DEFAULT_HEIGHT,
     title = containerSelector,
     tableColumns = [
       { label: 'Category', value: (d) => d.name },
@@ -99,69 +124,52 @@ function renderPieChart(containerSelector, data, totalEnrollment, config = {}) {
   // Fall back to default colors if colors weren't passed in, or don't cover both slices.
   const resolvedColors = colors && colors.length >= data.length ? colors : DEFAULT_COLORS;
 
-  const width = 700;
-  const height = 400;
-  const radius = Math.min(width, height) / 2;
+  const radius = height / 2;
+  const innerRadius = radius * 0.7;
   const enrollmentInMillions = (totalEnrollment / 1000000).toFixed(1);
-  const LABEL_OFFSET_X = 280;
+
+  // Cleared first so re-rendering into the same container (e.g. a future
+  // data refresh) doesn't stack duplicate label/svg elements.
+  const container = d3.select(containerSelector);
+  container.html('');
+
+  const inner = container.append('div').attr('class', 'pie-chart-inner');
+
+  const pie = d3.pie()
+      .sort(null)
+      .value(d => d.value);
+  const pieData = pie(data);
+
   // NOTE: with 2 slices and no custom startAngle, d3.pie() sweeps clockwise
   // from 12 o'clock, so index 0 lands on the right half of the donut and
-  // index 1 lands on the left half. This maps the label position to match
-  // wherever the arc itself actually ends up (index 1 → left).
-  const xPosition = (d, i) => (i === 1 ? -LABEL_OFFSET_X : LABEL_OFFSET_X);
+  // index 1 lands on the left half. Each label is placed in the grid
+  // column matching its slice's actual side.
+  renderValueLabel(
+    inner.append('div').attr('class', 'pie-chart-label'),
+    pieData[1],
+    enrollmentInMillions,
+  );
 
-  // Selected once and reused for both the SVG and the accessible sr-table
-  // below, so the visual chart and its hidden table end up as siblings
-  // inside the same container — matching the pattern in renderLineChart.
-  const container = d3.select(containerSelector);
+  const chartHost = inner.append('div').attr('class', 'pie-chart-svg-host');
+
+  renderValueLabel(
+    inner.append('div').attr('class', 'pie-chart-label'),
+    pieData[0],
+    enrollmentInMillions,
+  );
 
   // By adjusting the innerRadius you can change the width of the circle
-  const arc = d3
-    .arc()
-    .innerRadius(radius * 0.7)
-    .outerRadius(radius - 1);
-  // Converts data into angles
-  const pie = d3
-    .pie()
-    .sort(null)
-    .value((d) => d.value);
+  const arc = d3.arc()
+      .innerRadius(innerRadius)
+      .outerRadius(radius - 1);
   // Creation and centering of the SVG where D3 will draw
-  const svg = container
-    .append('svg')
-    .attr('width', width)
-    .attr('height', height)
-    .attr('viewBox', [-width / 2, -height / 2, width, height]);
+  const svg = chartHost.append('svg')
+      .attr('width', height)
+      .attr('height', height)
+      .attr('viewBox', [-radius, -radius, height, height]);
 
-  const pieData = pie(data);
   drawArcs(svg, pieData, arc, resolvedColors);
   drawCenterText(svg, enrollmentInMillions);
-
-  // The side texts are developed here
-  svg
-    .append('g')
-    .selectAll('text')
-    .data(pieData)
-    .join('text')
-    .attr('x', xPosition)
-    .attr('y', 0)
-    .attr('text-anchor', 'middle')
-    .call((text) => {
-      text
-        .append('tspan')
-        .attr('x', xPosition)
-        .attr('font-weight', 'bold')
-        .attr('font-size', 19)
-        .text(
-          (d) => `${d.data.name}: ${((d.data.value / 100) * enrollmentInMillions).toFixed(1)}M`,
-        );
-      text
-        .append('tspan')
-        .attr('x', xPosition)
-        .attr('font-weight', 'bold')
-        .attr('font-size', 19)
-        .attr('dy', '1.2em')
-        .text((d) => `(${Math.round(d.data.value)}% of total)`);
-    });
 
   // Visually-hidden table mirroring the chart's data, for screen readers.
   renderSrTable(container, title, tableColumns, data);

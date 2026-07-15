@@ -37,7 +37,7 @@ jobs:
       - name: Build project
         run: npm run build
         env:
-          BASEURL: /medicare_monthly_enrollment_dashboard # TODO: Set repository URL here
+          BASEURL: /medicare_monthly_enrollment_dashboard
           NODE_ENV: production
 
       - name: Setup GitHub pages
