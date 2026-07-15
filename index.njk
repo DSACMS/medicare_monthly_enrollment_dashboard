@@ -11,333 +11,640 @@ description: Medicare National & State Enrollment Trends (2018 - 2026)
 eleventyExcludeFromCollections: true
 ---
 
-<div class="dashboard-root">
-  {% include "title-bar.njk" %}
-  {% include "pie-card.njk" %}
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
 
-  <div class="US_MAPS dashboard-map-panel" data-map-dashboard-type="hospital" aria-hidden="false">
-    <ul class="usa-card-group">
-      <li class="usa-card">
-        <div class="usa-card__container">
-          <div class="usa-card__body grid-row">
+<style>
 
-            <!-- LEFT: 4/12 columns -->
-            <div class="grid-col-4 display-flex flex-column height-full padding-3 border-right border-base-lighter">
-              <div class="display-flex flex-column">
+    :root {
+      --page:      #f3f4f6;
+      --surface:   #ffffff;
+      --surface-2: #f7f8fa;
+      --ink:       #15151b;
+      --ink-2:     #54545f;
+      --muted:     #5c5c66;
+      --grid:      #e7e7ec;
+      --baseline:  #cfcfd7;
+      --border:    rgba(20,20,28,0.10);
+      --shadow:    0 1px 2px rgba(16,16,24,.05), 0 4px 16px rgba(16,16,24,.05);
 
-                <div class="margin-bottom-3">
-                  <h3 class="margin-0 margin-bottom-105 text-uppercase text-base font-body-3xs">Penetration Rate</h3>
-                  <ul class="usa-list usa-list--unstyled">
-                    <li class="display-flex flex-align-center margin-bottom-105">
-                      <span class="bg-custom-1 margin-right-105 height-105 width-105 radius-sm"></span> 1% - 17%
-                    </li>
-                    <li class="display-flex flex-align-center margin-bottom-105">
-                      <span class="bg-custom-2 margin-right-105 height-105 width-105 radius-sm"></span> 17% - 34%
-                    </li>
-                    <li class="display-flex flex-align-center margin-bottom-105">
-                      <span class="bg-custom-3 margin-right-105 height-105 width-105 radius-sm"></span> 34% - 51%
-                    </li>
-                    <li class="display-flex flex-align-center margin-bottom-105">
-                      <span class="bg-custom-4 margin-right-105 height-105 width-105 radius-sm"></span> 51% - 67%
-                    </li>
-                    <li class="display-flex flex-align-center">
-                      <span class="bg-custom-5 margin-right-105 height-105 width-105 radius-sm"></span> 67% - 87%
-                    </li>
-                  </ul>
-                </div>
+      --ma:   #7928c9;
+      --ffs:  #961d56;
+      --total:#1b1b1b;
 
-                <div class="usa-summary-box" role="region" aria-labelledby="map-summary-heading">
-                  <div class="usa-summary-box__body">
-                    <div class="usa-summary-box__text">
-                      *Map includes data for all 50 United States plus Washington D.C. <br><br>
-                      Click to View State level information.<br><br>
-                      See "Grid" for additional US territories.
-                    </div>
-                  </div>
-                </div>
+      --brand:     #015390;
+      --brand-ink: #013b63;
+      --focus:     #009ad0;
+    }
 
-              </div>
-            </div>
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", "Public Sans", sans-serif;
+      background: var(--page); color: var(--ink); line-height: 1.5; -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 1240px; margin: 0 auto; padding: clamp(12px, 2.4vw, 20px); }
+    :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
 
-            <!-- RIGHT: 8/12 columns — now holds the state selector + map -->
-            <div class="grid-col-8 display-flex flex-column height-full padding-3">
-              <div class="state-map-selection">
+    .segmented { display: inline-flex; background: var(--surface-2); border: 1px solid var(--border); border-radius: 11px; padding: 4px; gap: 4px; }
+    .segmented button {
+      appearance: none; border: 0; background: transparent; cursor: pointer; font: inherit;
+      font-weight: 600; font-size: .84rem; color: var(--ink-2);
+      padding: 6px 14px; border-radius: 8px; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;
+    }
+    .segmented button[aria-pressed="true"] { background: var(--surface); color: var(--brand-ink); box-shadow: 0 1px 2px rgba(16,16,24,.12); border: 1px solid var(--border); }
+    .segmented button svg { width: 16px; height: 16px; }
+    .hint { font-size: .8rem; color: var(--ink-2); font-weight: 600; }
 
-                <label class="usa-label" for="medicare-state-selector">Select a state to view <strong>county heat
-                    map:</strong></label>
-                <div class="usa-combo-box">
-                  <select class="usa-select" name="medicare-state" id="medicare-state-selector">
-                    <option value="">Select a state</option>
-                    <option value="Alabama">Alabama</option>
-                    <option value="Alaska">Alaska</option>
-                    <option value="Arizona">Arizona</option>
-                    <option value="Arkansas">Arkansas</option>
-                    <option value="California">California</option>
-                    <option value="Colorado">Colorado</option>
-                    <option value="Connecticut">Connecticut</option>
-                    <option value="Delaware">Delaware</option>
-                    <option value="District of Columbia">District of Columbia</option>
-                    <option value="Florida">Florida</option>
-                    <option value="Georgia">Georgia</option>
-                    <option value="Hawaii">Hawaii</option>
-                    <option value="Idaho">Idaho</option>
-                    <option value="Illinois">Illinois</option>
-                    <option value="Indiana">Indiana</option>
-                    <option value="Iowa">Iowa</option>
-                    <option value="Kansas">Kansas</option>
-                    <option value="Kentucky">Kentucky</option>
-                    <option value="Louisiana">Louisiana</option>
-                    <option value="Maine">Maine</option>
-                    <option value="Maryland">Maryland</option>
-                    <option value="Massachusetts">Massachusetts</option>
-                    <option value="Michigan">Michigan</option>
-                    <option value="Minnesota">Minnesota</option>
-                    <option value="Mississippi">Mississippi</option>
-                    <option value="Missouri">Missouri</option>
-                    <option value="Montana">Montana</option>
-                    <option value="Nebraska">Nebraska</option>
-                    <option value="Nevada">Nevada</option>
-                    <option value="New Hampshire">New Hampshire</option>
-                    <option value="New Jersey">New Jersey</option>
-                    <option value="New Mexico">New Mexico</option>
-                    <option value="New York">New York</option>
-                    <option value="North Carolina">North Carolina</option>
-                    <option value="North Dakota">North Dakota</option>
-                    <option value="Ohio">Ohio</option>
-                    <option value="Oklahoma">Oklahoma</option>
-                    <option value="Oregon">Oregon</option>
-                    <option value="Pennsylvania">Pennsylvania</option>
-                    <option value="Rhode Island">Rhode Island</option>
-                    <option value="South Carolina">South Carolina</option>
-                    <option value="South Dakota">South Dakota</option>
-                    <option value="Tennessee">Tennessee</option>
-                    <option value="Texas">Texas</option>
-                    <option value="Utah">Utah</option>
-                    <option value="Vermont">Vermont</option>
-                    <option value="Virginia">Virginia</option>
-                    <option value="Washington">Washington</option>
-                    <option value="West Virginia">West Virginia</option>
-                    <option value="Wisconsin">Wisconsin</option>
-                    <option value="Wyoming">Wyoming</option>
-                  </select>
-                </div>
+    .topbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .topbar .push { margin-left: auto; }
+    .topbar .rule { width: 1px; align-self: stretch; background: var(--border); margin: 2px 2px; }
 
-                <div class="table-container flex-1 width-full margin-top-2" id="medicare-enrollment-state-map"></div>
-              </div>
-            </div>
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 15px; box-shadow: var(--shadow); }
+    .card__title { font-size: .95rem; font-weight: 700; margin: 0; }
+    .card__sub   { font-size: .75rem; color: var(--ink-2); margin: 2px 0 0; }
 
+    .dash-grid { display: grid; grid-template-columns: minmax(0, 1.16fr) minmax(0, 0.84fr); gap: 14px; align-items: stretch; }
+    .col { display: grid; gap: 14px; align-content: stretch; }
+
+    .dash-grid.is-grid { grid-template-columns: 1fr; }
+    .tables-flex { display: grid; gap: 14px; }
+    .tables-flex > .chart-block { min-width: 0; margin-top: 0; }
+
+    .swatch { width: 11px; height: 11px; border-radius: 3px; flex: none; }
+    .dash-hero { padding: 14px 18px; margin-bottom: 14px; display: flex; align-items: center; gap: clamp(18px, 3vw, 36px); }
+    .dash-hero__total { flex: none; }
+    .dash-hero__total .lab { display: block; font-size: .7rem; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: .05em; }
+
+    .dash-hero__total b { display: block; font-size: 3rem; font-weight: 800; letter-spacing: -.03em; line-height: 1.06; }
+
+    .dash-hero__split { flex: 1; min-width: 0; display: grid;
+      grid-template-columns: max-content minmax(0, 1fr) max-content;
+      gap: 9px 12px; align-items: center; }
+    .dash-hero__split .key { display: inline-flex; align-items: center; gap: 7px; font-size: .78rem; color: var(--ink-2); font-weight: 600; white-space: nowrap; }
+
+    .dash-hero__bar { display: block; height: 13px; border-radius: 0 4px 4px 0; min-width: 3px; }
+    .dash-hero__val { display: inline-flex; align-items: baseline; gap: 8px; font-size: .78rem; color: var(--ink-2); font-weight: 600; white-space: nowrap; }
+    .dash-hero__val b { color: var(--ink); font-weight: 700; font-size: .86rem; }
+
+    .map-card { padding: 14px 16px; display: flex; flex-direction: column; }
+    .map-head { margin-bottom: 6px; }
+
+    #mapView { flex: 1; display: flex; flex-direction: column; }
+    .map-figure { position: relative; flex: 1; display: flex; align-items: center; }
+    .map-figure svg { width: 100%; height: auto; display: block; }
+    .map-figure .state { stroke: var(--surface); stroke-width: .7px; cursor: pointer; transition: opacity .12s; }
+    .map-figure .state:hover { opacity: .82; }
+    .map-figure .state.is-selected { stroke: var(--ink); stroke-width: 2px; }
+    .map-loading, .map-error { padding: 42px 20px; text-align: center; color: var(--ink-2); font-size: .9rem; }
+    .legend-scale { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 10px; }
+    .legend-scale .item { display: flex; align-items: center; gap: 6px; font-size: .72rem; color: var(--ink-2); }
+    .legend-scale .chip { width: 13px; height: 13px; border-radius: 3px; }
+    .focus-line { margin-top: 10px; font-size: .8rem; color: var(--ink-2); border-top: 1px dashed var(--border); padding-top: 9px; }
+    .focus-line b { color: var(--ink); }
+    .focus-line .sep { opacity: .5; margin: 0 6px; }
+
+    .table-title { font-size: .82rem; font-weight: 700; margin: 2px 0 6px; }
+    .table-scroll { overflow: auto; max-height: 320px; border: 1px solid var(--border); border-radius: 10px; }
+    .table-scroll--tall { max-height: 560px; }
+    table.data { width: 100%; border-collapse: collapse; font-size: .81rem; }
+    table.data th, table.data td { padding: 7px 11px; text-align: right; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    table.data th:first-child, table.data td:first-child { text-align: left; }
+    table.data.two-label th:nth-child(2), table.data.two-label td:nth-child(2) { text-align: left; }
+    table.data thead th { position: sticky; top: 0; background: var(--surface-2); color: var(--ink-2); font-weight: 700; font-size: .68rem; text-transform: uppercase; letter-spacing: .03em; box-shadow: inset 0 -1px 0 var(--border); }
+    table.data tbody tr:last-child td { border-bottom: 0; }
+    table.data tbody tr:hover td { background: var(--surface-2); }
+
+    .trend-card { padding: 14px 16px; display: flex; flex-direction: column; }
+    .trend-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 2px; }
+    #chartsView { flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; }
+    .tabs { display: inline-flex; gap: 4px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 3px; }
+    .tabs button { appearance: none; border: 0; background: transparent; font: inherit; font-weight: 600; font-size: .8rem; color: var(--ink-2); padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+    .tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(16,16,24,.12); }
+    .chart-block { margin-top: 14px; }
+    .chart-block__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 14px; margin-bottom: 4px; }
+    .chart-block h4 { font-size: .82rem; font-weight: 700; margin: 0; }
+    .chart-block h4 span { color: var(--ink-2); font-weight: 500; font-size: .74rem; }
+    .chart-svg { width: 100%; height: auto; display: block; overflow: visible; }
+
+    .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+    .legend .item { display: flex; align-items: center; gap: 7px; font-size: .77rem; color: var(--ink-2); font-weight: 600; }
+    .legend .key { width: 17px; height: 3px; border-radius: 2px; }
+    .legend .key.dot { width: 11px; height: 11px; border-radius: 50%; }
+
+    .gridline { stroke: var(--grid); stroke-width: 1; }
+    .axis-base { stroke: var(--baseline); stroke-width: 1; }
+    .tick-txt { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+    .end-label { fill: var(--ink); font-size: 12px; font-weight: 700; }
+    .series-line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+    .marker-ring { stroke: var(--surface); stroke-width: 2; }
+    .crosshair { stroke: var(--baseline); stroke-width: 1; stroke-dasharray: 3 3; }
+
+    .tt { position: absolute; pointer-events: none; z-index: 5; opacity: 0; transform: translate(-50%, -120%);
+      background: var(--surface); color: var(--ink); border: 1px solid var(--border);
+      box-shadow: var(--shadow); border-radius: 10px; padding: 9px 11px; font-size: .78rem; min-width: 118px; transition: opacity .08s; }
+    .tt .tt-h { font-weight: 700; margin-bottom: 6px; }
+    .tt .tt-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+    .tt .tt-row .lab { display: flex; align-items: center; gap: 7px; color: var(--ink-2); }
+    .tt .tt-row .val { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .tt .k { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+    .footnote { font-size: .73rem; color: var(--ink-2); margin-top: 12px; }
+
+    @media (max-width: 960px) {
+      .dash-grid { grid-template-columns: 1fr; }
+    }
+    @media (min-width: 961px) {
+      .dash-grid.is-grid { grid-template-columns: 1.5fr 1fr; }
+    }
+    @media (max-width: 520px) {
+      .segmented { width: 100%; }
+      .segmented button { flex: 1; justify-content: center; }
+      .dash-hero { gap: 14px; }
+      .dash-hero__side .big { font-size: 1.5rem; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+
+<div class="wrap">
+
+    <div class="topbar">
+      <div class="segmented" role="group" aria-label="Choose dashboard">
+        <button id="tab-hospital" aria-pressed="true" onclick="setDashboard('hospital')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M6 21V7l6-4 6 4v14"/><path d="M12 9v4M10 11h4"/></svg>
+          Hospital / Medical
+        </button>
+        <button id="tab-drug" aria-pressed="false" onclick="setDashboard('drug')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 20.5 3.5 13.5a5 5 0 0 1 7-7l7 7a5 5 0 0 1-7 7Z"/><path d="M8.5 8.5l7 7"/></svg>
+          Prescription Drug
+        </button>
+      </div>
+
+      <span class="rule" aria-hidden="true"></span>
+
+      <div class="segmented" role="group" aria-label="Map or grid view">
+        <button id="view-map" aria-pressed="true" onclick="setView('map')">Map</button>
+        <button id="view-grid" aria-pressed="false" onclick="setView('grid')">Grid</button>
+      </div>
+
+    </div>
+
+    <section class="card dash-hero" aria-labelledby="hero-title">
+      <h2 id="hero-title" class="sr-only">Total enrollment summary</h2>
+      <div class="dash-hero__total">
+        <span class="lab">Total enrollment</span>
+        <b id="heroTotal">70.2M</b>
+      </div>
+      <div class="dash-hero__split" id="splitBar" role="img" aria-label="Enrollment split by program type">
+        <span class="key"><span class="swatch" style="background:var(--ma)"></span><span id="maName">Medicare Advantage &amp; Other</span></span>
+        <span><span class="dash-hero__bar" id="segA" style="background:var(--ma)"></span></span>
+        <span class="dash-hero__val"><b id="maBig">35.9M</b><span id="maSub">51%</span></span>
+
+        <span class="key"><span class="swatch" style="background:var(--ffs)"></span><span id="ffsName">Fee-for-Service</span></span>
+        <span><span class="dash-hero__bar" id="segB" style="background:var(--ffs)"></span></span>
+        <span class="dash-hero__val"><b id="ffsBig">34.3M</b><span id="ffsSub">49%</span></span>
+      </div>
+    </section>
+
+    <div class="dash-grid" id="dashGrid">
+
+      <div class="col">
+        <section class="card map-card" id="mapCard" aria-labelledby="map-title">
+          <div class="map-head">
+            <h2 id="map-title" class="card__title">Medicare Advantage penetration by state</h2>
+            <p class="card__sub" id="mapSub">Share of beneficiaries in MA &amp; other health plans</p>
           </div>
-        </div>
-      </li>
-    </ul>
-  </div>
 
-  <div class="US_MAPS dashboard-map-panel" data-map-dashboard-type="drug" hidden aria-hidden="true">
-    <ul class="usa-card-group">
-      <li class="usa-card">
-        <div class="usa-card__container">
-          <div class="usa-card__body grid-row">
-
-            <!-- LEFT: 4/12 columns -->
-            <div class="grid-col-4 display-flex flex-column height-full padding-3 border-right border-base-lighter">
-              <div class="display-flex flex-column">
-
-                <div class="margin-bottom-3">
-                  <h3 class="margin-0 margin-bottom-105 text-uppercase text-base font-body-3xs">Penetration Rate</h3>
-                  <ul class="usa-list usa-list--unstyled">
-                    <li class="display-flex flex-align-center margin-bottom-105">
-                      <span class="bg-custom-6 margin-right-105 height-105 width-105 radius-sm"></span> 1% - 17%
-                    </li>
-                    <li class="display-flex flex-align-center margin-bottom-105">
-                      <span class="bg-custom-7 margin-right-105 height-105 width-105 radius-sm"></span> 17% - 34%
-                    </li>
-                    <li class="display-flex flex-align-center margin-bottom-105">
-                      <span class="bg-custom-8 margin-right-105 height-105 width-105 radius-sm"></span> 34% - 51%
-                    </li>
-                    <li class="display-flex flex-align-center margin-bottom-105">
-                      <span class="bg-custom-9 margin-right-105 height-105 width-105 radius-sm"></span> 51% - 67%
-                    </li>
-                    <li class="display-flex flex-align-center">
-                      <span class="bg-custom-10 margin-right-105 height-105 width-105 radius-sm"></span> 67% - 87%
-                    </li>
-                  </ul>
-                </div>
-
-                <div class="usa-summary-box" role="region" aria-labelledby="map-summary-heading">
-                  <div class="usa-summary-box__body">
-                    <div class="usa-summary-box__text">
-                      *Map includes data for all 50 United States plus Washington D.C. <br><br>
-                      Click to View State level information.<br><br>
-                      See "Grid" for additional US territories.
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-
-            <!-- RIGHT: 8/12 columns — now holds the state selector + map -->
-            <div class="grid-col-8 display-flex flex-column height-full padding-3">
-              <div class="state-map-selection">
-
-                <label class="usa-label" for="drug-state-selector">Select a state to view <strong>county heat
-                    map:</strong></label>
-                <div class="usa-combo-box">
-                  <select class="usa-select" name="drug-state" id="drug-state-selector">
-                    <option value="">Select a state</option>
-                    <option value="Alabama">Alabama</option>
-                    <option value="Alaska">Alaska</option>
-                    <option value="Arizona">Arizona</option>
-                    <option value="Arkansas">Arkansas</option>
-                    <option value="California">California</option>
-                    <option value="Colorado">Colorado</option>
-                    <option value="Connecticut">Connecticut</option>
-                    <option value="Delaware">Delaware</option>
-                    <option value="District of Columbia">District of Columbia</option>
-                    <option value="Florida">Florida</option>
-                    <option value="Georgia">Georgia</option>
-                    <option value="Hawaii">Hawaii</option>
-                    <option value="Idaho">Idaho</option>
-                    <option value="Illinois">Illinois</option>
-                    <option value="Indiana">Indiana</option>
-                    <option value="Iowa">Iowa</option>
-                    <option value="Kansas">Kansas</option>
-                    <option value="Kentucky">Kentucky</option>
-                    <option value="Louisiana">Louisiana</option>
-                    <option value="Maine">Maine</option>
-                    <option value="Maryland">Maryland</option>
-                    <option value="Massachusetts">Massachusetts</option>
-                    <option value="Michigan">Michigan</option>
-                    <option value="Minnesota">Minnesota</option>
-                    <option value="Mississippi">Mississippi</option>
-                    <option value="Missouri">Missouri</option>
-                    <option value="Montana">Montana</option>
-                    <option value="Nebraska">Nebraska</option>
-                    <option value="Nevada">Nevada</option>
-                    <option value="New Hampshire">New Hampshire</option>
-                    <option value="New Jersey">New Jersey</option>
-                    <option value="New Mexico">New Mexico</option>
-                    <option value="New York">New York</option>
-                    <option value="North Carolina">North Carolina</option>
-                    <option value="North Dakota">North Dakota</option>
-                    <option value="Ohio">Ohio</option>
-                    <option value="Oklahoma">Oklahoma</option>
-                    <option value="Oregon">Oregon</option>
-                    <option value="Pennsylvania">Pennsylvania</option>
-                    <option value="Rhode Island">Rhode Island</option>
-                    <option value="South Carolina">South Carolina</option>
-                    <option value="South Dakota">South Dakota</option>
-                    <option value="Tennessee">Tennessee</option>
-                    <option value="Texas">Texas</option>
-                    <option value="Utah">Utah</option>
-                    <option value="Vermont">Vermont</option>
-                    <option value="Virginia">Virginia</option>
-                    <option value="Washington">Washington</option>
-                    <option value="West Virginia">West Virginia</option>
-                    <option value="Wisconsin">Wisconsin</option>
-                    <option value="Wyoming">Wyoming</option>
-                  </select>
-                </div>
-
-                <div class="table-container flex-1 width-full margin-top-2" id="medicare-mapd-state-map"></div>
-              </div>
-            </div>
-
+          <div id="mapView">
+            <div class="map-figure" id="mapFigure"><div class="map-loading">Loading map…</div></div>
+            <div class="legend-scale" id="mapLegend"></div>
+            <div class="focus-line" id="focusLine">Hover or select a state for detail.</div>
           </div>
-        </div>
-      </li>
-    </ul>
+
+          <div id="gridStateView" hidden>
+            <div class="table-scroll table-scroll--tall"><table class="data" id="stateTable"><thead></thead><tbody></tbody></table></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="col">
+        <section class="card trend-card" aria-labelledby="trend-title">
+          <div class="trend-head">
+            <div>
+              <h2 id="trend-title" class="card__title" style="font-size:1.02rem">Enrollment trends over time</h2>
+              <p class="card__sub" id="trendSub">National · Hospital / Medical</p>
+            </div>
+            <div class="tabs" id="rangeTabs" role="tablist" aria-label="Time range">
+              <button role="tab" aria-selected="true"  id="range-yearly"  onclick="setRange('yearly')">2013–2025</button>
+              <button role="tab" aria-selected="false" id="range-monthly" onclick="setRange('monthly')">12 months</button>
+            </div>
+          </div>
+
+          <div id="chartsView">
+            <div class="chart-block">
+              <div class="chart-block__head"><h4>Enrollment count <span>(millions)</span></h4><div class="legend" id="lineLegend"></div></div>
+              <div style="position:relative">
+                <svg id="lineChart" class="chart-svg" viewBox="0 0 560 270" role="img" aria-label="Enrollment count trend"></svg>
+                <div class="tt" id="lineTT"></div>
+              </div>
+            </div>
+
+            <div class="chart-block">
+              <div class="chart-block__head"><h4>Share of total enrollment</h4><div class="legend" id="barLegend"></div></div>
+              <div style="position:relative">
+                <svg id="barChart" class="chart-svg" viewBox="0 0 560 270" role="img" aria-label="Percent of total enrollment"></svg>
+                <div class="tt" id="barTT"></div>
+              </div>
+            </div>
+          </div>
+
+          <div id="tablesView" hidden>
+            <div class="tables-flex">
+              <div class="chart-block">
+                <div class="table-title">Yearly trend — national</div>
+                <div class="table-scroll"><table class="data" id="yearlyTable"><thead></thead><tbody></tbody></table></div>
+              </div>
+              <div class="chart-block">
+                <div class="table-title">12-month trend — national</div>
+                <div class="table-scroll"><table class="data two-label" id="monthlyTable"><thead></thead><tbody></tbody></table></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <p class="footnote">Mockup for design review — figures are representative. Data source: CMS Medicare Monthly Enrollment. Map tiles stream from us-atlas (needs a connection).</p>
   </div>
-</div>
 
+<script>
 
+const DATA = {
+  hospital: {
+    labels: { a: 'Medicare Advantage & Other', b: 'Fee-for-Service', aShort: 'MA', bShort: 'FFS',
+              mapTitle: 'Medicare Advantage penetration by state', mapSub: 'Share of beneficiaries in MA & other health plans' },
+    snapshot: { total: 70.2, a: 35.9, b: 34.3 },
+    yearly: [
+      {t:'2013',a:15.0,b:37.0},{t:'2014',a:16.2,b:37.5},{t:'2015',a:17.6,b:37.8},
+      {t:'2016',a:19.0,b:38.0},{t:'2017',a:20.4,b:38.3},{t:'2018',a:21.9,b:38.5},
+      {t:'2019',a:23.6,b:38.2},{t:'2020',a:25.4,b:37.8},{t:'2021',a:27.5,b:37.1},
+      {t:'2022',a:29.8,b:36.0},{t:'2023',a:31.7,b:35.0},{t:'2024',a:33.3,b:34.4},{t:'2025',a:34.9,b:33.9}
+    ],
+    monthly: [
+      {t:'Apr',a:34.4,b:34.6},{t:'May',a:34.6,b:34.55},{t:'Jun',a:34.7,b:34.5},
+      {t:'Jul',a:34.85,b:34.5},{t:'Aug',a:35.0,b:34.45},{t:'Sep',a:35.15,b:34.45},
+      {t:'Oct',a:35.3,b:34.4},{t:'Nov',a:35.45,b:34.4},{t:'Dec',a:35.6,b:34.35},
+      {t:'Jan',a:35.7,b:34.35},{t:'Feb',a:35.8,b:34.3},{t:'Mar',a:35.9,b:34.3}
+    ]
+  },
+  drug: {
+    labels: { a: 'MA-PD (bundled)', b: 'Standalone PDP', aShort: 'MA-PD', bShort: 'PDP',
+              mapTitle: 'MA-PD penetration by state', mapSub: 'Share of Part D beneficiaries in bundled MA-PD plans' },
+    snapshot: { total: 51.0, a: 30.6, b: 20.4 },
+    yearly: [
+      {t:'2013',a:9.6,b:22.4},{t:'2014',a:10.8,b:22.6},{t:'2015',a:12.2,b:22.8},
+      {t:'2016',a:13.6,b:22.9},{t:'2017',a:15.0,b:23.0},{t:'2018',a:16.6,b:23.0},
+      {t:'2019',a:18.2,b:22.9},{t:'2020',a:20.0,b:22.7},{t:'2021',a:22.0,b:22.4},
+      {t:'2022',a:24.2,b:21.9},{t:'2023',a:26.2,b:21.4},{t:'2024',a:28.0,b:21.0},{t:'2025',a:29.8,b:20.7}
+    ],
+    monthly: [
+      {t:'Apr',a:29.9,b:20.7},{t:'May',a:30.0,b:20.65},{t:'Jun',a:30.1,b:20.6},
+      {t:'Jul',a:30.2,b:20.6},{t:'Aug',a:30.25,b:20.55},{t:'Sep',a:30.3,b:20.5},
+      {t:'Oct',a:30.35,b:20.5},{t:'Nov',a:30.4,b:20.45},{t:'Dec',a:30.45,b:20.45},
+      {t:'Jan',a:30.5,b:20.4},{t:'Feb',a:30.55,b:20.4},{t:'Mar',a:30.6,b:20.4}
+    ]
+  }
+};
 
-<!-- 1. Keep the template header section -->
-<div class="usa-section intro-header">
-  <div class="grid-container">
-    <h1 class="visually-hidden">{{ title }}</h1>
-    <p class="usa-intro usa-intro--sections no-print">{{ description }}</p>
-  </div>
-</div>
+const STATES = {
+  'Alabama':[53,1.10],'Alaska':[5,0.11],'Arizona':[52,1.50],'Arkansas':[46,0.70],
+  'California':[52,6.60],'Colorado':[48,1.00],'Connecticut':[52,0.70],'Delaware':[20,0.22],
+  'District of Columbia':[40,0.09],'Florida':[55,5.00],'Georgia':[51,1.90],'Hawaii':[55,0.28],
+  'Idaho':[47,0.36],'Illinois':[42,2.30],'Indiana':[47,1.30],'Iowa':[47,0.70],
+  'Kansas':[44,0.60],'Kentucky':[53,1.00],'Louisiana':[55,0.90],'Maine':[48,0.35],
+  'Maryland':[42,1.10],'Massachusetts':[48,1.30],'Michigan':[58,2.10],'Minnesota':[58,1.10],
+  'Mississippi':[46,0.60],'Missouri':[52,1.30],'Montana':[44,0.25],'Nebraska':[42,0.36],
+  'Nevada':[48,0.60],'New Hampshire':[30,0.30],'New Jersey':[48,1.70],'New Mexico':[44,0.45],
+  'New York':[50,3.70],'North Carolina':[50,2.10],'North Dakota':[26,0.14],'Ohio':[54,2.50],
+  'Oklahoma':[45,0.80],'Oregon':[52,0.90],'Pennsylvania':[56,2.90],'Rhode Island':[56,0.22],
+  'South Carolina':[52,1.10],'South Dakota':[34,0.18],'Tennessee':[52,1.50],'Texas':[50,4.60],
+  'Utah':[45,0.40],'Vermont':[22,0.15],'Virginia':[48,1.60],'Washington':[45,1.50],
+  'West Virginia':[52,0.45],'Wisconsin':[52,1.20],'Wyoming':[18,0.12]
+};
 
-<!-- 2. Your Dashboard Sections go inside the main container layout -->
-<div class="usa-section layout--sections">
-  <div class="grid-container"> 
-    <!-- Added to match USWDS layout system padding -->
+const TERRITORIES = {
+  'American Samoa':[8,0.0044],'Guam':[10,0.021],'Northern Mariana Islands':[9,0.016],
+  'Puerto Rico':[74,0.62],'U.S. Virgin Islands':[12,0.021],'Foreign and Other Outlying Areas':[1,0.566]
+};
 
-    <!-- National Enrollment Trends -->
-    <section id="national">
-      <h2>Medicare National Enrollment Trends (2018 - 2026)</h2>
+const MAP_RAMP = {
+  hospital: { colors: ['#f6e8a3','#e08e6d','#c0506b','#7a3a87','#3d1a5e'], breaks: [17,34,51,67], labels: ['1–17%','17–34%','34–51%','51–67%','67–87%'] },
+  drug:     { colors: ['#f4f1a3','#75c3a3','#3d8b6f','#aac4e8','#3a5fa0'], breaks: [21,40,60,79], labels: ['1–21%','21–40%','40–60%','60–79%','79–87%'] }
+};
+const NO_DATA = '#979595';
 
-      <h3>Hospital / Medical — Yearly Trend</h3>
-      <h4>Enrollment Count</h4>
-      <div class="table-container" id="national-hospital-yearly-line"></div>
-      <h4>Percent of Total Enrollment</h4>
-      <div class="table-container" id="national-hospital-yearly-bar"></div>
+const fmtM = v => v.toFixed(1) + 'M';
+const pct  = (part, whole) => Math.round((part / whole) * 100);
+const css  = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const rampColor = p => { const r = MAP_RAMP[dash]; let i = 0; while (i < r.breaks.length && p >= r.breaks[i]) i++; return r.colors[i]; };
+const commas = n => Math.round(n).toLocaleString('en-US');
 
-      <h3>Hospital / Medical — 12-Month Trend</h3>
-      <h4>Enrollment Count</h4>
-      <div class="table-container" id="national-hospital-monthly-line"></div>
-      <h4>Percent of Total Enrollment</h4>
-      <div class="table-container" id="national-hospital-monthly-bar"></div>
+const compact = n => n >= 1e6 ? (n / 1e6).toFixed(2) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(1) + 'K' : String(Math.round(n));
+const numCell = n => `<td title="${commas(n)}">${compact(n)}</td>`;
+const ABBR = {
+  'Alabama':'AL','Alaska':'AK','Arizona':'AZ','Arkansas':'AR','California':'CA','Colorado':'CO','Connecticut':'CT',
+  'Delaware':'DE','District of Columbia':'DC','Florida':'FL','Georgia':'GA','Hawaii':'HI','Idaho':'ID','Illinois':'IL',
+  'Indiana':'IN','Iowa':'IA','Kansas':'KS','Kentucky':'KY','Louisiana':'LA','Maine':'ME','Maryland':'MD',
+  'Massachusetts':'MA','Michigan':'MI','Minnesota':'MN','Mississippi':'MS','Missouri':'MO','Montana':'MT',
+  'Nebraska':'NE','Nevada':'NV','New Hampshire':'NH','New Jersey':'NJ','New Mexico':'NM','New York':'NY',
+  'North Carolina':'NC','North Dakota':'ND','Ohio':'OH','Oklahoma':'OK','Oregon':'OR','Pennsylvania':'PA',
+  'Rhode Island':'RI','South Carolina':'SC','South Dakota':'SD','Tennessee':'TN','Texas':'TX','Utah':'UT',
+  'Vermont':'VT','Virginia':'VA','Washington':'WA','West Virginia':'WV','Wisconsin':'WI','Wyoming':'WY',
+  'American Samoa':'AS','Guam':'GU','Northern Mariana Islands':'MP','Puerto Rico':'PR','U.S. Virgin Islands':'VI',
+  'Foreign and Other Outlying Areas':'Other'
+};
 
-      <h3>Prescription Drug — Yearly Trend</h3>
-      <h4>Enrollment Count</h4>
-      <div class="table-container" id="national-drug-yearly-line"></div>
-      <h4>Percent of Total Enrollment</h4>
-      <div class="table-container" id="national-drug-yearly-bar"></div>
+function seed(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+function toCount(vM, key) { const base = vM * 1e6; const frac = (seed(key) % 100000) / 100000 - 0.5; return Math.max(0, Math.round(base + frac * Math.max(base * 0.012, 18000))); }
 
-      <h3>Prescription Drug — 12-Month Trend</h3>
-      <h4>Enrollment Count</h4>
-      <div class="table-container" id="national-drug-monthly-line"></div>
-      <h4>Percent of Total Enrollment</h4>
-      <div class="table-container" id="national-drug-monthly-bar"></div>
+function areaRow(name, arr) {
+  let ma = arr[0]; if (dash === 'drug') ma = Math.min(85, Math.round(ma * 1.12));
+  const total = toCount(arr[1], name + dash);
+  const a = Math.round(total * ma / 100), b = total - a;
+  return { name, total, a, b, aPct: ma, bPct: 100 - ma };
+}
 
-      <h3>Data Table</h3>
-      <div class="table-container" id="medicare-table"></div>
+function natRow(d, key) {
+  const a = toCount(d.a, key + 'a' + dash), b = toCount(d.b, key + 'b' + dash), total = a + b;
+  const aPct = Math.round(a / total * 100);
+  return { total, a, b, aPct, bPct: 100 - aPct };
+}
 
-      <h3>Enrollment Breakdown — Current Year</h3>
-      <div class="table-container" id="drug-enrollment-pie"></div>
+let dash = 'hospital', range = 'yearly', view = 'map', selectedState = '';
 
+function renderHero() {
+  const s = DATA[dash].snapshot, L = DATA[dash].labels;
+  document.getElementById('maName').textContent = L.a;
+  document.getElementById('ffsName').textContent = L.b;
+  document.getElementById('maBig').textContent = fmtM(s.a);
+  document.getElementById('ffsBig').textContent = fmtM(s.b);
+  document.getElementById('maSub').textContent = pct(s.a, s.total) + '%';
+  document.getElementById('ffsSub').textContent = pct(s.b, s.total) + '%';
+  document.getElementById('heroTotal').textContent = fmtM(s.total);
 
-  </section>
+  document.getElementById('segA').style.width = (s.a / s.total * 100) + '%';
+  document.getElementById('segB').style.width = (s.b / s.total * 100) + '%';
+  document.getElementById('splitBar').setAttribute('aria-label',
+    `${L.a} ${pct(s.a,s.total)} percent, ${L.b} ${pct(s.b,s.total)} percent of ${fmtM(s.total)} total`);
+}
 
-  <!-- State Enrollment -->
-  <section id="state">
-    <h2>State Enrollment — Hospital / Medical</h2>
-    <h3>Yearly Trend</h3>
-    <h4>Enrollment Count</h4>
-    <div class="table-container" id="state-hospital-yearly-line"></div>
-    <h4>Percent of Total Enrollment</h4>
-    <div class="table-container" id="state-hospital-yearly-bar"></div>
-    <h4>Data Table</h4>
-    <div class="table-container" id="state-hospital-yearly"></div>
+function buildLegend(el, items) {
+  el.innerHTML = items.map(it => `<span class="item"><span class="key ${it.dot?'dot':''}" style="background:${it.c}"></span>${it.label}</span>`).join('');
+}
 
-    <h3>12-Month Trend</h3>
-    <h4>Enrollment Count</h4>
-    <div class="table-container" id="state-hospital-monthly-line"></div>
-    <h4>Percent of Total Enrollment</h4>
-    <div class="table-container" id="state-hospital-monthly-bar"></div>
-    <h4>Data Table</h4>
-    <div class="table-container" id="state-hospital-monthly"></div>
+function renderLine() {
+  const rows = DATA[dash][range], L = DATA[dash].labels;
+  const svg = d3.select('#lineChart'); svg.selectAll('*').remove();
+  const W = 560, H = 270, m = { t: 12, r: 58, b: 30, l: 44 };
+  const series = [
+    { label: 'Total', color: css('--total'), get: d => d.a + d.b, labelIt: true },
+    { label: L.aShort, color: css('--ma'),  get: d => d.a, labelIt: false },
+    { label: L.bShort, color: css('--ffs'), get: d => d.b, labelIt: false },
+  ];
+  const maxV = d3.max(rows, d => d.a + d.b) * 1.08;
+  const x = d3.scalePoint().domain(rows.map(d => d.t)).range([m.l, W - m.r]).padding(0.5);
+  const y = d3.scaleLinear().domain([0, maxV]).nice().range([H - m.b, m.t]);
 
-    <h2>State Enrollment — Prescription Drug</h2>
-    <h3>Yearly Trend</h3>
-    <h4>Enrollment Count</h4>
-    <div class="table-container" id="state-drug-yearly-line"></div>
-    <h4>Percent of Total Enrollment</h4>
-    <div class="table-container" id="state-drug-yearly-bar"></div>
-    <h4>Data Table</h4>
-    <div class="table-container" id="state-drug-yearly"></div>
+  y.ticks(5).forEach(t => {
+    svg.append('line').attr('class','gridline').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y(t)).attr('y2', y(t));
+    svg.append('text').attr('class','tick-txt').attr('x', m.l - 8).attr('y', y(t)).attr('text-anchor','end').attr('dominant-baseline','middle').text(t + 'M');
+  });
+  const step = rows.length > 8 ? 2 : 1;
+  svg.append('g').selectAll('text').data(rows.filter((d,i)=> i % step === 0 || i === rows.length-1)).join('text')
+    .attr('class','tick-txt').attr('x', d => x(d.t)).attr('y', H - m.b + 15).attr('text-anchor','middle').text(d => d.t);
+  svg.append('line').attr('class','axis-base').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y(0)).attr('y2', y(0));
 
-    <h3>12-Month Trend</h3>
-    <h4>Enrollment Count</h4>
-    <div class="table-container" id="state-drug-monthly-line"></div>
-    <h4>Percent of Total Enrollment</h4>
-    <div class="table-container" id="state-drug-monthly-bar"></div>
-    <h4>Data Table</h4>
-    <div class="table-container" id="state-drug-monthly"></div>
-  </section>
+  const line = d3.line().x(d => x(d.t)).y(d => d.v).curve(d3.curveMonotoneX);
+  series.forEach(s => {
+    const pts = rows.map(d => ({ t: d.t, v: y(s.get(d)) }));
+    svg.append('path').attr('class','series-line').attr('stroke', s.color).attr('d', line(pts));
+    const last = rows[rows.length - 1];
+    svg.append('circle').attr('class','marker-ring').attr('cx', x(last.t)).attr('cy', y(s.get(last))).attr('r', 4.5).attr('fill', s.color);
+    if (s.labelIt) svg.append('text').attr('class','end-label').attr('x', x(last.t) + 10).attr('y', y(s.get(last)) + 4).text(fmtM(s.get(last)));
+  });
 
-</div>
-</div>
+  const tt = document.getElementById('lineTT');
+  const cross = svg.append('line').attr('class','crosshair').attr('y1', m.t).attr('y2', H - m.b).style('opacity', 0);
+  const focusDots = svg.append('g');
+  svg.append('rect').attr('x', m.l).attr('y', m.t).attr('width', W - m.r - m.l).attr('height', H - m.b - m.t)
+    .attr('fill', 'transparent').style('cursor','crosshair')
+    .on('mousemove', function (ev) {
+      const [mx] = d3.pointer(ev, svg.node());
+      let idx = 0, best = Infinity;
+      rows.forEach((d, i) => { const dd = Math.abs(x(d.t) - mx); if (dd < best) { best = dd; idx = i; } });
+      const d = rows[idx];
+      cross.attr('x1', x(d.t)).attr('x2', x(d.t)).style('opacity', 1);
+      focusDots.selectAll('*').remove();
+      series.forEach(s => focusDots.append('circle').attr('class','marker-ring').attr('cx', x(d.t)).attr('cy', y(s.get(d))).attr('r', 4).attr('fill', s.color));
+      tt.innerHTML = `<div class="tt-h">${d.t}</div>` + series.map(s =>
+        `<div class="tt-row"><span class="lab"><span class="k" style="background:${s.color}"></span>${s.label}</span><span class="val">${fmtM(s.get(d))}</span></div>`).join('');
+      const rect = svg.node().getBoundingClientRect();
+      tt.style.left = (x(d.t) * rect.width / W) + 'px';
+      tt.style.top  = (y(d.a + d.b) * rect.height / H) + 'px';
+      tt.style.opacity = 1;
+    })
+    .on('mouseleave', () => { cross.style('opacity', 0); focusDots.selectAll('*').remove(); tt.style.opacity = 0; });
+
+  buildLegend(document.getElementById('lineLegend'), [
+    { label: 'Total', c: css('--total'), dot: true },
+    { label: L.aShort, c: css('--ma'), dot: true },
+    { label: L.bShort, c: css('--ffs'), dot: true },
+  ]);
+}
+
+function renderBar() {
+  const rows = DATA[dash][range], L = DATA[dash].labels;
+  const svg = d3.select('#barChart'); svg.selectAll('*').remove();
+  const W = 560, H = 270, m = { t: 12, r: 16, b: 30, l: 40 };
+  const y = d3.scaleLinear().domain([0, 100]).range([H - m.b, m.t]);
+  const x = d3.scaleBand().domain(rows.map(d => d.t)).range([m.l, W - m.r]).padding(0.28);
+  const bw = Math.min(24, x.bandwidth());
+  const bx = d => x(d.t) + (x.bandwidth() - bw) / 2;
+
+  y.ticks(5).forEach(t => {
+    svg.append('line').attr('class','gridline').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y(t)).attr('y2', y(t));
+    svg.append('text').attr('class','tick-txt').attr('x', m.l - 8).attr('y', y(t)).attr('text-anchor','end').attr('dominant-baseline','middle').text(t + '%');
+  });
+  const step = rows.length > 8 ? 2 : 1;
+  svg.append('g').selectAll('text').data(rows.filter((d,i)=> i % step === 0 || i === rows.length-1)).join('text')
+    .attr('class','tick-txt').attr('x', d => bx(d) + bw/2).attr('y', H - m.b + 15).attr('text-anchor','middle').text(d => d.t);
+
+  const GAP = 2, tt = document.getElementById('barTT'), g = svg.append('g');
+  rows.forEach(d => {
+    const total = d.a + d.b, pa = d.a / total * 100, pb = d.b / total * 100;
+    const yB0 = y(0), yBtop = y(pb), yAtop = y(100);
+    const col = g.append('g').style('cursor','pointer');
+    col.append('rect').attr('x', bx(d)).attr('width', bw).attr('y', yBtop).attr('height', Math.max(0, yB0 - yBtop)).attr('fill', css('--ffs'));
+    const aH = Math.max(0, (yBtop - GAP) - yAtop);
+    col.append('rect').attr('x', bx(d)).attr('width', bw).attr('y', yAtop).attr('height', aH).attr('fill', css('--ma')).attr('rx', 4).attr('ry', 4);
+    col.append('rect').attr('x', bx(d)).attr('width', bw).attr('y', yAtop + Math.min(4, aH)).attr('height', Math.max(0, aH - 4)).attr('fill', css('--ma'));
+    col.on('mousemove', function () {
+        tt.innerHTML = `<div class="tt-h">${d.t}</div>`
+          + `<div class="tt-row"><span class="lab"><span class="k" style="background:${css('--ma')}"></span>${L.aShort}</span><span class="val">${Math.round(pa)}%</span></div>`
+          + `<div class="tt-row"><span class="lab"><span class="k" style="background:${css('--ffs')}"></span>${L.bShort}</span><span class="val">${Math.round(pb)}%</span></div>`;
+        const rect = svg.node().getBoundingClientRect();
+        tt.style.left = ((bx(d) + bw/2) * rect.width / W) + 'px';
+        tt.style.top  = (y(100) * rect.height / H + 6) + 'px';
+        tt.style.opacity = 1;
+      })
+      .on('mouseleave', () => { tt.style.opacity = 0; });
+  });
+
+  buildLegend(document.getElementById('barLegend'), [ { label: L.aShort, c: css('--ma') }, { label: L.bShort, c: css('--ffs') } ]);
+}
+
+let stateFeatures = null;
+async function initMap() {
+  const fig = document.getElementById('mapFigure');
+  try {
+    const us = await d3.json('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json');
+    stateFeatures = topojson.feature(us, us.objects.states).features;
+    fig.innerHTML = '';
+    const W = 975, H = 610;
+    const projection = d3.geoAlbersUsa().scale(1280).translate([W/2, H/2]);
+    const geoPath = d3.geoPath(projection);
+    const svg = d3.select(fig).append('svg').attr('viewBox', `0 0 ${W} ${H}`).attr('role','img').attr('aria-label','US map of program penetration');
+    svg.append('g').attr('id','statesG').selectAll('path').data(stateFeatures).join('path')
+      .attr('class','state').attr('d', geoPath)
+      .on('mousemove', (ev, f) => onStateHover(ev, f))
+      .on('mouseleave', () => { if (!selectedState) resetFocus(); })
+      .on('click', (ev, f) => { const nm = f.properties.name; focusState(STATES[nm] ? nm : ''); });
+    const tt = document.createElement('div'); tt.className = 'tt'; tt.id = 'mapTT'; fig.appendChild(tt);
+    paintMap();
+  } catch (e) {
+    fig.innerHTML = '<div class="map-error">Map could not be loaded (needs a connection to us-atlas). The rest of the dashboard works offline.</div>';
+  }
+}
+function metricFor(name) {
+  const s = STATES[name]; if (!s) return null;
+  let ma = s[0]; if (dash === 'drug') ma = Math.min(85, Math.round(ma * 1.12));
+  return { ma, ffs: 100 - ma, total: s[1] };
+}
+function paintMap() {
+  if (stateFeatures) {
+    d3.select('#statesG').selectAll('path')
+      .attr('fill', f => { const m = metricFor(f.properties.name); return m ? rampColor(m.ma) : NO_DATA; })
+      .classed('is-selected', f => f.properties.name === selectedState);
+  }
+  const r = MAP_RAMP[dash];
+  document.getElementById('mapLegend').innerHTML =
+    r.colors.map((c,i) => `<span class="item"><span class="chip" style="background:${c}"></span>${r.labels[i]}</span>`).join('')
+    + `<span class="item"><span class="chip" style="background:${NO_DATA}"></span>No data</span>`;
+  document.getElementById('map-title').textContent = DATA[dash].labels.mapTitle;
+  document.getElementById('mapSub').textContent = DATA[dash].labels.mapSub;
+}
+function onStateHover(ev, f) {
+  const name = f.properties.name, m = metricFor(name), tt = document.getElementById('mapTT');
+  if (!m || !tt) return;
+  updateFocus(name, m);
+  const L = DATA[dash].labels;
+  tt.innerHTML = `<div class="tt-h">${name}</div>`
+    + `<div class="tt-row"><span class="lab"><span class="k" style="background:${css('--ma')}"></span>${L.aShort}</span><span class="val">${m.ma}%</span></div>`
+    + `<div class="tt-row"><span class="lab"><span class="k" style="background:${css('--ffs')}"></span>${L.bShort}</span><span class="val">${m.ffs}%</span></div>`
+    + `<div class="tt-row"><span class="lab">Total</span><span class="val">${fmtM(m.total)}</span></div>`;
+  const box = document.getElementById('mapFigure').getBoundingClientRect();
+  tt.style.left = (ev.clientX - box.left) + 'px';
+  tt.style.top  = (ev.clientY - box.top) + 'px';
+  tt.style.opacity = 1;
+  clearTimeout(tt._h); tt._h = setTimeout(() => tt.style.opacity = 0, 1200);
+}
+function updateFocus(name, m) {
+  const L = DATA[dash].labels;
+  document.getElementById('focusLine').innerHTML =
+    `<b>${name}</b><span class="sep">·</span>${L.aShort} ${m.ma}%<span class="sep">·</span>${L.bShort} ${m.ffs}%<span class="sep">·</span>${fmtM(m.total)} total`;
+}
+function resetFocus() {
+  const s = DATA[dash].snapshot, L = DATA[dash].labels;
+  document.getElementById('focusLine').innerHTML =
+    `<b>United States</b><span class="sep">·</span>${L.aShort} ${pct(s.a,s.total)}%<span class="sep">·</span>${L.bShort} ${pct(s.b,s.total)}%<span class="sep">·</span>${fmtM(s.total)} total`;
+}
+function focusState(name) {
+  selectedState = name; paintMap();
+  if (name && metricFor(name)) updateFocus(name, metricFor(name)); else resetFocus();
+}
+function renderGridTables() {
+  const L = DATA[dash].labels;
+  const pctCells = r => `<td>${r.bPct}%</td><td>${r.aPct}%</td>`;
+
+  document.querySelector('#stateTable thead').innerHTML =
+    `<tr><th>State</th><th>Total</th><th>${L.bShort}</th><th>${L.aShort}</th><th>${L.bShort} %</th><th>${L.aShort} %</th></tr>`;
+  const areas = Object.entries(STATES).concat(Object.entries(TERRITORIES)).sort((x, y) => x[0].localeCompare(y[0]));
+  document.querySelector('#stateTable tbody').innerHTML = areas.map(([n, arr]) => {
+    const r = areaRow(n, arr);
+    return `<tr><td title="${n}">${ABBR[n] || n}</td>${numCell(r.total)}${numCell(r.b)}${numCell(r.a)}${pctCells(r)}</tr>`;
+  }).join('');
+
+  document.querySelector('#yearlyTable thead').innerHTML = `<tr><th>Year</th><th>Total</th><th>${L.bShort}</th><th>${L.aShort}</th><th>${L.bShort} %</th><th>${L.aShort} %</th></tr>`;
+  document.querySelector('#yearlyTable tbody').innerHTML = DATA[dash].yearly.map(row => {
+    const r = natRow(row, 'Y' + row.t);
+    return `<tr><td>${row.t}</td>${numCell(r.total)}${numCell(r.b)}${numCell(r.a)}${pctCells(r)}</tr>`;
+  }).join('');
+
+  document.querySelector('#monthlyTable thead').innerHTML = `<tr><th>Year</th><th>Month</th><th>Total</th><th>${L.bShort}</th><th>${L.aShort}</th><th>${L.bShort} %</th><th>${L.aShort} %</th></tr>`;
+  document.querySelector('#monthlyTable tbody').innerHTML = DATA[dash].monthly.map(row => {
+    const yr = ['Jan', 'Feb', 'Mar'].includes(row.t) ? 2026 : 2025;
+    const r = natRow(row, 'M' + row.t);
+    return `<tr><td>${yr}</td><td>${row.t}</td>${numCell(r.total)}${numCell(r.b)}${numCell(r.a)}${pctCells(r)}</tr>`;
+  }).join('');
+}
+
+function setDashboard(which) {
+  dash = which;
+  document.getElementById('tab-hospital').setAttribute('aria-pressed', which === 'hospital');
+  document.getElementById('tab-drug').setAttribute('aria-pressed', which === 'drug');
+  document.getElementById('trendSub').textContent = 'National · ' + (which === 'hospital' ? 'Hospital / Medical' : 'Prescription Drug');
+  renderAll();
+}
+function setRange(r) {
+  range = r;
+  document.getElementById('range-yearly').setAttribute('aria-selected', r === 'yearly');
+  document.getElementById('range-monthly').setAttribute('aria-selected', r === 'monthly');
+  renderLine(); renderBar();
+}
+function setView(v) {
+  view = v;
+  const grid = v === 'grid';
+  document.getElementById('view-map').setAttribute('aria-pressed', !grid);
+  document.getElementById('view-grid').setAttribute('aria-pressed', grid);
+  document.getElementById('mapView').hidden = grid;
+  document.getElementById('gridStateView').hidden = !grid;
+  document.getElementById('chartsView').hidden = grid;
+  document.getElementById('tablesView').hidden = !grid;
+  document.getElementById('rangeTabs').hidden = grid;
+  document.getElementById('dashGrid').classList.toggle('is-grid', grid);
+  applyGridTitles();
+  if (grid) renderGridTables();
+}
+function applyGridTitles() {
+  const grid = view === 'grid';
+  document.getElementById('trend-title').textContent = grid ? 'Enrollment — data tables' : 'Enrollment trends over time';
+  if (grid) {
+    document.getElementById('map-title').textContent = 'All areas — enrollment by state';
+    document.getElementById('mapSub').textContent = 'States and territories · counts and share of total';
+  } else {
+    paintMap();
+  }
+}
+function renderAll() {
+  renderHero(); renderLine(); renderBar();
+  paintMap();
+  if (selectedState) focusState(selectedState); else resetFocus();
+  applyGridTitles();
+  if (view === 'grid') renderGridTables();
+}
+
+renderAll();
+initMap();
+</script>
