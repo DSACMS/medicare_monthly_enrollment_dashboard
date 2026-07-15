@@ -21,11 +21,36 @@ $bullet-spacing: 1.25rem;
 
 // Custom styles for the Medicare Enrollment Dashboard
 
+.dashboard-root {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
 .dashboard-type-button {
   width: 250px;
   height: 60px;
   padding: 2px;
   font-size: 22px;
+}
+
+.US_MAPS {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 0 2rem;
+}
+
+.US_MAPS .usa-card,
+.US_MAPS .usa-card__container,
+.US_MAPS .usa-card-group,
+.US_MAPS .usa-card__body {
+  width: 100%;
+  max-width: 100%;
+}
+
+.US_MAPS[hidden] {
+  display: none !important;
 }
 .title-bar {
   background-color: color('primary');
@@ -477,3 +502,14 @@ h2.heading-md {
 .chart-tooltip__label {
   color: color('base');
 }
+
+.bg-custom-1 { background-color: #f6e8a3; }
+.bg-custom-2 { background-color: #e08e6d; }
+.bg-custom-3 { background-color: #c0506b; }
+.bg-custom-4 { background-color: #7a3a87; }
+.bg-custom-5 { background-color: #3d1a5e; }
+.bg-custom-6 { background-color: #f4f1a3; }
+.bg-custom-7 { background-color: #75c3a3; }
+.bg-custom-8 { background-color: #3d8b6f; }
+.bg-custom-9 { background-color: #aac4e8; }
+.bg-custom-10 { background-color: #3a5fa0; }
