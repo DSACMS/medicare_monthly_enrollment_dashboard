@@ -17,3 +17,10 @@ Custom styling
 
 @forward "overrides/code_highlight.scss";
 
+/*---------------------------------------------------------
+New dashboard design (WIP) — pasted in as-is for now, not
+yet reconciled with the brand tokens above. Forwarded last
+so it wins the cascade over the older dashboard styles.
+----------------------------------------------------------*/
+@forward "dashboard-v2";
+

@@ -12,6 +12,7 @@ import {
   renderDrugYearlyStackedBarChart,
   renderDrugMonthlyStackedBarChart,
   renderPieChart,
+  renderEnrollmentHero,
   renderStateMap,
   mergeLatestMonthlyIntoYearly,
 } from '../charts/index';
@@ -70,13 +71,13 @@ async function init() {
     // currentYear assumes `yearlyWithLatest` has the latest year appearing first.
     const currentYear = yearlyWithLatest[0];
 
-    // Config for the swappable card at #medicare-enrollment-pie, keyed by
+    // Config for the swappable card at #medicare-enrollment-hero, keyed by
     // the button's data-dashboard-type
     const pieCardConfigs = {
       hospital: {
         data: [
-          { name: 'FFS', value: currentYear.ffsPercent },
-          { name: 'MA', value: currentYear.maPercent },
+          { name: 'FFS', label: 'Fee-For-Service (FFS)', value: currentYear.ffsPercent },
+          { name: 'MA', label: 'Medicare Advantage (MA)', value: currentYear.maPercent },
         ],
         total: currentYear.totalEnrollees,
         options: {
@@ -90,15 +91,11 @@ async function init() {
             { label: 'Percent of total', value: (d) => `${Math.round(d.value)}%` },
           ],
         },
-        legend: [
-          { swatchClass: 'pie-legend__swatch--ma', label: 'Medicare Advantage (MA)' },
-          { swatchClass: 'pie-legend__swatch--ffs', label: 'Fee-For-Service (FFS)' },
-        ],
       },
       drug: {
         data: [
-          { name: 'PDP', value: currentYear.pdpPercent },
-          { name: 'MAPD', value: currentYear.mapdPercent },
+          { name: 'PDP', label: 'Stand-Alone Prescription Drug Plans (PDP)', value: currentYear.pdpPercent },
+          { name: 'MAPD', label: 'Medicare Advantage Prescription Drug Plans (MAPD)', value: currentYear.mapdPercent },
         ],
         total: currentYear.drugTotal,
         options: {
@@ -112,10 +109,6 @@ async function init() {
             { label: 'Percent of total', value: (d) => `${Math.round(d.value)}%` },
           ],
         },
-        legend: [
-          { swatchClass: 'pie-legend__swatch--mapd', label: 'Medicare Advantage Prescription Drug Plans (MAPD)' },
-          { swatchClass: 'pie-legend__swatch--pdp', label: 'Stand-Alone Prescription Drug Plans (PDP)' },
-        ],
       },
     };
 
@@ -130,30 +123,22 @@ async function init() {
       });
     };
 
-    const renderEnrollmentPieCard = (type) => {
+    const renderEnrollmentHeroCard = (type) => {
       const config = pieCardConfigs[type];
       if (!config) {
-        console.warn(`renderEnrollmentPieCard: unknown dashboard type "${type}"`);
+        console.warn(`renderEnrollmentHeroCard: unknown dashboard type "${type}"`);
         return;
       }
 
-      renderPieChart('#medicare-enrollment-pie', config.data, config.total, config.options);
-
-      const legendList = d3.select('#medicare-enrollment-pie-legend');
-      legendList.html('');
-      config.legend.forEach((item) => {
-        const li = legendList.append('li').attr('class', 'pie-legend__item');
-        li.append('span').attr('class', `pie-legend__swatch ${item.swatchClass}`);
-        li.append('span').text(item.label);
-      });
+      renderEnrollmentHero('#medicare-enrollment-hero', config.data, config.total, config.options);
 
       document.querySelectorAll('.dashboard-type-button').forEach((btn) => {
-        btn.classList.toggle('usa-button--active', btn.dataset.dashboardType === type);
+        btn.setAttribute('aria-pressed', String(btn.dataset.dashboardType === type));
       });
     };
 
     setMapPanelVisibility('hospital');
-    renderEnrollmentPieCard('hospital');
+    renderEnrollmentHeroCard('hospital');
 
     document.addEventListener('dashboard:typechange', (event) => {
       const { type } = event.detail || {};
@@ -165,7 +150,7 @@ async function init() {
     document.querySelectorAll('.dashboard-type-button').forEach((btn) => {
       btn.addEventListener('click', () => {
         const { dashboardType } = btn.dataset;
-        renderEnrollmentPieCard(dashboardType);
+        renderEnrollmentHeroCard(dashboardType);
         // Lets future features (state maps, tables, etc.) react to the
         // dataset swap without this handler needing to know about them.
         document.dispatchEvent(new CustomEvent('dashboard:typechange', { detail: { type: dashboardType } }));
@@ -173,7 +158,7 @@ async function init() {
     });
 
     const latestMonth = sortMonthlyAscending(monthly).at(-1);
-    d3.select('#medicare-enrollment-pie-legend-label')
+    d3.select('#medicare-enrollment-hero-footnote')
       .text(`*Total Enrollment as of ${latestMonth.month} ${latestMonth.year}`);
     d3.select('#dashboard-title-date')
       .text(`${latestMonth.month} ${latestMonth.year}`);
