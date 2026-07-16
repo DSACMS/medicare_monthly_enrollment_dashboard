@@ -170,6 +170,14 @@ function renderStateMap(containerSelector, data, config = {}) {
 
   };
 
+  const emitStateChange = (stateData) => {
+    document.dispatchEvent(
+      new CustomEvent('dashboard:statechange', {
+        detail: { stateName: stateData.stateName, state: stateData.state },
+      }),
+    );
+  };
+
   getStateFeatures()
     .then((features) => {
       const featureByStateName = new Map(
@@ -192,6 +200,7 @@ function renderStateMap(containerSelector, data, config = {}) {
 
         if (!stateFeature) return;
 
+        emitStateChange(stateData);
         await showCountyView(stateFeature, stateData);
       });
       svg
@@ -230,8 +239,8 @@ function renderStateMap(containerSelector, data, config = {}) {
           const stateData = dataByName.get(d.properties.name);
           if (!stateData) return;
 
+          emitStateChange(stateData);
           await showCountyView(d, stateData);
-
         });
     })
     .catch(() => {

@@ -248,6 +248,46 @@ eleventyExcludeFromCollections: true
       </li>
     </ul>
   </div>
+
+  <section id="data-grids" class="data-grid-section" aria-label="Enrollment data grids">
+    <div class="data-grid-cards">
+      <article class="data-grid-card" aria-labelledby="all-areas-grid-title">
+        <header class="data-grid-card__header">
+          <h3 id="all-areas-grid-title" class="data-grid-card__title">All Areas</h3>
+        </header>
+        <div class="data-grid-card__body">
+          <div class="data-grid-scroll-wrap">
+            <div
+              class="data-grid-scroll"
+              id="all-areas-table"
+              tabindex="0"
+              role="region"
+              aria-labelledby="all-areas-grid-title"
+            ></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="data-grid-card" aria-labelledby="county-grid-title">
+        <header class="data-grid-card__header">
+          <h3 id="county-grid-title" class="data-grid-card__title">Select a state</h3>
+        </header>
+        <div class="data-grid-card__body">
+          <div class="data-grid-scroll-wrap">
+            <div
+              class="data-grid-scroll"
+              id="county-table"
+              tabindex="0"
+              role="region"
+              aria-labelledby="county-grid-title"
+            >
+              <p class="data-grid-placeholder">Select a state on the map or from the dropdown to view county enrollment.</p>
+            </div>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
 </div>
 
 

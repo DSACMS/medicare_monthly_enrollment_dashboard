@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 /**
  * Renders a D3 table into a container element.
  * @param {string} selector  - CSS selector for the container (e.g. '#my-table')
- * @param {Array}  columnDefs - Array of { label, value } objects
+ * @param {Array}  columnDefs - Array of { label, value, title? } objects
  * @param {Array}  data       - Array of data row objects
  */
 function renderTable(selector, columnDefs, data) {
@@ -18,7 +18,7 @@ function renderTable(selector, columnDefs, data) {
     .data(columnDefs)
     .enter()
     .append('th')
-    .text(col => col.label);
+    .text((col) => col.label);
 
   const rows = table.append('tbody')
     .selectAll('tr')
@@ -27,10 +27,14 @@ function renderTable(selector, columnDefs, data) {
     .append('tr');
 
   rows.selectAll('td')
-    .data(row => columnDefs.map(col => col.value(row)))
+    .data((row) => columnDefs.map((col) => ({
+      text: col.value(row),
+      title: col.title?.(row) ?? null,
+    })))
     .enter()
     .append('td')
-    .text(cell => cell);
+    .text((cell) => cell.text)
+    .attr('title', (cell) => cell.title);
 }
 
 export default renderTable;
