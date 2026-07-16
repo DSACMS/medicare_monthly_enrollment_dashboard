@@ -155,13 +155,6 @@ async function init() {
     setMapPanelVisibility('hospital');
     renderEnrollmentPieCard('hospital');
 
-    document.addEventListener('dashboard:typechange', (event) => {
-      const { type } = event.detail || {};
-      if (type) {
-        setMapPanelVisibility(type);
-      }
-    });
-
     document.querySelectorAll('.dashboard-type-button').forEach((btn) => {
       btn.addEventListener('click', () => {
         const { dashboardType } = btn.dataset;
@@ -185,20 +178,152 @@ async function init() {
       pieCardConfigs.drug.options,
     );
 
+    const roundPct = (v) => `${Math.round(v)}%`;
+
+    const compactNum = (n) => {
+      const value = Number(n) || 0;
+      if (value >= 1e6) return `${(value / 1e6).toFixed(value >= 1e7 ? 1 : 2)}M`;
+      if (value >= 1e3) return `${(value / 1e3).toFixed(value >= 1e4 ? 0 : 1)}K`;
+      return formatNum(value);
+    };
+
+    const countCol = (label, getter) => ({
+      label,
+      value: (d) => compactNum(getter(d)),
+      title: (d) => formatNum(getter(d)),
+    });
+
+    const hospitalAreaColumns = [
+      { label: 'State', value: (d) => d.stateName },
+      countCol('TOTAL', (d) => d.totalEnrollees),
+      countCol('FFS', (d) => d.ffsCount),
+      countCol('MA', (d) => d.maCount),
+      { label: 'FFS %', value: (d) => roundPct(d.ffsPercent) },
+      { label: 'MA %', value: (d) => roundPct(d.maPercent) },
+    ];
+
+    const drugAreaColumns = [
+      { label: 'State', value: (d) => d.stateName },
+      countCol('TOTAL', (d) => d.drugTotal),
+      countCol('PDP', (d) => d.pdpCount),
+      countCol('MAPD', (d) => d.mapdCount),
+      { label: 'PDP %', value: (d) => roundPct(d.pdpPercent) },
+      { label: 'MAPD %', value: (d) => roundPct(d.mapdPercent) },
+    ];
+
+    const hospitalCountyColumns = [
+      { label: 'County', value: (d) => d.county },
+      countCol('TOTAL', (d) => d.totalEnrollees),
+      countCol('FFS', (d) => d.ffsCount),
+      countCol('MA', (d) => d.maCount),
+      { label: 'FFS %', value: (d) => roundPct(d.ffsPercent) },
+      { label: 'MA %', value: (d) => roundPct(d.maPercent) },
+    ];
+
+    const drugCountyColumns = [
+      { label: 'County', value: (d) => d.county },
+      countCol('TOTAL', (d) => d.drugTotal),
+      countCol('PDP', (d) => d.pdpCount),
+      countCol('MAPD', (d) => d.mapdCount),
+      { label: 'PDP %', value: (d) => roundPct(d.pdpPercent) },
+      { label: 'MAPD %', value: (d) => roundPct(d.mapdPercent) },
+    ];
+
+    let allStatesRows = [];
+    let selectedState = null;
+    let activeDashboardType = 'hospital';
+
+    const areaColumnsFor = (type) => (type === 'drug' ? drugAreaColumns : hospitalAreaColumns);
+    const countyColumnsFor = (type) => (type === 'drug' ? drugCountyColumns : hospitalCountyColumns);
+    const rowTotal = (type, d) => (type === 'drug' ? d.drugTotal : d.totalEnrollees);
+
+    const updateScrollAffordance = (scrollEl) => {
+      const wrap = scrollEl?.closest('.data-grid-scroll-wrap');
+      if (!wrap) return;
+
+      const { scrollWidth, clientWidth, scrollLeft } = scrollEl;
+      const canScrollX = scrollWidth > clientWidth + 1;
+
+      wrap.classList.toggle('is-scrollable-x', canScrollX);
+      wrap.classList.toggle('is-at-start', scrollLeft <= 1);
+      wrap.classList.toggle('is-at-end', scrollLeft + clientWidth >= scrollWidth - 2);
+
+      if (canScrollX) {
+        scrollEl.setAttribute('aria-description', 'Scroll horizontally to see more columns.');
+      } else {
+        scrollEl.removeAttribute('aria-description');
+      }
+    };
+
+    const bindScrollAffordance = (scrollEl) => {
+      if (!scrollEl) return;
+      if (scrollEl.dataset.scrollBound === 'true') {
+        updateScrollAffordance(scrollEl);
+        return;
+      }
+
+      scrollEl.dataset.scrollBound = 'true';
+      scrollEl.addEventListener('scroll', () => updateScrollAffordance(scrollEl), { passive: true });
+      window.addEventListener('resize', () => updateScrollAffordance(scrollEl));
+      updateScrollAffordance(scrollEl);
+    };
+
+    const renderAllAreasGrid = (type = activeDashboardType) => {
+      const host = document.querySelector('#all-areas-table');
+      if (!host || !allStatesRows.length) return;
+
+      const rows = [...allStatesRows]
+        .filter((d) => rowTotal(type, d) > 0)
+        .sort((a, b) => a.stateName.localeCompare(b.stateName));
+
+      renderTable('#all-areas-table', areaColumnsFor(type), rows);
+      requestAnimationFrame(() => bindScrollAffordance(host));
+    };
+
+    const renderCountyGrid = async (stateAbbr, stateName, type = activeDashboardType) => {
+      const host = document.querySelector('#county-table');
+      const titleEl = document.querySelector('#county-grid-title');
+      if (!host) return;
+
+      if (!stateAbbr) {
+        if (titleEl) titleEl.textContent = 'Select a state';
+        host.innerHTML = '<p class="data-grid-placeholder">Select a state on the map or from the dropdown to view county enrollment.</p>';
+        updateScrollAffordance(host);
+        return;
+      }
+
+      if (titleEl) titleEl.textContent = stateName || stateAbbr;
+      host.innerHTML = '<p class="data-grid-placeholder">Loading counties…</p>';
+
+      try {
+        const counties = await requestDataset('countyEnrollment', { state: stateAbbr });
+        const rows = counties
+          .filter((d) => rowTotal(type, d) > 0)
+          .sort((a, b) => a.county.localeCompare(b.county));
+
+        renderTable('#county-table', countyColumnsFor(type), rows);
+        requestAnimationFrame(() => bindScrollAffordance(host));
+      } catch {
+        host.innerHTML = '<p class="data-grid-placeholder" role="alert">County data could not be loaded.</p>';
+      }
+    };
+
     const loadStateMap = async () => {
       const recentRows = await requestDataset('stateEnrollment', { state: 'NY', type: 'monthly' });
       const latest = recentRows[0];
-      const allStates = await requestDataset('allStates', {
+      allStatesRows = await requestDataset('allStates', {
         year: latest.year,
         month: latest.month,
       });
 
-      renderStateMap('#medicare-enrollment-state-map', allStates, {
+      renderAllAreasGrid('hospital');
+
+      renderStateMap('#medicare-enrollment-state-map', allStatesRows, {
         title: 'Medicare Advantage enrollment by state',
         comboBoxSelector: '#medicare-state-selector',
       });
 
-      renderStateMap('#medicare-mapd-state-map', allStates, {
+      renderStateMap('#medicare-mapd-state-map', allStatesRows, {
         metricLabel: 'MAPD',
         metricPercent: (d) => d.mapdPercent,
         metricCount: (d) => d.mapdCount,
@@ -210,6 +335,24 @@ async function init() {
         comboBoxSelector: '#drug-state-selector',
       });
     };
+
+    document.addEventListener('dashboard:typechange', (event) => {
+      const { type } = event.detail || {};
+      if (!type) return;
+      activeDashboardType = type;
+      setMapPanelVisibility(type);
+      renderAllAreasGrid(type);
+      if (selectedState) {
+        renderCountyGrid(selectedState.state, selectedState.stateName, type);
+      }
+    });
+
+    document.addEventListener('dashboard:statechange', (event) => {
+      const { state, stateName } = event.detail || {};
+      if (!state) return;
+      selectedState = { state, stateName };
+      renderCountyGrid(state, stateName, activeDashboardType);
+    });
 
     await loadStateMap();
   } catch (error) {
