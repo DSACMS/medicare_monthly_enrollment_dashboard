@@ -1,0 +1,36 @@
+<div class="topbar">
+  <span class="hint">Click to swap dashboards:</span>
+  <div class="segmented" role="group" aria-label="Choose enrollment dashboard type">
+    <button type="button" class="dashboard-type-button" data-dashboard-type="hospital" aria-pressed="true">
+      {% usa_icons 'location_city' %}
+      Hospital / Medical
+    </button>
+    <button type="button" class="dashboard-type-button" data-dashboard-type="drug" aria-pressed="false">
+      {% usa_icons 'local_pharmacy' %}
+      Prescription Drug
+    </button>
+  </div>
+</div>
+
+<section class="card dash-hero" id="medicare-enrollment-hero" aria-labelledby="medicare-enrollment-hero-title">
+  <h2 id="medicare-enrollment-hero-title" class="sr-only">Total enrollment summary</h2>
+
+  <div class="dash-hero__total">
+    <span class="lab">Total enrollment</span>
+    <b id="heroTotal"></b>
+  </div>
+
+  <div class="dash-hero__split" id="heroSplitBar" role="img" aria-label="Enrollment split by program type">
+    <span class="dash-hero__label" id="heroNameB"></span>
+    <span class="dash-hero__bar-row">
+      <span class="dash-hero__bar" id="heroSegB"></span>
+      <span class="dash-hero__val" id="heroValB"><b id="heroBigB"></b><span id="heroSubB"></span></span>
+    </span>
+
+    <span class="dash-hero__label" id="heroNameA"></span>
+    <span class="dash-hero__bar-row">
+      <span class="dash-hero__bar" id="heroSegA"></span>
+      <span class="dash-hero__val" id="heroValA"><b id="heroBigA"></b><span id="heroSubA"></span></span>
+    </span>
+  </div>
+</section>
