@@ -612,11 +612,13 @@ h2.heading-md {
 .data-grid-card table {
   width: max-content;
   min-width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 0.8125rem;
   background: transparent;
   box-shadow: none;
   border-radius: 0;
+  overflow: visible;
 }
 
 .data-grid-card th,
@@ -657,8 +659,21 @@ h2.heading-md {
   }
 }
 
+.data-grid-card tbody tr.is-clickable {
+  cursor: pointer;
+}
+
+.data-grid-card tbody tr.is-clickable:focus-visible {
+  outline: 2px solid var(--cms-blue, #015390);
+  outline-offset: -2px;
+}
+
 .data-grid-card tr:nth-child(even) {
   background-color: transparent;
+}
+
+.data-grid-card .num-abbr {
+  display: none;
 }
 
 @media (max-width: 63.99em) {
@@ -690,5 +705,13 @@ h2.heading-md {
     font-size: 0.625rem;
     letter-spacing: 0.01em;
     padding: 7px 5px;
+  }
+
+  .data-grid-card .num-full {
+    display: none;
+  }
+
+  .data-grid-card .num-abbr {
+    display: inline;
   }
 }
