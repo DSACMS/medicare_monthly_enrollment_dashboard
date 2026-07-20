@@ -174,8 +174,10 @@ async function init() {
 
     const countCol = (label, getter) => ({
       label,
-      value: (d) => compactNum(getter(d)),
-      title: (d) => formatNum(getter(d)),
+      html: (d) => {
+        const n = getter(d);
+        return `<span class="num-full">${formatNum(n)}</span><span class="num-abbr">${compactNum(n)}</span>`;
+      },
     });
 
     const hospitalAreaColumns = [
@@ -222,6 +224,14 @@ async function init() {
     const countyColumnsFor = (type) => (type === 'drug' ? drugCountyColumns : hospitalCountyColumns);
     const rowTotal = (type, d) => (type === 'drug' ? d.drugTotal : d.totalEnrollees);
 
+    const selectStateFromGrid = (stateName) => {
+      const selectorId = activeDashboardType === 'drug' ? '#drug-state-selector' : '#medicare-state-selector';
+      const select = document.querySelector(selectorId);
+      if (!select) return;
+      select.value = stateName;
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+
     const updateScrollAffordance = (scrollEl) => {
       const wrap = scrollEl?.closest('.data-grid-scroll-wrap');
       if (!wrap) return;
@@ -261,7 +271,9 @@ async function init() {
         .filter((d) => rowTotal(type, d) > 0)
         .sort((a, b) => a.stateName.localeCompare(b.stateName));
 
-      renderTable('#all-areas-table', areaColumnsFor(type), rows);
+      renderTable('#all-areas-table', areaColumnsFor(type), rows, {
+        onRowClick: (row) => selectStateFromGrid(row.stateName),
+      });
       requestAnimationFrame(() => bindScrollAffordance(host));
     };
 
