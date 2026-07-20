@@ -156,6 +156,8 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 @media (max-width: 520px) {
   .segmented { width: 100%; }
   .segmented button { flex: 1; justify-content: center; }
+  .usa-combo-box__input { width: 50% } //here the combo-box width is decreased!
+  .usa-combo-box__input-button-separator { display: none;}
 
   .dash-hero { flex-direction: column; align-items: stretch; text-align: center; gap: 14px; }
 
@@ -181,3 +183,28 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   #heroValA { grid-area: valA; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+
+
+
+
+//here are styles for map-card
+
+.usa-combo-box__input{
+  border-radius: 12px;
+  border: 1px solid var(--baseline);
+}
+
+
+.map-cards {
+  display: grid;
+  grid-template-columns: 3fr 2fr; 
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.map-card {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+}
