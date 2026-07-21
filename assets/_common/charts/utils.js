@@ -57,7 +57,26 @@ export function createTooltip(container) {
 
 export function moveTooltip(tooltip, containerNode, event) {
   const [x, y] = d3.pointer(event, containerNode);
-  tooltip.style('left', `${x + 16}px`).style('top', `${y + 16}px`);
+  const offset = 16;
+
+  const containerRect = containerNode.getBoundingClientRect();
+  const tooltipRect = tooltip.node().getBoundingClientRect();
+
+  let left = x + offset;
+  let top = y + offset;
+
+  if (left + tooltipRect.width > containerRect.width) {
+    left = x - offset - tooltipRect.width;
+  }
+
+  if (top + tooltipRect.height > containerRect.height) {
+    top = y - offset - tooltipRect.height;
+  }
+
+  left = Math.max(0, left);
+  top = Math.max(0, top);
+
+  tooltip.style('left', `${left}px`).style('top', `${top}px`);
 }
 
 export function buildLegendHtml(items) {
