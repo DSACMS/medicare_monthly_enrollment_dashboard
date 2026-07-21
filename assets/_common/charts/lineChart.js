@@ -1,45 +1,35 @@
 import * as d3 from 'd3';
-import { CHART_COLORS, LINE_STYLES } from './colors';
 import renderSrTable from './accessibility';
 import {
-  appendChartSvg,
-  getChartSize,
+  appendTrendFigure,
+  buildLegendHtml,
+  resolveLegendTarget,
+  selectTickRows,
+  formatMillions,
   formatPeriod,
-  createTooltip,
-  moveTooltip,
+  TREND_MARGIN,
 } from './utils';
 
-const formatCount = d3.format(',');
-
-function drawMarker(g, type, x, y, color) {
-  if (type === 'circle') {
-    g.append('circle').attr('cx', x).attr('cy', y).attr('r', 4).attr('fill', color);
-  } else if (type === 'triangle') {
-    g.append('path')
-      .attr('d', `M${x},${y - 5} L${x + 5},${y + 4} L${x - 5},${y + 4} Z`)
-      .attr('fill', color);
-  } else if (type === 'square') {
-    g.append('rect')
-      .attr('x', x - 4)
-      .attr('y', y - 4)
-      .attr('width', 8)
-      .attr('height', 8)
-      .attr('fill', color);
-  }
-}
+const PRIMARY_STROKE_WIDTH = 3;
+const DEFAULT_STROKE_WIDTH = 2;
+const PRIMARY_AREA_OPACITY = 0.08;
+const END_LABEL_MIN_GAP = 12;
 
 /**
  * Renders a multi-series enrollment count line chart with y-axis origin at 0.
+ * Each series is labeled directly at its line's endpoint (name + value), so
+ * there's no separate legend — the primary series (config.series[i].primary)
+ * additionally renders bolder with a light area fill for emphasis.
  *
  * @param {string} selector - DOM container selector
  * @param {Array}  data      - Enrollment data rows (pre-sorted ascending)
  * @param {Object} config
- * @param {Array}  config.series     - [{ key, label, color? }]
- * @param {Function} [config.xAccessor] - Row → x-axis label
- * @param {string} config.yLabel
- * @param {string} config.xLabel
+ * @param {Array}  config.series     - [{ key, label, color?, primary? }]
+ * @param {Function} [config.xAccessor] - Row → x-axis label / tooltip header
+ * @param {Function} [config.xTickFormat] - Row → short x-axis tick text
  * @param {string} config.title       - Used for aria-label and sr-table caption
  * @param {Array}  config.tableColumns - [{ label, value(row) }] for sr table
+ * @param {Function} [config.yTickFormat] - Value → axis tick / tooltip / end-label text
  */
 function renderLineChart(selector, data, config) {
   const container = d3.select(selector);
@@ -50,173 +40,160 @@ function renderLineChart(selector, data, config) {
   const {
     series,
     xAccessor = formatPeriod,
-    yLabel,
-    xLabel,
+    xTickFormat = xAccessor,
     title,
     tableColumns,
-    yTickFormat = formatCount,
+    yTickFormat = formatMillions,
+    legendSelector,
   } = config;
 
-  const { width, height, margin, innerWidth, innerHeight } = getChartSize(
-    container.node(),
-  );
+  const MARGIN = legendSelector ? { ...TREND_MARGIN, right: 16 } : TREND_MARGIN;
 
-  const tooltip = createTooltip(container);
-  const { svg } = appendChartSvg(container, width, height, title);
-  const g = svg
-    .append('g')
-    .attr('transform', `translate(${margin.left},${margin.top})`);
+  const {
+    svg, tooltip, width: W, height: H,
+  } = appendTrendFigure(container, title);
 
   const xLabels = data.map(xAccessor);
-  const rotateLabels = xLabels.some((label) => String(label).length > 6);
-  const xScale = d3.scalePoint().domain(xLabels).range([0, innerWidth]).padding(0.5);
+  const xScale = d3.scalePoint().domain(xLabels).range([MARGIN.left, W - MARGIN.right]).padding(0.5);
 
-  const yMax = d3.max(data, (d) => d3.max(series, (s) => d[s.key] || 0));
-  const yScale = d3
-    .scaleLinear()
-    .domain([0, yMax])
-    .nice()
-    .range([innerHeight, 0]);
+  const yMax = d3.max(data, (d) => d3.max(series, (s) => d[s.key] || 0)) * 1.08;
+  const yScale = d3.scaleLinear().domain([0, yMax]).nice().range([H - MARGIN.bottom, MARGIN.top]);
 
-  g.append('g')
-    .attr('transform', `translate(0,${innerHeight})`)
-    .call(d3.axisBottom(xScale))
-    .selectAll('text')
-    .attr('fill', CHART_COLORS.axis)
-    .attr('transform', rotateLabels ? 'rotate(-35)' : null)
-    .style('text-anchor', rotateLabels ? 'end' : 'middle')
-    .style('font-size', '13px');
+  yScale.ticks(5).forEach((t) => {
+    svg.append('line')
+      .attr('class', 'gridline')
+      .attr('x1', MARGIN.left).attr('x2', W - MARGIN.right)
+      .attr('y1', yScale(t)).attr('y2', yScale(t));
+    svg.append('text')
+      .attr('class', 'tick-txt')
+      .attr('x', MARGIN.left - 8).attr('y', yScale(t))
+      .attr('text-anchor', 'end').attr('dominant-baseline', 'middle')
+      .text(yTickFormat(t));
+  });
 
-  g.append('g')
-    .call(d3.axisLeft(yScale).ticks(6).tickFormat(yTickFormat))
-    .selectAll('text')
-    .attr('fill', CHART_COLORS.axis)
-    .style('font-size', '13px');
-
-  g.append('text')
-    .attr('transform', 'rotate(-90)')
-    .attr('x', -innerHeight / 2)
-    .attr('y', -60)
+  const tickRows = selectTickRows(svg, data, xTickFormat, W - MARGIN.left - MARGIN.right);
+  svg.append('g').selectAll('text')
+    .data(tickRows)
+    .join('text')
+    .attr('class', 'tick-txt')
+    .attr('x', (d) => xScale(xAccessor(d)))
+    .attr('y', H - MARGIN.bottom + 15)
     .attr('text-anchor', 'middle')
-    .attr('fill', CHART_COLORS.axis)
-    .style('font-size', '15px')
-    .style('font-weight', '600')
-    .text(yLabel);
+    .text((d) => xTickFormat(d));
 
-  g.append('text')
-    .attr('x', innerWidth / 2)
-    .attr('y', innerHeight + 48)
-    .attr('text-anchor', 'middle')
-    .attr('fill', CHART_COLORS.axis)
-    .style('font-size', '15px')
-    .style('font-weight', '600')
-    .text(xLabel);
+  svg.append('line')
+    .attr('class', 'axis-base')
+    .attr('x1', MARGIN.left).attr('x2', W - MARGIN.right)
+    .attr('y1', yScale(0)).attr('y2', yScale(0));
 
-  g.selectAll('.grid-line')
-    .data(yScale.ticks(6))
-    .enter()
-    .append('line')
-    .attr('class', 'grid-line')
-    .attr('x1', 0)
-    .attr('x2', innerWidth)
-    .attr('y1', (d) => yScale(d))
-    .attr('y2', (d) => yScale(d))
-    .attr('stroke', CHART_COLORS.grid)
-    .attr('stroke-dasharray', '2,4');
+  const lastRow = data[data.length - 1];
+  const lineGenerator = d3.line()
+    .x((d) => xScale(d.x))
+    .y((d) => yScale(d.v))
+    .curve(d3.curveMonotoneX);
+  const areaGenerator = d3.area()
+    .x((d) => xScale(d.x))
+    .y0(yScale(0))
+    .y1((d) => yScale(d.v))
+    .curve(d3.curveMonotoneX);
 
-  series.forEach((s, i) => {
-    const style = LINE_STYLES[i % LINE_STYLES.length];
-    const color = s.color || (i === 0 ? CHART_COLORS.primary : CHART_COLORS.secondary);
+  series.forEach((s) => {
+    const points = data.map((d) => ({ x: xAccessor(d), v: d[s.key] || 0 }));
 
-    const lineGenerator = d3
-      .line()
-      .x((d) => xScale(xAccessor(d)))
-      .y((d) => yScale(d[s.key] || 0));
+    if (s.primary) {
+      svg.append('path')
+        .attr('d', areaGenerator(points))
+        .attr('fill', s.color)
+        .attr('fill-opacity', PRIMARY_AREA_OPACITY)
+        .attr('stroke', 'none');
+    }
 
-    g.append('path')
-      .datum(data)
-      .attr('fill', 'none')
-      .attr('stroke', color)
-      .attr('stroke-width', 2.5)
-      .attr('stroke-dasharray', style.dash || null)
-      .attr('d', lineGenerator);
+    svg.append('path')
+      .attr('class', 'series-line')
+      .attr('stroke', s.color)
+      .style('stroke-width', s.primary ? PRIMARY_STROKE_WIDTH : DEFAULT_STROKE_WIDTH)
+      .attr('d', lineGenerator(points));
 
-    const markerG = g.append('g').attr('class', `markers-${s.key}`);
-    data.forEach((d) => {
-      drawMarker(markerG, style.marker, xScale(xAccessor(d)), yScale(d[s.key] || 0), color);
+    svg.append('circle')
+      .attr('class', 'marker-ring')
+      .attr('cx', xScale(xAccessor(lastRow)))
+      .attr('cy', yScale(lastRow[s.key] || 0))
+      .attr('r', s.primary ? 5 : 4.5)
+      .attr('fill', s.color);
+  });
+
+  if (legendSelector) {
+    const legendItems = series.map((s) => ({
+      label: `${s.label} ${yTickFormat(lastRow[s.key] || 0)}`,
+      color: s.color,
+      dot: true,
+    }));
+    resolveLegendTarget(container, legendSelector).html(buildLegendHtml(legendItems));
+  } else {
+    const endLabelX = xScale(xAccessor(lastRow)) + 10;
+    const endLabels = series
+      .map((s) => ({ s, y: yScale(lastRow[s.key] || 0) }))
+      .sort((a, b) => a.y - b.y);
+    endLabels.forEach((entry, i) => {
+      if (i > 0 && entry.y - endLabels[i - 1].y < END_LABEL_MIN_GAP) {
+        entry.y = endLabels[i - 1].y + END_LABEL_MIN_GAP;
+      }
     });
-  });
+    endLabels.forEach(({ s, y }) => {
+      svg.append('text')
+        .attr('class', 'end-label')
+        .attr('x', endLabelX)
+        .attr('y', y + 4)
+        .style('fill', s.color)
+        .style('font-weight', s.primary ? 800 : 700)
+        .text(`${s.label} ${yTickFormat(lastRow[s.key] || 0)}`);
+    });
+  }
 
-  const hoverRing = g
-    .append('circle')
-    .attr('r', 7)
-    .attr('fill', 'none')
-    .attr('stroke-width', 2)
-    .style('opacity', 0)
-    .style('pointer-events', 'none');
+  const crosshair = svg.append('line')
+    .attr('class', 'crosshair')
+    .attr('y1', MARGIN.top).attr('y2', H - MARGIN.bottom)
+    .style('opacity', 0);
+  const focusDots = svg.append('g');
+  const totalSeries = series.find((s) => s.primary) || series[0];
 
-  series.forEach((s, i) => {
-    const color = s.color || (i === 0 ? CHART_COLORS.primary : CHART_COLORS.secondary);
-
-    g.append('g')
-      .selectAll('circle')
-      .data(data)
-      .enter()
-      .append('circle')
-      .attr('cx', (d) => xScale(xAccessor(d)))
-      .attr('cy', (d) => yScale(d[s.key] || 0))
-      .attr('r', 12)
-      .attr('fill', 'transparent')
-      .on('mouseenter', (event, d) => {
-        hoverRing
-          .attr('cx', xScale(xAccessor(d)))
-          .attr('cy', yScale(d[s.key] || 0))
-          .attr('stroke', color)
-          .style('opacity', 1);
-        tooltip
-          .style('opacity', 1)
-          .html(
-            `<div class="chart-tooltip__row"><span class="chart-tooltip__label">${xLabel}</span><span>${xAccessor(d)}</span></div>`
-              + `<div class="chart-tooltip__row"><span class="chart-tooltip__label">${s.label}</span><span>${formatCount(d[s.key] || 0)}</span></div>`,
-          );
-        moveTooltip(tooltip, container.node(), event);
-      })
-      .on('mousemove', (event) => moveTooltip(tooltip, container.node(), event))
-      .on('mouseleave', () => {
-        hoverRing.style('opacity', 0);
-        tooltip.style('opacity', 0);
+  svg.append('rect')
+    .attr('x', MARGIN.left).attr('y', MARGIN.top)
+    .attr('width', Math.max(0, W - MARGIN.right - MARGIN.left))
+    .attr('height', Math.max(0, H - MARGIN.bottom - MARGIN.top))
+    .attr('fill', 'transparent')
+    .style('cursor', 'crosshair')
+    .on('mousemove', (event) => {
+      const [mx] = d3.pointer(event, svg.node());
+      let idx = 0;
+      let best = Infinity;
+      data.forEach((d, i) => {
+        const dist = Math.abs(xScale(xAccessor(d)) - mx);
+        if (dist < best) { best = dist; idx = i; }
       });
-  });
+      const d = data[idx];
+      const dx = xScale(xAccessor(d));
 
-  const legend = svg
-    .append('g')
-    .attr('transform', `translate(${width - margin.right + 12},${margin.top})`);
+      crosshair.attr('x1', dx).attr('x2', dx).style('opacity', 1);
+      focusDots.selectAll('*').remove();
+      series.forEach((s) => {
+        focusDots.append('circle')
+          .attr('class', 'marker-ring')
+          .attr('cx', dx).attr('cy', yScale(d[s.key] || 0))
+          .attr('r', 4).attr('fill', s.color);
+      });
 
-  series.forEach((s, i) => {
-    const style = LINE_STYLES[i % LINE_STYLES.length];
-    const color = s.color || (i === 0 ? CHART_COLORS.primary : CHART_COLORS.secondary);
-    const row = legend.append('g').attr('transform', `translate(0,${i * 22})`);
-
-    row
-      .append('line')
-      .attr('x1', 0)
-      .attr('x2', 20)
-      .attr('y1', 8)
-      .attr('y2', 8)
-      .attr('stroke', color)
-      .attr('stroke-width', 2.5)
-      .attr('stroke-dasharray', style.dash || null);
-
-    drawMarker(row, style.marker, 10, 8, color);
-
-    row
-      .append('text')
-      .attr('x', 28)
-      .attr('y', 12)
-      .attr('fill', CHART_COLORS.axis)
-      .style('font-size', '12px')
-      .text(s.label);
-  });
+      tooltip.html(`<div class="tt-h">${xAccessor(d)}</div>${series.map((s) => `<div class="tt-row"><span class="lab"><span class="k" style="background:${s.color}"></span>${s.label}</span><span class="val">${yTickFormat(d[s.key] || 0)}</span></div>`).join('')}`);
+      const rect = svg.node().getBoundingClientRect();
+      tooltip.style('left', `${(dx * rect.width) / W}px`);
+      tooltip.style('top', `${(yScale(d[totalSeries.key] || 0) * rect.height) / H}px`);
+      tooltip.style('opacity', 1);
+    })
+    .on('mouseleave', () => {
+      crosshair.style('opacity', 0);
+      focusDots.selectAll('*').remove();
+      tooltip.style('opacity', 0);
+    });
 
   renderSrTable(container, title, tableColumns, data);
 }

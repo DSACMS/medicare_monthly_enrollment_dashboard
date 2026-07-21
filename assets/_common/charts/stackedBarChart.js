@@ -1,28 +1,33 @@
 import * as d3 from 'd3';
-import { CHART_COLORS, BAR_FILLS } from './colors';
 import renderSrTable from './accessibility';
 import {
-  appendChartSvg,
-  getChartSize,
+  appendTrendFigure,
+  buildLegendHtml,
+  resolveLegendTarget,
+  selectTickRows,
   formatPeriod,
-  createTooltip,
-  moveTooltip,
+  TREND_MARGIN,
 } from './utils';
 
-const formatCount = d3.format(',');
+const BAR_MAX_WIDTH = 24;
+const SEGMENT_GAP = 2;
+
+const MARGIN = { ...TREND_MARGIN, right: 16 };
 
 /**
  * Renders a stacked bar chart showing percent-of-total enrollment trends (0–100%).
+ * Assumes exactly two segments: segments[0] stacks on the bottom (square),
+ * segments[1] stacks on top (rounded top corners) — matches the mockup's MA/FFS split.
  *
  * @param {string} selector - DOM container selector
  * @param {Array}  data      - Enrollment data rows (pre-sorted ascending)
  * @param {Object} config
  * @param {Array}  config.segments  - [{ key, label, color? }]
  * @param {Function} [config.xAccessor]
- * @param {string} config.yLabel
- * @param {string} config.xLabel
+ * @param {Function} [config.xTickFormat] - Row → short x-axis tick text
  * @param {string} config.title
  * @param {Array}  config.tableColumns
+ * @param {string} [config.legendSelector] - External element to render the legend into
  */
 function renderStackedBarChart(selector, data, config) {
   const container = d3.select(selector);
@@ -33,133 +38,86 @@ function renderStackedBarChart(selector, data, config) {
   const {
     segments,
     xAccessor = formatPeriod,
-    yLabel,
-    xLabel,
+    xTickFormat = xAccessor,
     title,
     tableColumns,
+    legendSelector,
   } = config;
 
-  const { width, height, margin, innerWidth, innerHeight } = getChartSize(
-    container.node(),
-  );
+  const [bottom, top] = segments;
+  const legendItems = segments.map((seg) => ({ label: seg.label, color: seg.color }));
+  resolveLegendTarget(container, legendSelector).html(buildLegendHtml(legendItems));
 
-  const tooltip = createTooltip(container);
-  const { svg } = appendChartSvg(container, width, height, title);
-  const g = svg
-    .append('g')
-    .attr('transform', `translate(${margin.left},${margin.top})`);
+  const {
+    svg, tooltip, width: W, height: H,
+  } = appendTrendFigure(container, title);
 
   const xLabels = data.map(xAccessor);
-  const rotateLabels = xLabels.some((label) => String(label).length > 6);
-  const xScale = d3
-    .scaleBand()
-    .domain(xLabels)
-    .range([0, innerWidth])
-    .padding(0.2);
+  const yScale = d3.scaleLinear().domain([0, 100]).range([H - MARGIN.bottom, MARGIN.top]);
+  const xScale = d3.scalePoint().domain(xLabels).range([MARGIN.left, W - MARGIN.right]).padding(0.5);
+  const barWidth = Math.min(BAR_MAX_WIDTH, xScale.step() * 0.72);
+  const barX = (d) => xScale(xAccessor(d)) - barWidth / 2;
 
-  const yScale = d3.scaleLinear().domain([0, 100]).range([innerHeight, 0]);
-
-  const stack = d3
-    .stack()
-    .keys(segments.map((s) => s.key))
-    .value((d, key) => d[key] || 0);
-
-  const stackedData = stack(data);
-
-  g.append('g')
-    .attr('transform', `translate(0,${innerHeight})`)
-    .call(d3.axisBottom(xScale))
-    .selectAll('text')
-    .attr('fill', CHART_COLORS.axis)
-    .attr('transform', rotateLabels ? 'rotate(-35)' : null)
-    .style('text-anchor', rotateLabels ? 'end' : 'middle')
-    .style('font-size', '13px');
-
-  g.append('g')
-    .call(d3.axisLeft(yScale).ticks(5).tickFormat((d) => `${d}%`))
-    .selectAll('text')
-    .attr('fill', CHART_COLORS.axis)
-    .style('font-size', '13px');
-
-  g.append('text')
-    .attr('transform', 'rotate(-90)')
-    .attr('x', -innerHeight / 2)
-    .attr('y', -60)
-    .attr('text-anchor', 'middle')
-    .attr('fill', CHART_COLORS.axis)
-    .style('font-size', '15px')
-    .style('font-weight', '600')
-    .text(yLabel);
-
-  g.append('text')
-    .attr('x', innerWidth / 2)
-    .attr('y', innerHeight + 48)
-    .attr('text-anchor', 'middle')
-    .attr('fill', CHART_COLORS.axis)
-    .style('font-size', '15px')
-    .style('font-weight', '600')
-    .text(xLabel);
-
-  stackedData.forEach((layerData, i) => {
-    const seg = segments[i];
-    const style = BAR_FILLS[i % BAR_FILLS.length];
-    const color = seg.color || style.fill;
-
-    g.append('g')
-      .selectAll('rect')
-      .data(layerData)
-      .enter()
-      .append('rect')
-      .attr('x', (d) => xScale(xAccessor(d.data)))
-      .attr('y', (d) => yScale(d[1]))
-      .attr('height', (d) => yScale(d[0]) - yScale(d[1]))
-      .attr('width', xScale.bandwidth())
-      .attr('fill', color)
-      .attr('stroke', '#ffffff')
-      .attr('stroke-width', 1.5)
-      .on('mouseenter', (event, d) => {
-        d3.select(event.currentTarget).attr('fill-opacity', 0.65);
-        const row = d.data;
-        tooltip
-          .style('opacity', 1)
-          .html(
-            `<div class="chart-tooltip__row"><span class="chart-tooltip__label">${xLabel}</span><span>${xAccessor(row)}</span></div>`
-              + `<div class="chart-tooltip__row"><span class="chart-tooltip__label">${seg.label}</span><span>${formatCount(row[seg.countKey] || 0)}</span></div>`
-              + `<div class="chart-tooltip__row chart-tooltip__row--spaced"><span class="chart-tooltip__label">Percent Contribution</span><span>${Number(row[seg.key] || 0).toFixed(2)}%</span></div>`,
-          );
-        moveTooltip(tooltip, container.node(), event);
-      })
-      .on('mousemove', (event) => moveTooltip(tooltip, container.node(), event))
-      .on('mouseleave', (event) => {
-        d3.select(event.currentTarget).attr('fill-opacity', 1);
-        tooltip.style('opacity', 0);
-      });
+  yScale.ticks(5).forEach((t) => {
+    svg.append('line')
+      .attr('class', 'gridline')
+      .attr('x1', MARGIN.left).attr('x2', W - MARGIN.right)
+      .attr('y1', yScale(t)).attr('y2', yScale(t));
+    svg.append('text')
+      .attr('class', 'tick-txt')
+      .attr('x', MARGIN.left - 8).attr('y', yScale(t))
+      .attr('text-anchor', 'end').attr('dominant-baseline', 'middle')
+      .text(`${t}%`);
   });
 
-  const legend = svg
-    .append('g')
-    .attr('transform', `translate(${width - margin.right + 12},${margin.top})`);
+  const tickRows = selectTickRows(svg, data, xTickFormat, W - MARGIN.left - MARGIN.right);
+  svg.append('g').selectAll('text')
+    .data(tickRows)
+    .join('text')
+    .attr('class', 'tick-txt')
+    .attr('x', (d) => barX(d) + barWidth / 2)
+    .attr('y', H - MARGIN.bottom + 15)
+    .attr('text-anchor', 'middle')
+    .text((d) => xTickFormat(d));
 
-  segments.forEach((seg, i) => {
-    const style = BAR_FILLS[i % BAR_FILLS.length];
-    const color = seg.color || style.fill;
-    const row = legend.append('g').attr('transform', `translate(0,${i * 22})`);
+  const columns = svg.append('g');
 
-    row
-      .append('rect')
-      .attr('width', 16)
-      .attr('height', 16)
-      .attr('fill', style.pattern === 'hatch' ? `url(#pattern-${seg.key})` : color)
-      .attr('stroke', CHART_COLORS.axis)
-      .attr('stroke-width', 0.5);
+  data.forEach((d) => {
+    const pctBottom = Number(d[bottom.key]) || 0;
+    const pctTop = Number(d[top.key]) || 0;
+    const yBase = yScale(0);
+    const yBottomTop = yScale(pctBottom);
+    const yTopEdge = yScale(100);
+    const topHeight = Math.max(0, (yBottomTop - SEGMENT_GAP) - yTopEdge);
 
-    row
-      .append('text')
-      .attr('x', 22)
-      .attr('y', 12)
-      .attr('fill', CHART_COLORS.axis)
-      .style('font-size', '12px')
-      .text(seg.label);
+    const col = columns.append('g').style('cursor', 'pointer');
+
+    col.append('rect')
+      .attr('x', barX(d)).attr('width', barWidth)
+      .attr('y', yBottomTop).attr('height', Math.max(0, yBase - yBottomTop))
+      .attr('fill', bottom.color);
+
+    col.append('rect')
+      .attr('x', barX(d)).attr('width', barWidth)
+      .attr('y', yTopEdge).attr('height', topHeight)
+      .attr('fill', top.color)
+      .attr('rx', 4).attr('ry', 4);
+    col.append('rect')
+      .attr('x', barX(d)).attr('width', barWidth)
+      .attr('y', yTopEdge + Math.min(4, topHeight)).attr('height', Math.max(0, topHeight - 4))
+      .attr('fill', top.color);
+
+    col.on('mousemove', () => {
+      tooltip.html(
+        `<div class="tt-h">${xAccessor(d)}</div>`
+        + `<div class="tt-row"><span class="lab"><span class="k" style="background:${top.color}"></span>${top.label}</span><span class="val">${Math.round(pctTop)}%</span></div>`
+        + `<div class="tt-row"><span class="lab"><span class="k" style="background:${bottom.color}"></span>${bottom.label}</span><span class="val">${Math.round(pctBottom)}%</span></div>`,
+      );
+      const rect = svg.node().getBoundingClientRect();
+      tooltip.style('left', `${((barX(d) + barWidth / 2) * rect.width) / W}px`);
+      tooltip.style('top', `${((yScale(100) * rect.height) / H) + 6}px`);
+      tooltip.style('opacity', 1);
+    }).on('mouseleave', () => tooltip.style('opacity', 0));
   });
 
   renderSrTable(container, title, tableColumns, data);
