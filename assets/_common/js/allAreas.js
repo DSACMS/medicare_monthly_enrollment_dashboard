@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import requestDataset from '../../../src/router';
 import renderTable from '../tables/renderTable';
-import { getCssVar, sortMonthlyAscending } from '../charts/utils';
+import { getCssVar, sortMonthlyAscending, observeResize } from '../charts/utils';
 import {
   renderHospitalYearlyLineChart,
   renderHospitalMonthlyLineChart,
@@ -52,15 +52,67 @@ async function init() {
 
     renderTable('#medicare-table', columns, yearlyWithLatest);
 
-    renderHospitalYearlyLineChart('#national-hospital-yearly-line', yearlyWithLatest);
-    renderHospitalYearlyStackedBarChart('#national-hospital-yearly-bar', yearlyWithLatest);
-    renderDrugYearlyLineChart('#national-drug-yearly-line', yearlyWithLatest);
-    renderDrugYearlyStackedBarChart('#national-drug-yearly-bar', yearlyWithLatest);
+    const barLegend = { legendSelector: '#national-trend-bar-legend' };
+    const lineLegend = { legendSelector: '#national-trend-line-legend' };
 
-    renderHospitalMonthlyLineChart('#national-hospital-monthly-line', monthly);
-    renderHospitalMonthlyStackedBarChart('#national-hospital-monthly-bar', monthly);
-    renderDrugMonthlyLineChart('#national-drug-monthly-line', monthly);
-    renderDrugMonthlyStackedBarChart('#national-drug-monthly-bar', monthly);
+    const nationalTrendRenderers = {
+      hospital: {
+        yearly: {
+          line: () => renderHospitalYearlyLineChart('#national-trend-line', yearlyWithLatest, lineLegend),
+          bar: () => renderHospitalYearlyStackedBarChart('#national-trend-bar', yearlyWithLatest, barLegend),
+        },
+        monthly: {
+          line: () => renderHospitalMonthlyLineChart('#national-trend-line', monthly, lineLegend),
+          bar: () => renderHospitalMonthlyStackedBarChart('#national-trend-bar', monthly, barLegend),
+        },
+      },
+      drug: {
+        yearly: {
+          line: () => renderDrugYearlyLineChart('#national-trend-line', yearlyWithLatest, lineLegend),
+          bar: () => renderDrugYearlyStackedBarChart('#national-trend-bar', yearlyWithLatest, barLegend),
+        },
+        monthly: {
+          line: () => renderDrugMonthlyLineChart('#national-trend-line', monthly, lineLegend),
+          bar: () => renderDrugMonthlyStackedBarChart('#national-trend-bar', monthly, barLegend),
+        },
+      },
+    };
+
+    let activeTrendType = 'hospital';
+    let activeTrendRange = 'yearly';
+
+    const renderNationalTrend = () => {
+      const renderers = nationalTrendRenderers[activeTrendType][activeTrendRange];
+      renderers.line();
+      renderers.bar();
+      d3.select('#national-trend-sub')
+        .text(`National · ${activeTrendType === 'drug' ? 'Prescription Drug' : 'Hospital / Medical'}`);
+    };
+
+    const trendYears = yearlyWithLatest.map((d) => Number(d.year));
+    const yearlyRangeTab = document.querySelector('#national-range-tabs [data-range="yearly"]');
+    if (yearlyRangeTab && trendYears.length) {
+      yearlyRangeTab.textContent = `${d3.min(trendYears)}–${d3.max(trendYears)}`;
+    }
+
+    const trendRangeTabs = document.querySelectorAll('#national-range-tabs .chart-range-tab');
+    trendRangeTabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        activeTrendRange = tab.dataset.range;
+        trendRangeTabs.forEach((t) => t.setAttribute('aria-selected', String(t === tab)));
+        renderNationalTrend();
+      });
+    });
+
+    document.addEventListener('dashboard:typechange', (event) => {
+      const { type } = event.detail || {};
+      if (!type) return;
+      activeTrendType = type;
+      renderNationalTrend();
+    });
+
+    renderNationalTrend();
+    observeResize('#chartsView', renderNationalTrend);
 
     // IMPORTANT: keep MA/MA-PD as the SECOND item in each array below.
     // pieChart.js renders index 1 on the left side of the donut (both the
