@@ -4,15 +4,14 @@ import {
   sortYearlyAscending,
   sortMonthlyAscending,
   formatPeriod,
-  formatMillions,
 } from './utils';
 import { SERIES_COLORS } from './colors';
 import { hospitalYearly, hospitalMonthly } from '../tables/hospitalMedical/tableColumns';
 
 const HOSPITAL_LINE_SERIES = [
-  { key: 'ffsCount', label: 'FFS', color: SERIES_COLORS.ffs },
+  { key: 'totalEnrollees', label: 'TOTAL', color: SERIES_COLORS.total, primary: true },
   { key: 'maCount', label: 'MA', color: SERIES_COLORS.ma },
-  { key: 'totalEnrollees', label: 'TOTAL', color: SERIES_COLORS.total },
+  { key: 'ffsCount', label: 'FFS', color: SERIES_COLORS.ffs },
 ];
 
 const HOSPITAL_STACK_SEGMENTS = [
@@ -20,21 +19,22 @@ const HOSPITAL_STACK_SEGMENTS = [
   { key: 'maPercent', countKey: 'maCount', label: 'MA', color: SERIES_COLORS.ma },
 ];
 
+const monthTick = (d) => d.month.slice(0, 3);
+
 /**
  * Hospital/Medical — yearly enrollment count line chart.
  * @param {string} selector
  * @param {Array} data
+ * @param {Object} [extra]
  */
-export function renderHospitalYearlyLineChart(selector, data) {
+export function renderHospitalYearlyLineChart(selector, data, extra = {}) {
   const sorted = sortYearlyAscending(data);
   renderLineChart(selector, sorted, {
     series: HOSPITAL_LINE_SERIES,
     xAccessor: (d) => String(d.year),
-    xLabel: 'Year',
-    yLabel: 'Enrollment Count',
     title: 'Hospital/Medical Enrollment Count Yearly Trend',
     tableColumns: hospitalYearly,
-    yTickFormat: formatMillions,
+    ...extra,
   });
 }
 
@@ -42,17 +42,17 @@ export function renderHospitalYearlyLineChart(selector, data) {
  * Hospital/Medical — 12-month enrollment count line chart.
  * @param {string} selector
  * @param {Array} data
+ * @param {Object} [extra]
  */
-export function renderHospitalMonthlyLineChart(selector, data) {
+export function renderHospitalMonthlyLineChart(selector, data, extra = {}) {
   const sorted = sortMonthlyAscending(data);
   renderLineChart(selector, sorted, {
     series: HOSPITAL_LINE_SERIES,
     xAccessor: formatPeriod,
-    xLabel: 'Month',
-    yLabel: 'Enrollment Count',
+    xTickFormat: monthTick,
     title: 'Hospital/Medical Enrollment Count 12-Month Trend',
     tableColumns: hospitalMonthly,
-    yTickFormat: formatMillions,
+    ...extra,
   });
 }
 
@@ -60,16 +60,16 @@ export function renderHospitalMonthlyLineChart(selector, data) {
  * Hospital/Medical — yearly percent-of-total stacked bar chart.
  * @param {string} selector
  * @param {Array} data
+ * @param {Object} [extra]
  */
-export function renderHospitalYearlyStackedBarChart(selector, data) {
+export function renderHospitalYearlyStackedBarChart(selector, data, extra = {}) {
   const sorted = sortYearlyAscending(data);
   renderStackedBarChart(selector, sorted, {
     segments: HOSPITAL_STACK_SEGMENTS,
     xAccessor: (d) => String(d.year),
-    xLabel: 'Year',
-    yLabel: 'Percent of Total Enrollment',
     title: 'Hospital/Medical Percent of Total Enrollment Yearly Trend',
     tableColumns: hospitalYearly,
+    ...extra,
   });
 }
 
@@ -77,15 +77,16 @@ export function renderHospitalYearlyStackedBarChart(selector, data) {
  * Hospital/Medical — 12-month percent-of-total stacked bar chart.
  * @param {string} selector
  * @param {Array} data
+ * @param {Object} [extra]
  */
-export function renderHospitalMonthlyStackedBarChart(selector, data) {
+export function renderHospitalMonthlyStackedBarChart(selector, data, extra = {}) {
   const sorted = sortMonthlyAscending(data);
   renderStackedBarChart(selector, sorted, {
     segments: HOSPITAL_STACK_SEGMENTS,
     xAccessor: formatPeriod,
-    xLabel: 'Month',
-    yLabel: 'Percent of Total Enrollment',
+    xTickFormat: monthTick,
     title: 'Hospital/Medical Percent of Total Enrollment 12-Month Trend',
     tableColumns: hospitalMonthly,
+    ...extra,
   });
 }
