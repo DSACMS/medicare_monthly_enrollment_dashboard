@@ -4,6 +4,11 @@ import { createTooltip, moveTooltip } from './utils';
 import { joinCountyData, filterCountiesByState } from './joinCountyData';
 
 const NO_DATA_FILL = '#eee';
+const buttonX = 10;
+const buttonY = 10;
+const buttonWidth = 120;
+const buttonHeight = 40;
+const buttonRadius = 12;
 
 /**
  * Renders a single state's counties as a choropleth, colored by the same
@@ -74,10 +79,16 @@ function renderCountyMap(
   const joined = joinCountyData(stateCounties, countyRows);
 
   const projection = d3.geoAlbersUsa();
-  projection.fitSize([width, height], {
+  projection.fitExtent(
+  [
+    [0, 60],
+    [width, height],
+  ],
+  {
     type: 'FeatureCollection',
     features: stateCounties,
-  });
+  },
+  );
 
   const path = d3.geoPath(projection);
 
@@ -100,21 +111,22 @@ function renderCountyMap(
 
   backButton
     .append('rect')
-    .attr('x', 10)
-    .attr('y', 10)
-    .attr('width', 90)
-    .attr('height', 30)
-    .attr('rx', 15)
+    .attr('x', buttonX)
+    .attr('y', buttonY)
+    .attr('width', buttonWidth)
+    .attr('height', buttonHeight)
+    .attr('rx', buttonRadius)
     .attr('fill', '#fff')
     .attr('stroke', '#888');
 
   backButton
     .append('text')
-    .attr('x', 55)
-    .attr('y', 30)
+    .attr('x', buttonX + buttonWidth / 2)
+    .attr('y', buttonY + buttonHeight / 2)
     .attr('text-anchor', 'middle')
-    .attr('font-size', 13)
-    .text('\u2190 Back');
+    .attr('dominant-baseline', 'middle')
+    .attr('font-size', 25)
+    .text('Back');
 
   const tooltip = createTooltip(container).classed('county-map-tooltip', true);
 
