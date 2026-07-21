@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 import renderSrTable from './accessibility';
-import { createTooltip, moveTooltip } from './utils';
+import { createTooltip, moveTooltip, getCssVar } from './utils';
 import { joinCountyData, filterCountiesByState } from './joinCountyData';
 
 const NO_DATA_FILL = '#eee';
@@ -39,6 +39,7 @@ function renderCountyMap(
     metricCount = (d) => d.maCount,
     breakpoints,
     colors,
+    selectedCounty = null,
     title = `${stateFeature.properties.name} counties`,
     tableColumns = [
       { label: 'County', value: (d) => d.county },
@@ -118,7 +119,9 @@ function renderCountyMap(
 
   const tooltip = createTooltip(container).classed('county-map-tooltip', true);
 
-  svg
+  const isSelected = (entry) => Boolean(entry.data) && entry.data.county === selectedCounty;
+
+  const countyPaths = svg
     .append('g')
     .selectAll('path')
     .data(joined)
@@ -130,7 +133,8 @@ function renderCountyMap(
       const percent = metricPercent(entry.data);
       return Number.isFinite(percent) ? metricColor(percent) : NO_DATA_FILL;
     })
-    .attr('stroke', '#fff')
+    .attr('stroke', (entry) => (isSelected(entry) ? getCssVar('--brand-ink', '#013b63') : '#fff'))
+    .attr('stroke-width', (entry) => (isSelected(entry) ? 3 : 0.75))
     .style('cursor', 'pointer')
     .on('mousemove', (event, entry) => {
       const row = entry.data;
@@ -154,7 +158,15 @@ function renderCountyMap(
     })
     .on('mouseleave', () => {
       tooltip.style('opacity', 0).style('display', 'none');
+    })
+    .on('click', (event, entry) => {
+      if (!entry.data) return;
+      document.dispatchEvent(new CustomEvent('dashboard:countyselect', {
+        detail: { containerSelector, county: entry.data.county },
+      }));
     });
+
+  countyPaths.filter((entry) => isSelected(entry)).raise();
 
   renderSrTable(
     container,

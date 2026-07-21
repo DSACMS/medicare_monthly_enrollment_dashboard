@@ -20,6 +20,18 @@ const NO_DATA_FILL = '#979595';
 const PROJECTION_SCALE = 1300;
 
 
+// Module-level (not inside renderStateMap, which runs repeatedly) so
+// document only ever gets one dashboard:countyselect listener.
+const countyViewRegistry = {};
+
+document.addEventListener('dashboard:countyselect', (event) => {
+  const { containerSelector, county } = event.detail || {};
+  const entry = countyViewRegistry[containerSelector];
+  if (!entry) return;
+  entry.rerender(county);
+  document.dispatchEvent(new CustomEvent('dashboard:countychange', { detail: { county } }));
+});
+
 let cachedCountyFeatures = null;
 
 async function getCountyFeatures() {
@@ -80,6 +92,9 @@ async function getStateFeatures() {
  */
 
 function renderStateMap(containerSelector, data, config = {}) {
+  // Reaching here always means this container is back on the national view.
+  delete countyViewRegistry[containerSelector];
+
   let currentCountyRequestId = 0;
   if (!data?.length) {
     return {
@@ -149,20 +164,30 @@ function renderStateMap(containerSelector, data, config = {}) {
 
       if (requestId !== currentCountyRequestId) return;
 
-      renderCountyMap(
-        containerSelector,
-        countyFeatures,
-        stateFeature,
-        countyRows,
-        () => renderStateMap(containerSelector, data, config),
-        {
-          metricLabel,
-          metricPercent,
-          metricCount,
-          breakpoints: resolvedBreakpoints,
-          colors: resolvedColors,
-        },
-      );
+      const onBackFn = () => {
+        document.dispatchEvent(new CustomEvent('dashboard:stateclear'));
+        renderStateMap(containerSelector, data, config);
+      };
+
+      countyViewRegistry[containerSelector] = {
+        rerender: (selectedCounty) => renderCountyMap(
+          containerSelector,
+          countyFeatures,
+          stateFeature,
+          countyRows,
+          onBackFn,
+          {
+            metricLabel,
+            metricPercent,
+            metricCount,
+            breakpoints: resolvedBreakpoints,
+            colors: resolvedColors,
+            selectedCounty,
+          },
+        ),
+      };
+
+      countyViewRegistry[containerSelector].rerender(null);
     } catch (error) {
       if (requestId !== currentCountyRequestId) return;
       container.append('p').attr('role', 'alert').text('County map could not be loaded.');
