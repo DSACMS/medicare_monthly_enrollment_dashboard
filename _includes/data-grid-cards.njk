@@ -2,8 +2,23 @@
   <div class="data-grid-cards">
     <article class="data-grid-card data-grid-card--all-areas" aria-labelledby="all-areas-grid-title">
       <header class="data-grid-card__header">
-        <h3 id="all-areas-grid-title" class="data-grid-card__title">National Data by State</h3>
-        <p class="data-grid-card__instruction">Click a state to display on the map.</p>
+        <div class="data-grid-card__heading">
+          <h3 id="all-areas-grid-title" class="data-grid-card__title">National Data by State</h3>
+          <p class="data-grid-card__instruction">Click a state to display on the map. Click again to deselect.</p>
+        </div>
+        <button
+          type="button"
+          class="data-grid-card__expand"
+          id="all-areas-expand-trigger"
+          aria-haspopup="dialog"
+          aria-expanded="false"
+          aria-controls="all-areas-overlay"
+          aria-label="Expand National Data by State grid"
+        >
+          <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+            <path d="M6 2H2v4M10 2h4v4M2 10v4h4M14 10v4h-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
       </header>
       <div class="data-grid-card__body">
         <div class="data-grid-scroll-wrap">
@@ -61,8 +76,25 @@
 
     <article class="data-grid-card data-grid-card--county" aria-labelledby="county-grid-title">
       <header class="data-grid-card__header">
-        <h3 id="county-grid-title" class="data-grid-card__title">State Data by County</h3>
-        <p class="data-grid-card__instruction">Select a state to view its counties, then click a county to display on the map.</p>
+        <div class="data-grid-card__heading">
+          <h3 id="county-grid-title" class="data-grid-card__title">State Data by County</h3>
+          <p class="data-grid-card__instruction">Select a state to view its counties, then click a county to display on the map.</p>
+        </div>
+        <button
+          type="button"
+          class="data-grid-card__expand"
+          id="county-expand-trigger"
+          aria-haspopup="dialog"
+          aria-expanded="false"
+          aria-controls="county-overlay"
+          aria-label="Expand State Data by County grid"
+          disabled
+          aria-disabled="true"
+        >
+          <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+            <path d="M6 2H2v4M10 2h4v4M2 10v4h4M14 10v4h-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
       </header>
       <div class="data-grid-card__body">
         <div class="data-grid-scroll-wrap">
@@ -73,7 +105,7 @@
             role="region"
             aria-labelledby="county-grid-title"
           >
-            <p class="data-grid-placeholder">Select a state on the map or from the dropdown to view county enrollment.</p>
+            <p class="data-grid-placeholder">Select a state to view county enrollment.</p>
           </div>
         </div>
 
@@ -208,4 +240,48 @@
       <tbody id="county-drawer-tbody"></tbody>
     </table>
   </div>
+</div>
+
+<!--
+  Desktop "expand" overlays: state-level (All Areas) and county-level. Each
+  reparents that card's existing .data-grid-scroll-wrap into
+  .data-grid-overlay__body while open, so the live table/sort/click-to-map
+  wiring keeps working untouched — see allAreas.js's openOverlay/closeOverlay.
+-->
+<div class="data-grid-overlay-scrim" id="all-areas-overlay-scrim"></div>
+<div
+  class="data-grid-overlay"
+  id="all-areas-overlay"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="all-areas-overlay-title"
+>
+  <header class="data-grid-overlay__header">
+    <h3 class="data-grid-overlay__title" id="all-areas-overlay-title">National Data by State</h3>
+    <button type="button" class="data-grid-overlay__close" id="all-areas-overlay-close" aria-label="Minimize National Data by State grid">
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+        <path d="M2 2l12 12M14 2L2 14" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+      </svg>
+    </button>
+  </header>
+  <div class="data-grid-overlay__body" id="all-areas-overlay-body"></div>
+</div>
+
+<div class="data-grid-overlay-scrim" id="county-overlay-scrim"></div>
+<div
+  class="data-grid-overlay"
+  id="county-overlay"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="county-overlay-title"
+>
+  <header class="data-grid-overlay__header">
+    <h3 class="data-grid-overlay__title" id="county-overlay-title">State Data by County</h3>
+    <button type="button" class="data-grid-overlay__close" id="county-overlay-close" aria-label="Minimize State Data by County grid">
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+        <path d="M2 2l12 12M14 2L2 14" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+      </svg>
+    </button>
+  </header>
+  <div class="data-grid-overlay__body" id="county-overlay-body"></div>
 </div>

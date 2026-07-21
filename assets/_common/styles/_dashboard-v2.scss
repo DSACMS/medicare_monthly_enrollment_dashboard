@@ -1,6 +1,5 @@
-// NOTE: Pasted from a new design mockup. Not yet reconciled
-// with the CMS/USWDS brand tokens in brand-colors.scss / custom-styles.scss —
-// treat as a temporary standalone system until it's cleaned up.
+// Pasted from a new design mockup, not yet reconciled with the CMS/USWDS
+// brand tokens in brand-colors.scss / custom-styles.scss.
 
 @use '../../_common/styles/colors' as *;
 @use 'uswds-core' as *;
@@ -33,7 +32,6 @@ body {
   font-family: system-ui, -apple-system, "Segoe UI", "Public Sans", sans-serif;
   background: var(--page); color: var(--ink); line-height: 1.5; -webkit-font-smoothing: antialiased;
 }
-.wrap { max-width: 1240px; margin: 0 auto; padding: clamp(12px, 2.4vw, 20px); }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
 
 .segmented { display: inline-flex; background: var(--surface-2); border: 1px solid var(--border); border-radius: 11px; padding: 4px; gap: 4px; }
@@ -51,17 +49,6 @@ body {
 .topbar .rule { width: 1px; align-self: stretch; background: var(--border); margin: 2px 2px; }
 
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: 15px; box-shadow: var(--shadow); }
-.card__title { font-size: .95rem; font-weight: 700; margin: 0; }
-.card__sub   { font-size: .75rem; color: var(--ink-2); margin: 2px 0 0; }
-
-.dash-grid { display: grid; grid-template-columns: minmax(0, 1.16fr) minmax(0, 0.84fr); gap: 14px; align-items: stretch; }
-.col { display: grid; gap: 14px; align-content: stretch; }
-
-.dash-grid.is-grid { grid-template-columns: 1fr; }
-.tables-flex { display: grid; gap: 14px; }
-.tables-flex > .chart-block { min-width: 0; margin-top: 0; }
-
-.swatch { width: 11px; height: 11px; border-radius: 3px; flex: none; }
 
 .lab { font-size: .7rem; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: .05em; }
 
@@ -85,26 +72,7 @@ body {
 .dash-hero__val { display: inline-flex; align-items: baseline; gap: 8px; font-size: .78rem; color: var(--ink-2); font-weight: 600; white-space: nowrap; }
 .dash-hero__val b { color: var(--ink); font-weight: 700; font-size: .86rem; }
 
-.map-card { padding: 14px 16px; display: flex; flex-direction: column; }
-.map-head { margin-bottom: 6px; }
-
-#mapView { flex: 1; display: flex; flex-direction: column; }
-.map-figure { position: relative; flex: 1; display: flex; align-items: center; }
-.map-figure svg { width: 100%; height: auto; display: block; }
-.map-figure .state { stroke: var(--surface); stroke-width: .7px; cursor: pointer; transition: opacity .12s; }
-.map-figure .state:hover { opacity: .82; }
-.map-figure .state.is-selected { stroke: var(--ink); stroke-width: 2px; }
-.map-loading, .map-error { padding: 42px 20px; text-align: center; color: var(--ink-2); font-size: .9rem; }
-.legend-scale { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 10px; }
-.legend-scale .item { display: flex; align-items: center; gap: 6px; font-size: .72rem; color: var(--ink-2); }
-.legend-scale .chip { width: 13px; height: 13px; border-radius: 3px; }
-.focus-line { margin-top: 10px; font-size: .8rem; color: var(--ink-2); border-top: 1px dashed var(--border); padding-top: 9px; }
-.focus-line b { color: var(--ink); }
-.focus-line .sep { opacity: .5; margin: 0 6px; }
-
-.table-title { font-size: .82rem; font-weight: 700; margin: 2px 0 6px; }
-.table-scroll { overflow: auto; max-height: 320px; border: 1px solid var(--border); border-radius: 10px; }
-.table-scroll--tall { max-height: 560px; }
+// Used by the mobile drawers' <table class="data"> (data-grid-cards.njk).
 table.data { width: 100%; border-collapse: collapse; font-size: .81rem; }
 table.data th, table.data td { padding: 7px 11px; text-align: right; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; white-space: nowrap; }
 table.data th:first-child, table.data td:first-child { text-align: left; }
@@ -113,49 +81,8 @@ table.data thead th { position: sticky; top: 0; background: var(--surface-2); co
 table.data tbody tr:last-child td { border-bottom: 0; }
 table.data tbody tr:hover td { background: var(--surface-2); }
 
-.trend-card { padding: 14px 16px; display: flex; flex-direction: column; }
-.trend-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 2px; }
-#chartsView { flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; }
-.tabs { display: inline-flex; gap: 4px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 3px; }
-.tabs button { appearance: none; border: 0; background: transparent; font: inherit; font-weight: 600; font-size: .8rem; color: var(--ink-2); padding: 6px 12px; border-radius: 8px; cursor: pointer; }
-.tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(16,16,24,.12); }
-.chart-block { margin-top: 14px; }
-.chart-block__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 14px; margin-bottom: 4px; }
-.chart-block h4 { font-size: .82rem; font-weight: 700; margin: 0; }
-.chart-block h4 span { color: var(--ink-2); font-weight: 500; font-size: .74rem; }
-.chart-svg { width: 100%; height: auto; display: block; overflow: visible; }
-
-.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; }
-.legend .item { display: flex; align-items: center; gap: 7px; font-size: .77rem; color: var(--ink-2); font-weight: 600; }
-.legend .key { width: 17px; height: 3px; border-radius: 2px; }
-.legend .key.dot { width: 11px; height: 11px; border-radius: 50%; }
-
-.gridline { stroke: var(--grid); stroke-width: 1; }
-.axis-base { stroke: var(--baseline); stroke-width: 1; }
-.tick-txt { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
-.end-label { fill: var(--ink); font-size: 12px; font-weight: 700; }
-.series-line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
-.marker-ring { stroke: var(--surface); stroke-width: 2; }
-.crosshair { stroke: var(--baseline); stroke-width: 1; stroke-dasharray: 3 3; }
-
-.tt { position: absolute; pointer-events: none; z-index: 5; opacity: 0; transform: translate(-50%, -120%);
-  background: var(--surface); color: var(--ink); border: 1px solid var(--border);
-  box-shadow: var(--shadow); border-radius: 10px; padding: 9px 11px; font-size: .78rem; min-width: 118px; transition: opacity .08s; }
-.tt .tt-h { font-weight: 700; margin-bottom: 6px; }
-.tt .tt-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
-.tt .tt-row .lab { display: flex; align-items: center; gap: 7px; color: var(--ink-2); }
-.tt .tt-row .val { font-weight: 700; font-variant-numeric: tabular-nums; }
-.tt .k { width: 9px; height: 9px; border-radius: 2px; flex: none; }
-
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
-.footnote { font-size: .73rem; color: var(--ink-2); margin-top: 12px; }
 
-@media (max-width: 960px) {
-  .dash-grid { grid-template-columns: 1fr; }
-}
-@media (min-width: 961px) {
-  .dash-grid.is-grid { grid-template-columns: 1.5fr 1fr; }
-}
 @media (max-width: 520px) {
   .segmented { width: 100%; }
   .segmented button { flex: 1; justify-content: center; }
@@ -215,9 +142,17 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 }
 
 .data-grid-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
   background: #f7f8fa;
   border-bottom: 1px solid rgba(20, 20, 28, 0.10);
   padding: 12px 14px;
+}
+
+.data-grid-card__heading {
+  min-width: 0;
 }
 
 .data-grid-card__title {
@@ -232,6 +167,37 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   font-size: 0.8125rem;
   line-height: 1.4;
   color: var(--ink-2, #54545f);
+}
+
+// Own visibility rule, not the header's clip-rect hidden trick below (that
+// one intentionally keeps the <h3> AT-reachable on mobile).
+.data-grid-card__expand {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-2, #54545f);
+  cursor: pointer;
+}
+
+.data-grid-card__expand:hover {
+  background: rgba(20, 20, 28, 0.06);
+}
+
+.data-grid-card__expand:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+@media (max-width: 63.99em) {
+  .data-grid-card__expand {
+    display: none;
+  }
 }
 
 .data-grid-card__body {
@@ -250,7 +216,9 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 
 .data-grid-scroll {
   overflow: auto;
-  max-height: 560px;
+  // ~10 data rows (36.5px: 16px padding + 19.5px line-height + 1px border)
+  // plus the ~32.5px sticky header, at this rule's current font/padding values.
+  max-height: 400px;
   -webkit-overflow-scrolling: touch;
   scrollbar-gutter: stable;
 }
@@ -289,7 +257,9 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   color: #54545f;
 }
 
-.data-grid-card table {
+// :is(...) since the overlay reparents the same table node rather than
+// re-rendering it — see allAreas.js's openOverlay.
+:is(.data-grid-card, .data-grid-overlay) table {
   width: max-content;
   min-width: 100%;
   border-collapse: separate;
@@ -301,8 +271,8 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   overflow: visible;
 }
 
-.data-grid-card th,
-.data-grid-card td {
+:is(.data-grid-card, .data-grid-overlay) th,
+:is(.data-grid-card, .data-grid-overlay) td {
   padding: 8px 10px;
   text-align: right;
   border-bottom: 1px solid rgba(20, 20, 28, 0.10);
@@ -310,13 +280,13 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   white-space: nowrap;
 }
 
-.data-grid-card th:first-child,
-.data-grid-card td:first-child {
+:is(.data-grid-card, .data-grid-overlay) th:first-child,
+:is(.data-grid-card, .data-grid-overlay) td:first-child {
   text-align: left;
   font-weight: 600;
 }
 
-.data-grid-card thead th {
+:is(.data-grid-card, .data-grid-overlay) thead th {
   position: sticky;
   top: 0;
   z-index: 1;
@@ -347,12 +317,12 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   color: var(--brand-ink, #013b63);
 }
 
-.data-grid-card tbody tr:last-child td {
+:is(.data-grid-card, .data-grid-overlay) tbody tr:last-child td {
   border-bottom: 0;
 }
 
 @media (hover: hover) {
-  .data-grid-card tbody tr:not(.is-unselectable):hover td {
+  :is(.data-grid-card, .data-grid-overlay) tbody tr:not(.is-unselectable):hover td {
     background: #e5f3fa;
   }
 
@@ -362,27 +332,27 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   }
 }
 
-.data-grid-card tbody tr.is-clickable {
+:is(.data-grid-card, .data-grid-overlay) tbody tr.is-clickable {
   cursor: pointer;
 }
 
-.data-grid-card tbody tr.is-clickable:focus-visible {
+:is(.data-grid-card, .data-grid-overlay) tbody tr.is-clickable:focus-visible {
   outline: 2px solid var(--cms-blue, #015390);
   outline-offset: -2px;
 }
 
-// Active row highlight -- bold + accent bar 
+// Active row highlight -- bold + accent bar
 // Click the row again to clear
-.data-grid-card tbody tr.is-selected td {
+:is(.data-grid-card, .data-grid-overlay) tbody tr.is-selected td {
   color: var(--brand-ink, #013b63);
   font-weight: 700;
 }
 
-.data-grid-card tbody tr.is-selected td:first-child {
+:is(.data-grid-card, .data-grid-overlay) tbody tr.is-selected td:first-child {
   box-shadow: inset 3px 0 0 var(--brand-ink, #013b63);
 }
 
-.data-grid-card tbody tr.is-unselectable td,
+:is(.data-grid-card, .data-grid-overlay) tbody tr.is-unselectable td,
 .data-grid-drawer table.data tbody tr.is-unselectable td {
   color: var(--ink-2, #54545f);
   cursor: default;
@@ -406,11 +376,11 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   fill: currentColor;
 }
 
-.data-grid-card tr:nth-child(even) {
+:is(.data-grid-card, .data-grid-overlay) tr:nth-child(even) {
   background-color: transparent;
 }
 
-.data-grid-card .num-abbr {
+:is(.data-grid-card, .data-grid-overlay) .num-abbr {
   display: none;
 }
 
@@ -460,8 +430,9 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 }
 
 @media (max-width: 63.99em) {
-  .data-grid-card--all-areas .data-grid-scroll-wrap,
-  .data-grid-card--county .data-grid-scroll-wrap {
+  // Unscoped so this still matches while reparented into a .data-grid-overlay
+  // outside the card (the class is already card-specific).
+  .data-grid-scroll-wrap {
     display: none;
   }
 
@@ -555,9 +526,8 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   position: relative;
 }
 
-// display:none by default — this button is part of the mobile trigger UI
-// (see the @media (max-width: 63.99em) block below), not the desktop grid,
-// which highlights the selected row instead (see tr.is-selected).
+// display:none by default; shown only in the mobile trigger UI below.
+// Desktop highlights the selected row instead (see tr.is-selected).
 .data-grid-card__mobile-trigger-clear {
   display: none;
   position: absolute;
@@ -663,6 +633,112 @@ body.data-grid-drawer-open {
   .data-grid-drawer-overlay {
     display: none !important;
   }
+}
+
+// Desktop-only "expand" overlay — a centered popup card (not the drawer's
+// bottom sheet). See allAreas.js's openOverlay/closeOverlay.
+.data-grid-overlay-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(16, 16, 24, 0.45);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0s linear 0.25s;
+}
+
+.data-grid-overlay-scrim.is-open {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.25s ease, visibility 0s linear 0s;
+}
+
+.data-grid-overlay {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 1001;
+  // Matches .dashboard-root's max-width: 1200px / padding: 0 20px (custom-styles.scss)
+  // continuously across the ≥64em range, so this lines up with the hero card's width.
+  width: min(calc(100% - 40px), 1160px);
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface, #ffffff);
+  border-radius: 15px;
+  box-shadow: var(--shadow, 0 1px 2px rgba(16, 16, 24, 0.05), 0 4px 16px rgba(16, 16, 24, 0.05));
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, -50%) scale(0.97);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
+}
+
+.data-grid-overlay.is-open {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -50%) scale(1);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .data-grid-overlay,
+  .data-grid-overlay-scrim {
+    transition: none;
+  }
+}
+
+body.data-grid-overlay-open {
+  overflow: hidden;
+}
+
+// Desktop-only feature (mobile relies on the drawer instead); the JS's
+// desktopMql listener force-closes this when leaving desktop, and this
+// display:none is a defense-in-depth backstop for that.
+@media (max-width: 63.99em) {
+  .data-grid-overlay,
+  .data-grid-overlay-scrim {
+    display: none !important;
+  }
+}
+
+.data-grid-overlay__header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border, rgba(20, 20, 28, 0.10));
+}
+
+.data-grid-overlay__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ink, #15151b);
+}
+
+.data-grid-overlay__close {
+  border: 0;
+  background: transparent;
+  padding: 8px;
+  line-height: 0;
+  color: var(--ink-2, #54545f);
+  cursor: pointer;
+}
+
+// No overflow here — .data-grid-scroll (reparented in) is the only
+// scrollable area, same as the minimized card, just bigger.
+.data-grid-overlay__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+// The reparented .data-grid-scroll otherwise keeps its card-sized 560px cap
+// — override so expanding actually surfaces more rows, not just more width.
+.data-grid-overlay__body .data-grid-scroll {
+  max-height: calc(85vh - 57px); // 57px ~= .data-grid-overlay__header's rendered height
 }
 
 .data-grid-drawer__handle {

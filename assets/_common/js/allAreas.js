@@ -156,8 +156,6 @@ async function init() {
     });
 
     const latestMonth = sortMonthlyAscending(monthly).at(-1);
-    d3.select('#medicare-enrollment-hero-footnote')
-      .text(`*Total Enrollment as of ${latestMonth.month} ${latestMonth.year}`);
     d3.select('#dashboard-title-date')
       .text(`${latestMonth.month} ${latestMonth.year}`);
 
@@ -237,11 +235,15 @@ async function init() {
     let currentCountyRows = [];
     let activeDashboardType = 'hospital';
 
-    // Forward-declared: selectStateFromGrid (below) needs to call these to
-    // toggle a row off, but they're only defined later once their own
-    // dependencies (mapConfigs, renderCountyGrid, etc.) exist.
+    // Forward-declared: selectStateFromGrid (below) calls these, but they're
+    // defined later once mapConfigs/renderCountyGrid etc. exist.
     let resetMapToNational;
     let clearSelectedState;
+
+    // Forward-declared: the desktopMql listener below force-closes these,
+    // but they're defined later once their DOM refs exist.
+    let closeOverlay;
+    let closeCountyOverlay;
 
     // Desktop grids' sort state, one per grid. index 0/'asc' matches each
     // grid's previous hardcoded default (name column, A→Z).
@@ -267,9 +269,8 @@ async function init() {
       });
     };
 
-    // Clicking the already-selected row again deselects it (mirrors the
-    // desktop grid's old X-button behavior); clicking a different row swaps
-    // the map to that state, same as before.
+    // Clicking the already-selected row again deselects it; a different
+    // row swaps the map to that state, same as before.
     const selectStateFromGrid = (stateName) => {
       if (selectedState?.stateName === stateName) {
         clearSelectedState();
@@ -378,6 +379,14 @@ async function init() {
       search: document.querySelector('#all-areas-drawer-search'),
       theadRow: document.querySelector('#all-areas-drawer-thead-row'),
       tbody: document.querySelector('#all-areas-drawer-tbody'),
+    };
+
+    const overlayEls = {
+      trigger: document.querySelector('#all-areas-expand-trigger'),
+      scrim: document.querySelector('#all-areas-overlay-scrim'),
+      panel: document.querySelector('#all-areas-overlay'),
+      body: document.querySelector('#all-areas-overlay-body'),
+      closeBtn: document.querySelector('#all-areas-overlay-close'),
     };
 
     let drawerSort = { index: 0, direction: 'asc' }; // State A→Z, matches desktop table's default
@@ -573,13 +582,16 @@ async function init() {
       });
     }
 
-    // Force-close if the viewport crosses into desktop while the drawer is
-    // open (matches the CSS `display:none !important` desktop guard).
+    // Force-close the drawers on entering desktop, and the expand overlays
+    // on leaving it — matches each one's own CSS display:none guard.
     const desktopMql = window.matchMedia('(min-width: 64em)');
     desktopMql.addEventListener('change', (event) => {
       if (event.matches) {
         closeDrawer();
         closeCountyDrawer();
+      } else {
+        closeOverlay();
+        closeCountyOverlay();
       }
     });
 
@@ -601,6 +613,14 @@ async function init() {
       tbody: document.querySelector('#county-drawer-tbody'),
     };
 
+    const countyOverlayEls = {
+      trigger: document.querySelector('#county-expand-trigger'),
+      scrim: document.querySelector('#county-overlay-scrim'),
+      panel: document.querySelector('#county-overlay'),
+      body: document.querySelector('#county-overlay-body'),
+      closeBtn: document.querySelector('#county-overlay-close'),
+    };
+
     let countyDrawerSort = { index: 0, direction: 'asc' };
     let countyDrawerSearchTerm = '';
     let countyDrawerLastFocusedEl = null;
@@ -619,6 +639,7 @@ async function init() {
       countyDrawerEls.triggerDot?.classList.toggle('is-selected', hasCounty);
       if (countyDrawerEls.triggerClear) countyDrawerEls.triggerClear.hidden = !hasCounty;
       if (countyDrawerEls.trigger) countyDrawerEls.trigger.disabled = !hasState;
+      if (countyOverlayEls.trigger) countyOverlayEls.trigger.disabled = !hasState;
     };
 
     const countyDrawerFilterSort = (type) => {
@@ -792,13 +813,129 @@ async function init() {
       updateCountyDrawerTriggerValue();
     });
 
+    // ---- Desktop "expand" overlays (state-level, county-level) ----
+    // Reparents the card's live .data-grid-scroll-wrap into the overlay body
+    // while open (and back on close) — nothing here re-renders the table.
+
+    const allAreasScrollWrapEl = document.querySelector('#all-areas-table')?.closest('.data-grid-scroll-wrap');
+    const allAreasScrollWrapHome = allAreasScrollWrapEl?.parentElement;
+    const countyScrollWrapEl = document.querySelector('#county-table')?.closest('.data-grid-scroll-wrap');
+    const countyScrollWrapHome = countyScrollWrapEl?.parentElement;
+
+    let overlayLastFocusedEl = null;
+    let countyOverlayLastFocusedEl = null;
+
+    const trapOverlayFocus = (panel, event) => {
+      if (event.key !== 'Tab' || !panel) return;
+      const focusable = getFocusableEls(panel);
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    const onOverlayKeydown = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeOverlay();
+        return;
+      }
+      trapOverlayFocus(overlayEls.panel, event);
+    };
+
+    const onCountyOverlayKeydown = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeCountyOverlay();
+        return;
+      }
+      trapOverlayFocus(countyOverlayEls.panel, event);
+    };
+
+    const openOverlay = () => {
+      if (!overlayEls.panel || !overlayEls.scrim || !allAreasScrollWrapEl) return;
+      closeCountyOverlay();
+      closeDrawer();
+      closeCountyDrawer();
+      overlayLastFocusedEl = document.activeElement;
+      overlayEls.body.appendChild(allAreasScrollWrapEl);
+      bindScrollAffordance(document.querySelector('#all-areas-table'));
+      overlayEls.scrim.classList.add('is-open');
+      overlayEls.panel.classList.add('is-open');
+      overlayEls.trigger?.setAttribute('aria-expanded', 'true');
+      document.body.classList.add('data-grid-overlay-open');
+      document.addEventListener('keydown', onOverlayKeydown);
+      overlayEls.closeBtn?.focus();
+    };
+
+    closeOverlay = () => {
+      if (!overlayEls.panel || !overlayEls.scrim || !allAreasScrollWrapHome) return;
+      allAreasScrollWrapHome.appendChild(allAreasScrollWrapEl);
+      bindScrollAffordance(document.querySelector('#all-areas-table'));
+      overlayEls.scrim.classList.remove('is-open');
+      overlayEls.panel.classList.remove('is-open');
+      overlayEls.trigger?.setAttribute('aria-expanded', 'false');
+      document.body.classList.remove('data-grid-overlay-open');
+      document.removeEventListener('keydown', onOverlayKeydown);
+      (overlayLastFocusedEl || overlayEls.trigger)?.focus();
+    };
+
+    if (overlayEls.trigger) {
+      overlayEls.trigger.addEventListener('click', openOverlay);
+      overlayEls.closeBtn?.addEventListener('click', closeOverlay);
+      overlayEls.scrim?.addEventListener('click', closeOverlay);
+    }
+
+    const openCountyOverlay = () => {
+      if (!countyOverlayEls.panel || !countyOverlayEls.scrim || !countyScrollWrapEl
+        || countyOverlayEls.trigger?.disabled) return;
+      closeOverlay();
+      closeDrawer();
+      closeCountyDrawer();
+      countyOverlayLastFocusedEl = document.activeElement;
+      countyOverlayEls.body.appendChild(countyScrollWrapEl);
+      bindScrollAffordance(document.querySelector('#county-table'));
+      countyOverlayEls.scrim.classList.add('is-open');
+      countyOverlayEls.panel.classList.add('is-open');
+      countyOverlayEls.trigger?.setAttribute('aria-expanded', 'true');
+      document.body.classList.add('data-grid-overlay-open');
+      document.addEventListener('keydown', onCountyOverlayKeydown);
+      countyOverlayEls.closeBtn?.focus();
+    };
+
+    closeCountyOverlay = () => {
+      if (!countyOverlayEls.panel || !countyOverlayEls.scrim || !countyScrollWrapHome) return;
+      countyScrollWrapHome.appendChild(countyScrollWrapEl);
+      bindScrollAffordance(document.querySelector('#county-table'));
+      countyOverlayEls.scrim.classList.remove('is-open');
+      countyOverlayEls.panel.classList.remove('is-open');
+      countyOverlayEls.trigger?.setAttribute('aria-expanded', 'false');
+      document.body.classList.remove('data-grid-overlay-open');
+      document.removeEventListener('keydown', onCountyOverlayKeydown);
+      (countyOverlayLastFocusedEl || countyOverlayEls.trigger)?.focus();
+    };
+
+    if (countyOverlayEls.trigger) {
+      countyOverlayEls.trigger.addEventListener('click', openCountyOverlay);
+      countyOverlayEls.closeBtn?.addEventListener('click', closeCountyOverlay);
+      countyOverlayEls.scrim?.addEventListener('click', closeCountyOverlay);
+    }
+
     // Base text read from the njk markup ("State data by county") so the
     // state-name prefix stays in sync with it instead of duplicating the string.
     const countyGridTitleEl = document.querySelector('#county-grid-title');
+    const countyOverlayTitleEl = document.querySelector('#county-overlay-title');
     const countyGridBaseTitle = countyGridTitleEl?.textContent.trim() || 'State Data by County';
     const updateCountyGridTitle = (stateName) => {
-      if (!countyGridTitleEl) return;
-      countyGridTitleEl.textContent = stateName ? `${stateName} - ${countyGridBaseTitle}` : countyGridBaseTitle;
+      const text = stateName ? `${stateName} - ${countyGridBaseTitle}` : countyGridBaseTitle;
+      if (countyGridTitleEl) countyGridTitleEl.textContent = text;
+      if (countyOverlayTitleEl) countyOverlayTitleEl.textContent = text;
     };
 
     const renderCountyGridTable = (type = activeDashboardType) => {
