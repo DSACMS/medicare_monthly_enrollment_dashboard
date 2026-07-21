@@ -5,7 +5,12 @@ const MONTH_ORDER = {
   July: 7, August: 8, September: 9, October: 10, November: 11, December: 12,
 };
 
-export const CHART_MARGIN = { top: 24, right: 140, bottom: 56, left: 80 };
+export const TREND_CHART_WIDTH = 560;
+export const TREND_CHART_HEIGHT = 270;
+
+export const TREND_MARGIN = {
+  top: 12, right: 100, bottom: 30, left: 44,
+};
 
 export function clearContainer(selector) {
   return d3.select(selector).html('');
@@ -52,57 +57,120 @@ export function createTooltip(container) {
 
 export function moveTooltip(tooltip, containerNode, event) {
   const [x, y] = d3.pointer(event, containerNode);
-  tooltip.style('left', `${x + 16}px`).style('top', `${y + 16}px`);
+  const offset = 16;
+
+  const containerRect = containerNode.getBoundingClientRect();
+  const tooltipRect = tooltip.node().getBoundingClientRect();
+
+  let left = x + offset;
+  let top = y + offset;
+
+  if (left + tooltipRect.width > containerRect.width) {
+    left = x - offset - tooltipRect.width;
+  }
+
+  if (top + tooltipRect.height > containerRect.height) {
+    top = y - offset - tooltipRect.height;
+  }
+
+  left = Math.max(0, left);
+  top = Math.max(0, top);
+
+  tooltip.style('left', `${left}px`).style('top', `${top}px`);
 }
 
-export function getChartSize(containerNode, height = 400) {
-  const width = containerNode.getBoundingClientRect().width || 800;
-  const margin = CHART_MARGIN;
-  return {
-    width,
-    height,
-    margin,
-    innerWidth: width - margin.left - margin.right,
-    innerHeight: height - margin.top - margin.bottom,
-  };
+export function buildLegendHtml(items) {
+  return items
+    .map((it) => `<span class="item"><span class="key${it.dot ? ' dot' : ''}" style="background:${it.color}"></span>${it.label}</span>`)
+    .join('');
 }
 
-export function appendChartSvg(container, width, height, ariaLabel) {
-  const wrapper = container
+export function resolveLegendTarget(container, legendSelector) {
+  return legendSelector
+    ? d3.select(legendSelector)
+    : container.append('div').attr('class', 'legend');
+}
+
+function pickEvenIndices(count, max) {
+  if (count <= max) return Array.from({ length: count }, (_, i) => i);
+  const step = Math.ceil(count / max);
+  const indices = [];
+  for (let i = 0; i < count; i += step) indices.push(i);
+  return indices;
+}
+
+export function selectTickRows(svg, data, tickFormat, availableWidth, minGap = 16) {
+  const probe = svg.append('text').attr('class', 'tick-txt').style('visibility', 'hidden');
+  let maxWidth = 0;
+  data.forEach((d) => {
+    probe.text(tickFormat(d));
+    maxWidth = Math.max(maxWidth, probe.node().getComputedTextLength());
+  });
+  probe.remove();
+
+  const maxCount = Math.max(2, Math.floor(availableWidth / (maxWidth + minGap)));
+  return pickEvenIndices(data.length, maxCount).map((i) => data[i]);
+}
+
+export function appendTrendFigure(container, title) {
+  container.style('position', 'relative');
+
+  const figure = container
     .append('div')
+    .attr('class', 'chart-figure')
     .attr('role', 'img')
-    .attr('aria-label', ariaLabel);
+    .attr('aria-label', title);
 
-  const svg = wrapper
+  // The figure is flexed to fill whatever height the card actually has
+  // (see .chart-figure / #chartsView in _dashboard-v2.scss), which varies
+  // with the map's real rendered height — so the viewBox is sized to match
+  // the figure's actual box rather than a fixed constant, letting the plot
+  // use all the available space without distortion or dead space.
+  const rect = figure.node().getBoundingClientRect();
+  const width = Math.round(rect.width) || TREND_CHART_WIDTH;
+  const height = Math.round(rect.height) || TREND_CHART_HEIGHT;
+
+  const svg = figure
     .append('svg')
-    .attr('width', '100%')
-    .attr('height', height)
+    .attr('class', 'chart-svg')
     .attr('viewBox', `0 0 ${width} ${height}`)
+    .attr('preserveAspectRatio', 'none')
     .attr('aria-hidden', 'true')
     .attr('focusable', 'false');
 
-  return { svg, wrapper };
+  const tooltip = container.append('div').attr('class', 'tt').attr('aria-hidden', 'true');
+
+  return {
+    svg, tooltip, width, height,
+  };
 }
 
-export function addHatchPattern(svg, id, stroke, baseFill = '#f8f9fa') {
-  const defs = svg.select('defs').empty() ? svg.append('defs') : svg.select('defs');
+// Re-measures `selector`'s box whenever it changes size (e.g. the map card
+// finishing its async load and growing taller, a breakpoint stacking the
+// grid, or a window resize) and calls `onResize` so charts can redraw at
+// the correct size. No-ops on browsers without ResizeObserver — charts just
+// keep their initial-render size.
+export function observeResize(selector, onResize) {
+  if (typeof ResizeObserver === 'undefined') return undefined;
+  const node = document.querySelector(selector);
+  if (!node) return undefined;
 
-  const pattern = defs
-    .append('pattern')
-    .attr('id', id)
-    .attr('patternUnits', 'userSpaceOnUse')
-    .attr('width', 6)
-    .attr('height', 6)
-    .attr('patternTransform', 'rotate(45)');
+  let lastWidth = null;
+  let lastHeight = null;
+  let frame = null;
 
-  pattern.append('rect').attr('width', 6).attr('height', 6).attr('fill', baseFill);
+  const observer = new ResizeObserver((entries) => {
+    const { width, height } = entries[0].contentRect;
+    const w = Math.round(width);
+    const h = Math.round(height);
+    if (w === lastWidth && h === lastHeight) return;
+    lastWidth = w;
+    lastHeight = h;
 
-  pattern
-    .append('line')
-    .attr('x1', 0)
-    .attr('y1', 0)
-    .attr('x2', 0)
-    .attr('y2', 6)
-    .attr('stroke', stroke)
-    .attr('stroke-width', 2);
+    if (frame) cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(onResize);
+  });
+
+  observer.observe(node);
+  return observer;
 }

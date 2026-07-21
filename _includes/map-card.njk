@@ -1,0 +1,80 @@
+<section class="map-cards">
+
+  <div class="card map-card dashboard-map-panel" data-map-dashboard-type="hospital" aria-hidden="false">
+    <div class="map-card__body">
+      <span class="card__title">
+        Medicare Advantage enrollment by state
+      </span>
+      <br>
+      <span class="lab">
+        Share of Medicare enrollees in Medicare Advantage and other health plans
+      </span>
+
+      <div class="state-map-selection">
+            <div class="usa-combo-box">
+                  <select class="usa-select" name="medicare-state" id="medicare-state-selector">
+                    <option value="">Select a state</option>
+                    {% for state in usStates %}
+                    <option value="{{ state }}">{{ state }}</option>
+                    {% endfor %}
+                  </select>
+            </div>
+            <div class="table-container flex-1 width-full margin-top-2" id="medicare-enrollment-state-map"></div>
+        </div>
+    </div>
+  </div>
+
+  <div class="card map-card dashboard-map-panel" data-map-dashboard-type="drug" hidden aria-hidden="true">
+    <div class="map-card__body">
+      <span class="card__title">
+        Prescription Drug enrollment by state
+      </span>
+      <br>
+      <span class="lab">
+        Share of Medicare Prescription Drug enrollees in MAPD vs. PDP plans
+      </span>
+
+      <div class="state-map-selection">
+            <div class="usa-combo-box">
+                  <select class="usa-select" name="drug-state" id="drug-state-selector">
+                    <option value="">Select a state</option>
+                    {% for state in usStates %}
+                    <option value="{{ state }}">{{ state }}</option>
+                    {% endfor %}
+                  </select>
+            </div>
+            <div class="table-container flex-1 width-full margin-top-2" id="medicare-mapd-state-map"></div>
+        </div>
+    </div>
+  </div>
+
+  <div class="card map-card">
+    <div class="map-card__body">
+      <div class="trend-head">
+        <div>
+          <span class="card__title" id="national-trend-title">
+            Enrollment trends over time
+          </span>
+          <p class="card__sub" id="national-trend-sub">National · Hospital / Medical</p>
+        </div>
+        <div class="tabs" id="national-range-tabs" role="tablist" aria-label="Time range">
+          <button type="button" role="tab" class="chart-range-tab" aria-selected="true" data-range="yearly">Yearly</button>
+          <button type="button" role="tab" class="chart-range-tab" aria-selected="false" data-range="monthly">12 months</button>
+        </div>
+      </div>
+
+      <div id="chartsView">
+        <div class="chart-block">
+          <div class="chart-block__head"><h4>Enrollment Count</h4><div class="legend" id="national-trend-line-legend"></div></div>
+          <div class="table-container" id="national-trend-line"></div>
+        </div>
+
+        <div class="chart-block">
+          <div class="chart-block__head"><h4>Percent of Total Enrollment</h4><div class="legend" id="national-trend-bar-legend"></div></div>
+          <div class="table-container" id="national-trend-bar"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>

@@ -4,15 +4,14 @@ import {
   sortYearlyAscending,
   sortMonthlyAscending,
   formatPeriod,
-  formatMillions,
 } from './utils';
 import { SERIES_COLORS } from './colors';
 import { drugYearly, drugMonthly } from '../tables/prescriptionDrug/tableColumns';
 
 const DRUG_LINE_SERIES = [
-  { key: 'pdpCount', label: 'PDP', color: SERIES_COLORS.ffs },
+  { key: 'drugTotal', label: 'TOTAL', color: SERIES_COLORS.total, primary: true },
   { key: 'mapdCount', label: 'MA-PD', color: SERIES_COLORS.ma },
-  { key: 'drugTotal', label: 'TOTAL', color: SERIES_COLORS.total },
+  { key: 'pdpCount', label: 'PDP', color: SERIES_COLORS.ffs },
 ];
 
 const DRUG_STACK_SEGMENTS = [
@@ -20,21 +19,22 @@ const DRUG_STACK_SEGMENTS = [
   { key: 'mapdPercent', countKey: 'mapdCount', label: 'MA-PD', color: SERIES_COLORS.ma },
 ];
 
+const monthTick = (d) => d.month.slice(0, 3);
+
 /**
  * Prescription Drug — yearly enrollment count line chart.
  * @param {string} selector
  * @param {Array} data
+ * @param {Object} [extra]
  */
-export function renderDrugYearlyLineChart(selector, data) {
+export function renderDrugYearlyLineChart(selector, data, extra = {}) {
   const sorted = sortYearlyAscending(data);
   renderLineChart(selector, sorted, {
     series: DRUG_LINE_SERIES,
     xAccessor: (d) => String(d.year),
-    xLabel: 'Year',
-    yLabel: 'Enrollment Count',
     title: 'Prescription Drug Enrollment Count Yearly Trend',
     tableColumns: drugYearly,
-    yTickFormat: formatMillions,
+    ...extra,
   });
 }
 
@@ -42,17 +42,17 @@ export function renderDrugYearlyLineChart(selector, data) {
  * Prescription Drug — 12-month enrollment count line chart.
  * @param {string} selector
  * @param {Array} data
+ * @param {Object} [extra]
  */
-export function renderDrugMonthlyLineChart(selector, data) {
+export function renderDrugMonthlyLineChart(selector, data, extra = {}) {
   const sorted = sortMonthlyAscending(data);
   renderLineChart(selector, sorted, {
     series: DRUG_LINE_SERIES,
     xAccessor: formatPeriod,
-    xLabel: 'Month',
-    yLabel: 'Enrollment Count',
+    xTickFormat: monthTick,
     title: 'Prescription Drug Enrollment Count 12-Month Trend',
     tableColumns: drugMonthly,
-    yTickFormat: formatMillions,
+    ...extra,
   });
 }
 
@@ -60,16 +60,16 @@ export function renderDrugMonthlyLineChart(selector, data) {
  * Prescription Drug — yearly percent-of-total stacked bar chart.
  * @param {string} selector
  * @param {Array} data
+ * @param {Object} [extra]
  */
-export function renderDrugYearlyStackedBarChart(selector, data) {
+export function renderDrugYearlyStackedBarChart(selector, data, extra = {}) {
   const sorted = sortYearlyAscending(data);
   renderStackedBarChart(selector, sorted, {
     segments: DRUG_STACK_SEGMENTS,
     xAccessor: (d) => String(d.year),
-    xLabel: 'Year',
-    yLabel: 'Percent of Total Enrollment',
     title: 'Prescription Drug Percent of Total Enrollment Yearly Trend',
     tableColumns: drugYearly,
+    ...extra,
   });
 }
 
@@ -77,15 +77,16 @@ export function renderDrugYearlyStackedBarChart(selector, data) {
  * Prescription Drug — 12-month percent-of-total stacked bar chart.
  * @param {string} selector
  * @param {Array} data
+ * @param {Object} [extra]
  */
-export function renderDrugMonthlyStackedBarChart(selector, data) {
+export function renderDrugMonthlyStackedBarChart(selector, data, extra = {}) {
   const sorted = sortMonthlyAscending(data);
   renderStackedBarChart(selector, sorted, {
     segments: DRUG_STACK_SEGMENTS,
     xAccessor: formatPeriod,
-    xLabel: 'Month',
-    yLabel: 'Percent of Total Enrollment',
+    xTickFormat: monthTick,
     title: 'Prescription Drug Percent of Total Enrollment 12-Month Trend',
     tableColumns: drugMonthly,
+    ...extra,
   });
 }

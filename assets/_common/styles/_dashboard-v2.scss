@@ -81,11 +81,49 @@ table.data thead th { position: sticky; top: 0; background: var(--surface-2); co
 table.data tbody tr:last-child td { border-bottom: 0; }
 table.data tbody tr:hover td { background: var(--surface-2); }
 
+.trend-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 2px; }
+#chartsView { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.tabs { display: inline-flex; gap: 4px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 3px; }
+.tabs button { appearance: none; border: 0; background: transparent; font: inherit; font-weight: 600; font-size: .8rem; color: var(--ink-2); padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(16,16,24,.12); }
+.chart-block { margin-top: 14px; flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.chart-block .table-container { overflow: visible; margin-top: 0; flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.chart-block .chart-figure { flex: 1; min-height: 0; }
+.chart-block__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 14px; margin-bottom: 4px; }
+.chart-block h4 { font-size: .82rem; font-weight: 700; margin: 0; }
+.chart-block h4 span { color: var(--ink-2); font-weight: 500; font-size: .74rem; }
+.chart-svg { width: 100%; height: auto; display: block; overflow: visible; }
+.chart-block .chart-svg { height: 100%; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.legend .item { display: flex; align-items: center; gap: 7px; font-size: .77rem; color: var(--ink-2); font-weight: 600; }
+.legend .key { width: 17px; height: 3px; border-radius: 2px; }
+.legend .key.dot { width: 11px; height: 11px; border-radius: 50%; }
+
+.gridline { stroke: var(--grid); stroke-width: 1; }
+.axis-base { stroke: var(--baseline); stroke-width: 1; }
+.tick-txt { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.end-label { fill: var(--ink); font-size: 12px; font-weight: 700; }
+.series-line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.marker-ring { stroke: var(--surface); stroke-width: 2; }
+.crosshair { stroke: var(--baseline); stroke-width: 1; stroke-dasharray: 3 3; }
+
+.tt { position: absolute; pointer-events: none; z-index: 5; opacity: 0; transform: translate(-50%, -120%);
+  background: var(--surface); color: var(--ink); border: 1px solid var(--border);
+  box-shadow: var(--shadow); border-radius: 10px; padding: 9px 11px; font-size: .78rem; min-width: 118px; transition: opacity .08s; }
+.tt .tt-h { font-weight: 700; margin-bottom: 6px; }
+.tt .tt-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.tt .tt-row .lab { display: flex; align-items: center; gap: 7px; color: var(--ink-2); }
+.tt .tt-row .val { font-weight: 700; font-variant-numeric: tabular-nums; }
+.tt .k { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
 
 @media (max-width: 520px) {
   .segmented { width: 100%; }
   .segmented button { flex: 1; justify-content: center; }
+  .usa-combo-box__input { width: 50% } //here the combo-box width is decreased!
+  .usa-combo-box__input-button-separator { display: none;}
 
   .dash-hero { flex-direction: column; align-items: stretch; text-align: center; gap: 14px; }
 
@@ -137,6 +175,26 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   box-shadow: 0 1px 2px rgba(16, 16, 24, 0.05), 0 4px 16px rgba(16, 16, 24, 0.05);
   overflow: hidden;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+// here are styles for map-card
+
+.usa-combo-box__input {
+  border-radius: 12px;
+  border: 1px solid var(--baseline);
+}
+
+.map-cards {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.map-card {
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
 }
@@ -833,4 +891,15 @@ body.data-grid-overlay-open {
   white-space: normal !important;
   color: var(--ink-2, #54545f);
   padding: 24px 14px !important;
+}
+
+.map-card__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+@media (max-width: 960px) {
+  .map-cards { grid-template-columns: 1fr; }
+  .chart-block .chart-figure { min-height: 220px; }
 }
