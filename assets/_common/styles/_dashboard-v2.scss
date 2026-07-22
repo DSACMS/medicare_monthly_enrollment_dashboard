@@ -225,10 +225,85 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 .usa-combo-box__input {
   border-radius: 15px;
   border: 1px solid var(--baseline);
+  // USWDS's base form-control rule bakes in margin-top: 0.5rem (for
+  // stacking a field under a label), which throws off centering against
+  // the back button here since it sits in a plain button+select row, not
+  // a labeled-field stack.
+  margin-top: 0;
+}
+
+.map-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 14px;
+  margin-bottom: 2px;
+}
+
+.state-map-selection {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .usa-combo-box {
-  width: 50%;
+  width: 220px;
+  max-width: 100%;
+}
+
+.map-card__back {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.5rem;
+  padding: 0 12px;
+  border: 1px solid var(--baseline);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.map-card__back:hover {
+  background: var(--surface-2);
+}
+
+@media (max-width: 63.99em) {
+  .map-card__head {
+    flex-direction: column;
+  }
+
+  .state-map-selection {
+    width: 100%;
+  }
+
+  .usa-combo-box {
+    width: 100%;
+  }
+}
+
+.map-card__divider {
+  margin: 14px 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+.map-card__histogram-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  border: 1px dashed var(--baseline);
+  border-radius: 12px;
+  color: var(--ink-2);
+  font-size: 0.85rem;
+  text-align: center;
 }
 
 .map-cards {

@@ -348,6 +348,7 @@ async function init() {
         options: {
           title: 'Medicare Advantage enrollment by state',
           comboBoxSelector: '#medicare-state-selector',
+          backButtonSelector: '#medicare-map-back',
         },
       },
       drug: {
@@ -362,6 +363,7 @@ async function init() {
           comparisonPercent: (d) => d.pdpPercent,
           comparisonCount: (d) => d.pdpCount,
           comboBoxSelector: '#drug-state-selector',
+          backButtonSelector: '#drug-map-back',
         },
       },
     };

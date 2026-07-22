@@ -2,49 +2,77 @@
 
   <div class="card map-card dashboard-map-panel" data-map-dashboard-type="hospital" aria-hidden="false">
     <div class="map-card__body">
-      <span class="data-grid-card__title">
-        Medicare Advantage Enrollment by State
-      </span>
-      <p class="data-grid-card__instruction">
-        Share of Medicare enrollees in Medicare Advantage and other health plans
-      </p>
-
-      <div class="state-map-selection">
-            <label class="usa-label" for="medicare-state-selector">Select a state</label>
-            <div class="usa-combo-box">
-                  <select class="usa-select" name="medicare-state" id="medicare-state-selector">
-                    <option value="">Select a state</option>
-                    {% for state in usStates %}
-                    <option value="{{ state }}">{{ state }}</option>
-                    {% endfor %}
-                  </select>
-            </div>
-            <div class="table-container flex-1 width-full margin-top-2" id="medicare-enrollment-state-map"></div>
+      <div class="map-card__head">
+        <div>
+          <span class="data-grid-card__title">
+            Medicare Advantage Enrollment Map
+          </span>
+          <p class="data-grid-card__instruction">
+            Share of Medicare enrollees in Medicare Advantage and other health plans
+          </p>
         </div>
+
+        <div class="state-map-selection">
+          <button type="button" class="map-card__back" id="medicare-map-back" hidden aria-label="Back to state map">
+            &larr; Back
+          </button>
+          <label class="usa-sr-only" for="medicare-state-selector">Select a state</label>
+          <div class="usa-combo-box">
+                <select class="usa-select" name="medicare-state" id="medicare-state-selector">
+                  <option value="">Select a state</option>
+                  {% for state in usStates %}
+                  <option value="{{ state }}">{{ state }}</option>
+                  {% endfor %}
+                </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-container flex-1 width-full margin-top-2" id="medicare-enrollment-state-map"></div>
+
+      <hr class="map-card__divider">
+
+      <div class="map-card__histogram-placeholder">
+        States by tier — histogram coming soon
+      </div>
     </div>
   </div>
 
   <div class="card map-card dashboard-map-panel" data-map-dashboard-type="drug" hidden aria-hidden="true">
     <div class="map-card__body">
-      <span class="data-grid-card__title">
-        Prescription Drug Enrollment by State
-      </span>
-      <p class="data-grid-card__instruction">
-        Share of Medicare Prescription Drug enrollees in MAPD vs. PDP plans
-      </p>
-
-      <div class="state-map-selection">
-            <label class="usa-label" for="drug-state-selector">Select a state</label>
-            <div class="usa-combo-box">
-                  <select class="usa-select" name="drug-state" id="drug-state-selector">
-                    <option value="">Select a state</option>
-                    {% for state in usStates %}
-                    <option value="{{ state }}">{{ state }}</option>
-                    {% endfor %}
-                  </select>
-            </div>
-            <div class="table-container flex-1 width-full margin-top-2" id="medicare-mapd-state-map"></div>
+      <div class="map-card__head">
+        <div>
+          <span class="data-grid-card__title">
+            Prescription Drug Enrollment Map
+          </span>
+          <p class="data-grid-card__instruction">
+            Share of Medicare Prescription Drug enrollees in MAPD vs. PDP plans
+          </p>
         </div>
+
+        <div class="state-map-selection">
+          <button type="button" class="map-card__back" id="drug-map-back" hidden aria-label="Back to state map">
+            &larr; Back
+          </button>
+          <label class="usa-sr-only" for="drug-state-selector">Select a state</label>
+          <div class="usa-combo-box">
+                <select class="usa-select" name="drug-state" id="drug-state-selector">
+                  <option value="">Select a state</option>
+                  {% for state in usStates %}
+                  <option value="{{ state }}">{{ state }}</option>
+                  {% endfor %}
+                </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-container flex-1 width-full margin-top-2" id="medicare-mapd-state-map"></div>
+
+      <hr class="map-card__divider">
+
+      <div class="map-card__histogram-placeholder">
+        States by tier — histogram coming soon
+      </div>
     </div>
   </div>
 

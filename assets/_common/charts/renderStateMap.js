@@ -120,7 +120,13 @@ function renderStateMap(containerSelector, data, config = {}) {
       { label: 'Total enrollees', value: (d) => d.totalEnrollees.toLocaleString() },
     ],
     comboBoxSelector,
+    backButtonSelector,
   } = config;
+
+  // Reaching here always means we're back on the national view — the button
+  // only makes sense while showCountyView below has drilled into a state.
+  const backButtonEl = backButtonSelector ? document.querySelector(backButtonSelector) : null;
+  if (backButtonEl) backButtonEl.hidden = true;
 
   const resolvedBreakpoints =
     breakpoints && breakpoints.length === 4 ? breakpoints : DEFAULT_PERCENT_BREAKPOINTS;
@@ -132,7 +138,7 @@ function renderStateMap(containerSelector, data, config = {}) {
   const dataByName = new Map(data.map((d) => [d.stateName, d]));
 
   const width = 975;
-  const height = 610;
+  const height = 550;
 
   const container = d3.select(containerSelector);
 
@@ -175,7 +181,6 @@ function renderStateMap(containerSelector, data, config = {}) {
           countyFeatures,
           stateFeature,
           countyRows,
-          onBackFn,
           {
             metricLabel,
             metricPercent,
@@ -188,6 +193,11 @@ function renderStateMap(containerSelector, data, config = {}) {
       };
 
       countyViewRegistry[containerSelector].rerender(null);
+
+      if (backButtonEl) {
+        backButtonEl.hidden = false;
+        backButtonEl.onclick = onBackFn;
+      }
     } catch (error) {
       if (requestId !== currentCountyRequestId) return;
       container.append('p').attr('role', 'alert').text('County map could not be loaded.');

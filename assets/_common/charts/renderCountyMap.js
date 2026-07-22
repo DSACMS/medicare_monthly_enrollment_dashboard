@@ -4,11 +4,6 @@ import { createTooltip, moveTooltip, getCssVar } from './utils';
 import { joinCountyData, filterCountiesByState } from './joinCountyData';
 
 const NO_DATA_FILL = '#eee';
-const buttonX = 10;
-const buttonY = 10;
-const buttonWidth = 120;
-const buttonHeight = 40;
-const buttonRadius = 12;
 
 /**
  * Renders a single state's counties as a choropleth, colored by the same
@@ -18,7 +13,6 @@ const buttonRadius = 12;
  * @param {Object[]} allCountyFeatures - Full counties FeatureCollection features.
  * @param {Object} stateFeature - Clicked state's GeoJSON feature.
  * @param {Object[]} countyRows - County-level rows for this state.
- * @param {Function} onBack - Called when the user wants to return to states view.
  * @param {Object} [config]
  * @param {string} [config.metricLabel] - Display label for the colored metric.
  * @param {Function} [config.metricPercent] - (row) => percent value for coloring and tooltip.
@@ -33,7 +27,6 @@ function renderCountyMap(
   allCountyFeatures,
   stateFeature,
   countyRows,
-  onBack,
   config = {},
 ) {
   const formatNumber = (value) => (value == null ? 'No data' : value.toLocaleString());
@@ -66,7 +59,7 @@ function renderCountyMap(
   const stateCounties = filterCountiesByState(allCountyFeatures, stateFips);
 
   const width = 975;
-  const height = 610;
+  const height = 550;
 
   const container = d3.select(containerSelector);
   container.style('position', 'relative');
@@ -80,54 +73,14 @@ function renderCountyMap(
   const joined = joinCountyData(stateCounties, countyRows);
 
   const projection = d3.geoAlbersUsa();
-  projection.fitExtent(
-  [
-    [0, 60],
-    [width, height],
-  ],
-  {
+  projection.fitSize([width, height], {
     type: 'FeatureCollection',
     features: stateCounties,
-  },
-  );
+  });
 
   const path = d3.geoPath(projection);
 
   const svg = container.append('svg').attr('width', '100%').attr('viewBox', [0, 0, width, height]);
-
-  const backButton = svg
-    .append('g')
-    .attr('class', 'county-map-back')
-    .attr('role', 'button')
-    .attr('tabindex', 0)
-    .attr('aria-label', 'Back to state map')
-    .style('cursor', 'pointer')
-    .on('click', () => onBack())
-    .on('keydown', (event) => {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        onBack();
-      }
-    });
-
-  backButton
-    .append('rect')
-    .attr('x', buttonX)
-    .attr('y', buttonY)
-    .attr('width', buttonWidth)
-    .attr('height', buttonHeight)
-    .attr('rx', buttonRadius)
-    .attr('fill', '#fff')
-    .attr('stroke', '#888');
-
-  backButton
-    .append('text')
-    .attr('x', buttonX + buttonWidth / 2)
-    .attr('y', buttonY + buttonHeight / 2)
-    .attr('text-anchor', 'middle')
-    .attr('dominant-baseline', 'middle')
-    .attr('font-size', 25)
-    .text('Back');
 
   const tooltip = createTooltip(container).classed('county-map-tooltip', true);
 
