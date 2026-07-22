@@ -132,7 +132,7 @@ function renderStateMap(containerSelector, data, config = {}) {
   const dataByName = new Map(data.map((d) => [d.stateName, d]));
 
   const width = 975;
-  const height = 800;
+  const height = 610;
 
   const container = d3.select(containerSelector);
 
