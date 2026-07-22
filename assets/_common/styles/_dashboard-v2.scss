@@ -91,10 +91,13 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 .chart-block { margin-top: 14px; display: flex; flex-direction: column; }
 .chart-block .table-container { overflow: visible; margin-top: 0; display: flex; flex-direction: column; }
 // Fixed (not fill-parent) height: the trend card is no longer grid-stretched
-// 1:1 against the map (it's one of three cards stacked in the right column),
+// 1:1 against the map (it's one of two cards stacked in the right column),
 // so sizing the chart off the map's height would tie its box to whatever
 // else in that column is loading/resizing — see observeResize in charts/utils.js.
-.chart-block .chart-figure { height: 270px; }
+// 300px is tuned (alongside .data-grid-scroll's row count below) so the
+// trend card + enrollment card split the right column evenly and the whole
+// column's total height roughly matches the hero+map column on the left.
+.chart-block .chart-figure { height: 300px; }
 .chart-block__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 14px; margin-bottom: 4px; }
 .chart-block h4 { font-size: .82rem; font-weight: 700; margin: 0; }
 .chart-block h4 span { color: var(--ink-2); font-weight: 500; font-size: .74rem; }
@@ -323,7 +326,6 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   justify-content: space-between;
   gap: 10px;
   background: #f7f8fa;
-  border-bottom: 1px solid rgba(20, 20, 28, 0.10);
   padding: 12px 14px;
 }
 
@@ -376,6 +378,47 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   }
 }
 
+.data-grid-card__tabs-slot {
+  padding: 0 14px 12px;
+  background: #f7f8fa;
+  border-bottom: 1px solid rgba(20, 20, 28, 0.10);
+}
+
+// Reuses .tabs/.tabs button (the trend chart's Yearly/12-months pattern) —
+// .data-grid-view-tab is a hook class for the tweaks below. .tabs button
+// (0-1-1) beats a bare .data-grid-view-tab (0-1-0), so overrides here use
+// the compound .data-grid-view-tabs .data-grid-view-tab form.
+.data-grid-view-tabs .data-grid-view-tab {
+  font-size: 0.8rem;
+  padding: 6px 14px;
+  border: 1px solid transparent;
+  font-weight: 600;
+}
+
+.data-grid-view-tabs .data-grid-view-tab:hover {
+  background: rgba(20, 20, 28, 0.06);
+  color: var(--ink, #15151b);
+}
+
+// Active state leans on more than color/hue: font-weight and an explicit
+// border (on top of the inherited box-shadow "lift") so it stays
+// distinguishable in grayscale, low-vision, and forced-colors contexts.
+.data-grid-view-tabs .data-grid-view-tab[aria-selected="true"] {
+  font-weight: 700;
+  border-color: var(--border, rgba(20, 20, 28, 0.10));
+}
+
+.data-grid-view-tabs .data-grid-view-tab:focus-visible {
+  outline: 2px solid var(--focus, #009ad0);
+  outline-offset: 2px;
+}
+
+@media (forced-colors: active) {
+  .data-grid-view-tabs .data-grid-view-tab[aria-selected="true"] {
+    border: 2px solid CanvasText;
+  }
+}
+
 .data-grid-card__body {
   padding: 0;
   min-height: 0;
@@ -392,9 +435,11 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 
 .data-grid-scroll {
   overflow: auto;
-  // ~5 data rows (36.5px: 16px padding + 19.5px line-height + 1px border)
+  // ~7 data rows (36.5px: 16px padding + 19.5px line-height + 1px border)
   // plus the ~32.5px sticky header, at this rule's current font/padding values.
-  max-height: 215px;
+  // Tuned alongside .chart-block .chart-figure's height above so the trend
+  // card + enrollment card split the right column evenly.
+  max-height: 288px;
   -webkit-overflow-scrolling: touch;
   scrollbar-gutter: stable;
   // Reserves space for the sticky header so scrollIntoView doesn't park a row underneath it.
@@ -438,9 +483,8 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 // :is(...) since the overlay reparents the same table node rather than
 // re-rendering it — see allAreas.js's openOverlay.
 //
-// width: 100% (not max-content) keeps the table within the card's width —
-// the name column below wraps instead of forcing horizontal scroll for
-// long state/county names.
+// width: 100% (not max-content) keeps the table within the card's width.
+// the name column below wraps
 :is(.data-grid-card, .data-grid-overlay) table {
   width: 100%;
   border-collapse: separate;
@@ -621,8 +665,7 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   }
 
   // Visually hidden, not display:none, so the <h3> still labels the article.
-  .data-grid-card--all-areas .data-grid-card__header,
-  .data-grid-card--county .data-grid-card__header {
+  .data-grid-card--enrollment .data-grid-card__header {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -634,8 +677,11 @@ table.data tbody tr:hover td { background: var(--surface-2); }
     border: 0;
   }
 
-  .data-grid-card--all-areas .data-grid-card__mobile-trigger,
-  .data-grid-card--county .data-grid-card__mobile-trigger {
+  .data-grid-card__tabs-slot {
+    display: none;
+  }
+
+  .data-grid-card--enrollment .data-grid-card__mobile-trigger {
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -651,6 +697,18 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   .data-grid-card__mobile-trigger-clear:not([hidden]) {
     display: flex;
   }
+
+  .data-grid-card__mobile-divider {
+    display: block;
+    height: 1px;
+    margin: 0;
+    border: 0;
+    background: var(--border, rgba(20, 20, 28, 0.10));
+  }
+}
+
+.data-grid-card__mobile-divider {
+  display: none;
 }
 
 .data-grid-card__mobile-trigger:disabled {
@@ -886,11 +944,24 @@ body.data-grid-overlay-open {
 
 .data-grid-overlay__header {
   flex: none;
+  padding: 14px 18px 0;
+  border-bottom: 1px solid var(--border, rgba(20, 20, 28, 0.10));
+}
+
+.data-grid-overlay__header-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--border, rgba(20, 20, 28, 0.10));
+  gap: 10px;
+  padding-bottom: 14px;
+}
+
+.data-grid-overlay__tabs-slot {
+  padding-bottom: 12px;
+}
+
+.data-grid-overlay__tabs-slot:empty {
+  display: none;
 }
 
 .data-grid-overlay__title {
@@ -918,10 +989,20 @@ body.data-grid-overlay-open {
   flex-direction: column;
 }
 
-// The reparented .data-grid-scroll otherwise keeps its card-sized 560px cap
-// — override so expanding actually surfaces more rows, not just more width.
+// The reparented .data-grid-scroll otherwise keeps its card-sized cap —
+// flex-fill instead of a fixed calc() so this stays correct regardless of
+// how tall .data-grid-overlay__header ends up (title row + tabs row).
+.data-grid-overlay__body .data-grid-scroll-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
 .data-grid-overlay__body .data-grid-scroll {
-  max-height: calc(85vh - 57px); // 57px ~= .data-grid-overlay__header's rendered height
+  max-height: none;
+  flex: 1;
+  min-height: 0;
 }
 
 .data-grid-drawer__handle {

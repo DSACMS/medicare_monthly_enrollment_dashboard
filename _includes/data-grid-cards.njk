@@ -1,25 +1,33 @@
 <section id="data-grids" class="data-grid-section" aria-label="Enrollment data grids">
   <div class="data-grid-cards">
-    <article class="data-grid-card data-grid-card--all-areas" aria-labelledby="all-areas-grid-title">
+    <article class="data-grid-card data-grid-card--enrollment" aria-labelledby="enrollment-grid-title">
       <header class="data-grid-card__header">
         <div class="data-grid-card__heading">
-          <h3 id="all-areas-grid-title" class="data-grid-card__title">State Enrollment</h3>
-          <p class="data-grid-card__instruction">Click a state to display on the map. Click again to deselect.</p>
+          <h3 id="enrollment-grid-title" class="data-grid-card__title">Enrollment Table</h3>
+          <p class="data-grid-card__instruction" id="enrollment-instruction">Click a state to display on the map. Click again to deselect.</p>
         </div>
         <button
           type="button"
           class="data-grid-card__expand"
-          id="all-areas-expand-trigger"
+          id="enrollment-expand-trigger"
           aria-haspopup="dialog"
           aria-expanded="false"
-          aria-controls="all-areas-overlay"
-          aria-label="Expand State Enrollment grid"
+          aria-controls="enrollment-overlay"
+          aria-label="Expand Enrollment Table"
         >
           <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
             <path d="M6 2H2v4M10 2h4v4M2 10v4h4M14 10v4h-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
         </button>
       </header>
+
+      <div class="data-grid-card__tabs-slot" id="enrollment-card-tabs-slot">
+        <div class="tabs data-grid-view-tabs" id="enrollment-view-tabs" role="tablist" aria-label="Table view">
+          <button type="button" role="tab" class="data-grid-view-tab" id="enrollment-tab-state" aria-selected="true" data-view="state">States</button>
+          <button type="button" role="tab" class="data-grid-view-tab" id="enrollment-tab-county" aria-selected="false" data-view="county" hidden>Counties</button>
+        </div>
+      </div>
+
       <div class="data-grid-card__body">
         <div class="data-grid-scroll-wrap">
           <div
@@ -27,8 +35,20 @@
             id="all-areas-table"
             tabindex="0"
             role="region"
-            aria-labelledby="all-areas-grid-title"
+            aria-labelledby="enrollment-tab-state"
           ></div>
+        </div>
+
+        <div class="data-grid-scroll-wrap" hidden>
+          <div
+            class="data-grid-scroll"
+            id="county-table"
+            tabindex="0"
+            role="region"
+            aria-labelledby="enrollment-tab-county"
+          >
+            <p class="data-grid-placeholder">Select a state to view county enrollment.</p>
+          </div>
         </div>
 
         <div class="data-grid-card__mobile-trigger-wrap">
@@ -71,43 +91,8 @@
             </svg>
           </button>
         </div>
-      </div>
-    </article>
 
-    <article class="data-grid-card data-grid-card--county" aria-labelledby="county-grid-title">
-      <header class="data-grid-card__header">
-        <div class="data-grid-card__heading">
-          <h3 id="county-grid-title" class="data-grid-card__title">County Enrollment</h3>
-          <p class="data-grid-card__instruction">Select a state to view its counties, then click a county to display on the map.</p>
-        </div>
-        <button
-          type="button"
-          class="data-grid-card__expand"
-          id="county-expand-trigger"
-          aria-haspopup="dialog"
-          aria-expanded="false"
-          aria-controls="county-overlay"
-          aria-label="Expand County Enrollment grid"
-          disabled
-          aria-disabled="true"
-        >
-          <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-            <path d="M6 2H2v4M10 2h4v4M2 10v4h4M14 10v4h-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-        </button>
-      </header>
-      <div class="data-grid-card__body">
-        <div class="data-grid-scroll-wrap">
-          <div
-            class="data-grid-scroll"
-            id="county-table"
-            tabindex="0"
-            role="region"
-            aria-labelledby="county-grid-title"
-          >
-            <p class="data-grid-placeholder">Select a state to view county enrollment.</p>
-          </div>
-        </div>
+        <hr class="data-grid-card__mobile-divider" aria-hidden="true">
 
         <div class="data-grid-card__mobile-trigger-wrap">
           <button
@@ -243,45 +228,31 @@
 </div>
 
 <!--
-  Desktop "expand" overlays: state-level (All Areas) and county-level. Each
-  reparents that card's existing .data-grid-scroll-wrap into
-  .data-grid-overlay__body while open, so the live table/sort/click-to-map
-  wiring keeps working untouched — see allAreas.js's openOverlay/closeOverlay.
+  Desktop "expand" overlay: one shared overlay for the merged Enrollment
+  Table card. Reparents whichever .data-grid-scroll-wrap (state or county)
+  is currently active into .data-grid-overlay__body, and moves the tabs
+  element in alongside it, so switching state/county view works the same
+  way whether the card is expanded or not — see allAreas.js's
+  openOverlay/closeOverlay/setActiveGridView.
 -->
-<div class="data-grid-overlay-scrim" id="all-areas-overlay-scrim"></div>
+<div class="data-grid-overlay-scrim" id="enrollment-overlay-scrim"></div>
 <div
   class="data-grid-overlay"
-  id="all-areas-overlay"
+  id="enrollment-overlay"
   role="dialog"
   aria-modal="true"
-  aria-labelledby="all-areas-overlay-title"
+  aria-labelledby="enrollment-overlay-title"
 >
   <header class="data-grid-overlay__header">
-    <h3 class="data-grid-overlay__title" id="all-areas-overlay-title">State Enrollment</h3>
-    <button type="button" class="data-grid-overlay__close" id="all-areas-overlay-close" aria-label="Minimize State Enrollment grid">
-      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-        <path d="M2 2l12 12M14 2L2 14" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
-      </svg>
-    </button>
+    <div class="data-grid-overlay__header-row">
+      <h3 class="data-grid-overlay__title" id="enrollment-overlay-title">Enrollment Table</h3>
+      <button type="button" class="data-grid-overlay__close" id="enrollment-overlay-close" aria-label="Minimize Enrollment Table">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <path d="M2 2l12 12M14 2L2 14" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+        </svg>
+      </button>
+    </div>
+    <div class="data-grid-overlay__tabs-slot" id="enrollment-overlay-tabs-slot"></div>
   </header>
-  <div class="data-grid-overlay__body" id="all-areas-overlay-body"></div>
-</div>
-
-<div class="data-grid-overlay-scrim" id="county-overlay-scrim"></div>
-<div
-  class="data-grid-overlay"
-  id="county-overlay"
-  role="dialog"
-  aria-modal="true"
-  aria-labelledby="county-overlay-title"
->
-  <header class="data-grid-overlay__header">
-    <h3 class="data-grid-overlay__title" id="county-overlay-title">County Enrollment</h3>
-    <button type="button" class="data-grid-overlay__close" id="county-overlay-close" aria-label="Minimize County Enrollment grid">
-      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-        <path d="M2 2l12 12M14 2L2 14" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
-      </svg>
-    </button>
-  </header>
-  <div class="data-grid-overlay__body" id="county-overlay-body"></div>
+  <div class="data-grid-overlay__body" id="enrollment-overlay-body"></div>
 </div>

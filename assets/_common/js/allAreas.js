@@ -292,7 +292,6 @@ async function init() {
     let closeDrawer;
     let closeCountyDrawer;
     let closeOverlay;
-    let closeCountyOverlay;
 
     // Desktop grids' sort state, one per grid. index 0/'asc' matches each
     // grid's previous hardcoded default (name column, A→Z).
@@ -459,6 +458,7 @@ async function init() {
       panel: document.querySelector(`#${prefix}-overlay`),
       body: document.querySelector(`#${prefix}-overlay-body`),
       closeBtn: document.querySelector(`#${prefix}-overlay-close`),
+      tabsSlot: document.querySelector(`#${prefix}-overlay-tabs-slot`),
     });
 
     // Generic popup "chrome" shared by all 4 popups (2 drawers, 2 overlays).
@@ -614,7 +614,7 @@ async function init() {
     // ---- State mobile drawer + desktop expand overlay ----
 
     const drawerEls = makeDrawerEls('all-areas');
-    const overlayEls = makeOverlayEls('all-areas');
+    const overlayEls = makeOverlayEls('enrollment');
 
     let drawerSort = { index: 0, direction: 'asc' }; // State A→Z, matches desktop table's default
     let drawerSearchTerm = '';
@@ -691,15 +691,13 @@ async function init() {
         closeCountyDrawer();
       } else {
         closeOverlay();
-        closeCountyOverlay();
       }
     });
 
-    // ---- County mobile drawer + desktop expand overlay. Dispatches
-    // dashboard:countyselect directly instead of driving a <select>. ----
+    // ---- County mobile drawer. Dispatches dashboard:countyselect directly
+    // instead of driving a <select>. ----
 
     const countyDrawerEls = makeDrawerEls('county');
-    const countyOverlayEls = makeOverlayEls('county');
 
     let countyDrawerSort = { index: 0, direction: 'asc' };
     let countyDrawerSearchTerm = '';
@@ -718,7 +716,6 @@ async function init() {
       countyDrawerEls.triggerDot?.classList.toggle('is-selected', hasCounty);
       if (countyDrawerEls.triggerClear) countyDrawerEls.triggerClear.hidden = !hasCounty;
       if (countyDrawerEls.trigger) countyDrawerEls.trigger.disabled = !hasState;
-      if (countyOverlayEls.trigger) countyOverlayEls.trigger.disabled = !hasState;
     };
 
     const renderCountyDrawerList = (type = activeDashboardType) => {
@@ -779,38 +776,62 @@ async function init() {
       }));
     });
 
-    // ---- Desktop "expand" overlays. Reparents the card's live
-    // .data-grid-scroll-wrap into the overlay body while open, and back on close. ----
+    // ---- Desktop "expand" overlay for the merged Enrollment Table card.
+    // Reparents whichever .data-grid-scroll-wrap (state or county) is
+    // currently active into the overlay body while open, and back on close.
+    // The tabs element itself is reparented alongside it, so switching
+    // state/county view works the same way whether the card is expanded
+    // or not — see setActiveGridView below. ----
 
     const allAreasScrollWrapEl = document.querySelector('#all-areas-table')?.closest('.data-grid-scroll-wrap');
     const allAreasScrollWrapHome = allAreasScrollWrapEl?.parentElement;
     const countyScrollWrapEl = document.querySelector('#county-table')?.closest('.data-grid-scroll-wrap');
     const countyScrollWrapHome = countyScrollWrapEl?.parentElement;
 
-    const stateOverlayPopup = createPopup({
+    const viewTabsEl = document.querySelector('#enrollment-view-tabs');
+    const viewTabsHome = viewTabsEl?.parentElement;
+
+    let activeGridView = 'state'; // 'state' | 'county'
+
+    const enrollmentTabState = document.querySelector('#enrollment-tab-state');
+    const enrollmentTabCounty = document.querySelector('#enrollment-tab-county');
+    const enrollmentInstructionEl = document.querySelector('#enrollment-instruction');
+
+    const viewInstructions = {
+      state: 'Click a state to display on the map. Click again to deselect.',
+      county: 'Click a county to display on the map. Click again to deselect.',
+    };
+
+    const scrollWrapFor = (view) => (view === 'county' ? countyScrollWrapEl : allAreasScrollWrapEl);
+    const scrollWrapHomeFor = (view) => (view === 'county' ? countyScrollWrapHome : allAreasScrollWrapHome);
+    const tableSelectorFor = (view) => (view === 'county' ? '#county-table' : '#all-areas-table');
+
+    const enrollmentOverlayPopup = createPopup({
       scrim: overlayEls.scrim,
       panel: overlayEls.panel,
       trigger: overlayEls.trigger,
-      isDisabled: () => !allAreasScrollWrapEl,
+      isDisabled: () => !allAreasScrollWrapEl && !countyScrollWrapEl,
       bodyLockClass: 'data-grid-overlay-open',
       focusOnOpen: () => overlayEls.closeBtn?.focus(),
       onBeforeOpen: () => {
-        closeCountyOverlay();
         closeDrawer();
         closeCountyDrawer();
       },
       onOpen: () => {
-        overlayEls.body.appendChild(allAreasScrollWrapEl);
-        bindScrollAffordance(document.querySelector('#all-areas-table'));
-        document.querySelector('#all-areas-table tr.is-selected')?.scrollIntoView({ block: 'nearest' });
+        overlayEls.tabsSlot.appendChild(viewTabsEl);
+        overlayEls.body.appendChild(scrollWrapFor(activeGridView));
+        bindScrollAffordance(document.querySelector(tableSelectorFor(activeGridView)));
+        document.querySelector(`${tableSelectorFor(activeGridView)} tr.is-selected`)?.scrollIntoView({ block: 'nearest' });
       },
       onClose: () => {
-        allAreasScrollWrapHome.appendChild(allAreasScrollWrapEl);
-        bindScrollAffordance(document.querySelector('#all-areas-table'));
+        scrollWrapHomeFor(activeGridView).appendChild(scrollWrapFor(activeGridView));
+        viewTabsHome.appendChild(viewTabsEl);
+        bindScrollAffordance(document.querySelector(tableSelectorFor(activeGridView)));
       },
     });
-    const openOverlay = stateOverlayPopup.open;
-    closeOverlay = stateOverlayPopup.close;
+    const openOverlay = enrollmentOverlayPopup.open;
+    closeOverlay = enrollmentOverlayPopup.close;
+    const isOverlayOpen = enrollmentOverlayPopup.isOpen;
 
     if (overlayEls.trigger) {
       overlayEls.trigger.addEventListener('click', openOverlay);
@@ -818,48 +839,51 @@ async function init() {
       overlayEls.scrim?.addEventListener('click', closeOverlay);
     }
 
-    const countyOverlayPopup = createPopup({
-      scrim: countyOverlayEls.scrim,
-      panel: countyOverlayEls.panel,
-      trigger: countyOverlayEls.trigger,
-      isDisabled: () => !countyScrollWrapEl || Boolean(countyOverlayEls.trigger?.disabled),
-      bodyLockClass: 'data-grid-overlay-open',
-      focusOnOpen: () => countyOverlayEls.closeBtn?.focus(),
-      onBeforeOpen: () => {
-        closeOverlay();
-        closeDrawer();
-        closeCountyDrawer();
-      },
-      onOpen: () => {
-        countyOverlayEls.body.appendChild(countyScrollWrapEl);
-        bindScrollAffordance(document.querySelector('#county-table'));
-        document.querySelector('#county-table tr.is-selected')?.scrollIntoView({ block: 'nearest' });
-      },
-      onClose: () => {
-        countyScrollWrapHome.appendChild(countyScrollWrapEl);
-        bindScrollAffordance(document.querySelector('#county-table'));
-      },
-    });
-    const openCountyOverlay = countyOverlayPopup.open;
-    closeCountyOverlay = countyOverlayPopup.close;
+    // Swaps which table (state/county) is visible, whether the card is
+    // expanded into the overlay or not — reused both for a direct tab click
+    // and for the forced state-cleared reset in updateCountyGridTitle below.
+    const setActiveGridView = (view) => {
+      if (view === activeGridView || (view === 'county' && enrollmentTabCounty.hidden)) return;
+      const previousView = activeGridView;
+      activeGridView = view;
 
-    if (countyOverlayEls.trigger) {
-      countyOverlayEls.trigger.addEventListener('click', openCountyOverlay);
-      countyOverlayEls.closeBtn?.addEventListener('click', closeCountyOverlay);
-      countyOverlayEls.scrim?.addEventListener('click', closeCountyOverlay);
-    }
+      enrollmentTabState.setAttribute('aria-selected', String(view === 'state'));
+      enrollmentTabCounty.setAttribute('aria-selected', String(view === 'county'));
+      enrollmentInstructionEl.textContent = viewInstructions[view];
+
+      scrollWrapFor(previousView).hidden = true;
+      scrollWrapFor(view).hidden = false;
+
+      if (isOverlayOpen()) {
+        scrollWrapHomeFor(previousView).appendChild(scrollWrapFor(previousView));
+        overlayEls.body.appendChild(scrollWrapFor(view));
+      }
+
+      bindScrollAffordance(document.querySelector(tableSelectorFor(view)));
+    };
+
+    [enrollmentTabState, enrollmentTabCounty].forEach((tab) => {
+      tab.addEventListener('click', () => setActiveGridView(tab.dataset.view));
+    });
 
     // Base text read from the njk markup ("County Enrollment") so the
     // state-name prefix stays in sync with it instead of duplicating the string.
-    const countyGridTitleEl = document.querySelector('#county-grid-title');
-    const countyOverlayTitleEl = document.querySelector('#county-overlay-title');
     const countyDrawerTitleEl = document.querySelector('#county-drawer-title');
-    const countyGridBaseTitle = countyGridTitleEl?.textContent.trim() || 'County Enrollment';
+    const countyDrawerBaseTitle = countyDrawerTitleEl?.textContent.trim() || 'County Enrollment';
     const updateCountyGridTitle = (stateName) => {
-      const text = stateName ? `${stateName} ${countyGridBaseTitle}` : countyGridBaseTitle;
-      if (countyGridTitleEl) countyGridTitleEl.textContent = text;
-      if (countyOverlayTitleEl) countyOverlayTitleEl.textContent = text;
-      if (countyDrawerTitleEl) countyDrawerTitleEl.textContent = text;
+      const hasState = Boolean(stateName);
+
+      enrollmentTabCounty.hidden = !hasState;
+      enrollmentTabCounty.textContent = hasState ? `${stateName} Counties` : 'Counties';
+
+      // Edge case: state cleared while county view was active — force back to state view.
+      if (!hasState && activeGridView === 'county') {
+        setActiveGridView('state');
+      }
+
+      if (countyDrawerTitleEl) {
+        countyDrawerTitleEl.textContent = hasState ? `${stateName} ${countyDrawerBaseTitle}` : countyDrawerBaseTitle;
+      }
     };
 
     const renderCountyGridTable = (type = activeDashboardType) => {

@@ -59,7 +59,7 @@ function renderCountyMap(
   const stateCounties = filterCountiesByState(allCountyFeatures, stateFips);
 
   const width = 975;
-  const height = 550;
+  const height = 520;
 
   const container = d3.select(containerSelector);
   container.style('position', 'relative');
