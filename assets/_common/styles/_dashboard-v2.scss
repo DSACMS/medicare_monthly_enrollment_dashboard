@@ -158,7 +158,6 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 @media (max-width: 520px) {
   .segmented { width: 100%; }
   .segmented button { flex: 1; justify-content: center; }
-  .usa-combo-box__input { width: 50% } //here the combo-box width is decreased!
   .usa-combo-box__input-button-separator { display: none;}
 
   .dash-hero { flex-direction: column; align-items: stretch; text-align: center; gap: 14px; }
@@ -192,9 +191,11 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 
 //here are styles for map-card
 
+#medicare-state-selector.usa-select, #drug-state-selector.usa-select,
 .usa-combo-box__input{
-  border-radius: 12px;
+  border-radius: 15px;
   border: 1px solid var(--baseline);
+  width: 50%;
 }
 
 
