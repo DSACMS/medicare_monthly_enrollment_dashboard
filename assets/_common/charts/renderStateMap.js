@@ -119,7 +119,34 @@ function renderStateMap(containerSelector, data, config = {}) {
   const width = 975;
   const height = 610;
 
+  const getStateFill = (stateFeature) => {
+    const row = dataByName.get(stateFeature.properties.name);
+
+    if (!row) return NO_DATA_FILL;
+
+    const percent = metricPercent(row);
+    return Number.isFinite(percent) ? metricColor(percent) : NO_DATA_FILL;
+  };
+
   const container = d3.select(containerSelector);
+
+  const syncComboBox = (stateName = '') => {
+    if (!comboBoxSelector) return;
+
+    const select = document.querySelector(comboBoxSelector);
+
+    if (!select) return;
+
+    // Change the first option depending on the current view.
+    select.options[0].text = stateName
+      ? 'U.S. Map'
+      : 'Select a state';
+
+    // Select either the state or the empty option.
+    select.value = stateName;
+  };
+
+syncComboBox();
 
   container.style('position', 'relative');
   container.selectAll('*').remove();
@@ -135,6 +162,7 @@ function renderStateMap(containerSelector, data, config = {}) {
   const tooltip = createTooltip(container).classed('state-map-tooltip', true);
 
   const showCountyView = async (stateFeature, stateData) => {
+    syncComboBox(stateData.stateName);
 
     currentCountyRequestId += 1;
     const requestId = currentCountyRequestId;
@@ -190,7 +218,10 @@ function renderStateMap(containerSelector, data, config = {}) {
       d3.select(comboBoxSelector).on('change.state-map', async (event) => {
         const selectedStateName = event.target.value;
 
-        if (!selectedStateName) return;
+        if (!selectedStateName){
+          renderStateMap(containerSelector, data, config);
+          return;
+        } 
 
         const stateData = dataByName.get(selectedStateName);
 
@@ -209,12 +240,18 @@ function renderStateMap(containerSelector, data, config = {}) {
         .data(features)
         .join('path')
         .attr('d', path)
-        .attr('fill', (d) => {
-          const row = dataByName.get(d.properties.name);
-          return row === undefined ? NO_DATA_FILL : metricColor(metricPercent(row));
-        })
+        .attr('fill', getStateFill)
         .attr('stroke', '#fff')
         .style('cursor', 'pointer')
+        .on('mouseenter', function(event, d){
+          const currentFill = getStateFill(d);
+          
+          d3.select(this)
+            .raise()
+            .attr('stroke', '#111')
+            .attr('stroke-width', 3)
+            .attr('fill', d3.color(currentFill).brighter(0.7).formatHex());
+          })
         .on('mousemove', (event, d) => {
           const row = dataByName.get(d.properties.name);
           if (!row) {
@@ -232,7 +269,12 @@ function renderStateMap(containerSelector, data, config = {}) {
           `);
           moveTooltip(tooltip, container.node(), event);
         })
-        .on('mouseleave', () => {
+        .on('mouseleave', function (event, entry) {
+            d3.select(this)
+              .attr('fill', getStateFill(entry))
+              .attr('stroke', '#fff')
+              .attr('stroke-width', 1);
+        
           tooltip.style('opacity', 0).style('display', 'none');
         })
         .on('click', async (event, d) => {
