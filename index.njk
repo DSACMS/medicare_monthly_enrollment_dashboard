@@ -13,9 +13,16 @@ eleventyExcludeFromCollections: true
 
 <div class="dashboard-root">
   {% include "title-bar.njk" %}
-  {% include "hero-card.njk" %}
-  {% include "map-card.njk" %}
-  {% include "data-grid-cards.njk" %}
+  <div class="dashboard-columns">
+    <div class="dashboard-columns__main">
+      {% include "hero-card.njk" %}
+      {% include "map-card.njk" %}
+    </div>
+    <div class="dashboard-columns__side">
+      {% include "trend-card.njk" %}
+      {% include "data-grid-cards.njk" %}
+    </div>
+  </div>
 </div>
 
 

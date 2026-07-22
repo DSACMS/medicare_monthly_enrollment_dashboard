@@ -44,7 +44,7 @@ body {
 .segmented button svg { width: 16px; height: 16px; flex-shrink: 0; }
 .hint { font-size: .8rem; color: var(--ink-2); font-weight: 600; }
 
-.topbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 12px; }
+.topbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .topbar .push { margin-left: auto; }
 .topbar .rule { width: 1px; align-self: stretch; background: var(--border); margin: 2px 2px; }
 
@@ -52,11 +52,12 @@ body {
 
 .lab { font-size: .7rem; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: .05em; }
 
-.page-header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; margin: 4px 0 14px; }
+.page-header { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 14px; }
 .page-header__title { margin: 0; font-size: 1.6rem; font-weight: 800; letter-spacing: -.02em; color: var(--ink); }
+.page-header__meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; }
 .page-header__updated { margin: 0; }
 
-.dash-hero { padding: 14px 18px; margin-bottom: 14px; display: flex; align-items: center; gap: clamp(18px, 3vw, 36px); }
+.dash-hero { padding: 14px 18px; display: flex; align-items: center; gap: clamp(18px, 3vw, 36px); }
 .dash-hero__total { flex: none; }
 .dash-hero__total .lab { display: block; }
 
@@ -83,13 +84,17 @@ table.data tbody tr:last-child td { border-bottom: 0; }
 table.data tbody tr:hover td { background: var(--surface-2); }
 
 .trend-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 2px; }
-#chartsView { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+#chartsView { display: flex; flex-direction: column; }
 .tabs { display: inline-flex; gap: 4px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 3px; }
 .tabs button { appearance: none; border: 0; background: transparent; font: inherit; font-weight: 600; font-size: .8rem; color: var(--ink-2); padding: 6px 12px; border-radius: 8px; cursor: pointer; }
 .tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(16,16,24,.12); }
-.chart-block { margin-top: 14px; flex: 1; display: flex; flex-direction: column; min-height: 0; }
-.chart-block .table-container { overflow: visible; margin-top: 0; flex: 1; display: flex; flex-direction: column; min-height: 0; }
-.chart-block .chart-figure { flex: 1; min-height: 0; }
+.chart-block { margin-top: 14px; display: flex; flex-direction: column; }
+.chart-block .table-container { overflow: visible; margin-top: 0; display: flex; flex-direction: column; }
+// Fixed (not fill-parent) height: the trend card is no longer grid-stretched
+// 1:1 against the map (it's one of three cards stacked in the right column),
+// so sizing the chart off the map's height would tie its box to whatever
+// else in that column is loading/resizing — see observeResize in charts/utils.js.
+.chart-block .chart-figure { height: 270px; }
 .chart-block__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 14px; margin-bottom: 4px; }
 .chart-block h4 { font-size: .82rem; font-weight: 700; margin: 0; }
 .chart-block h4 span { color: var(--ink-2); font-weight: 500; font-size: .74rem; }
@@ -165,12 +170,35 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 
+// ---- Two-column dashboard layout: hero+map (left) + trend chart/tables (right) ----
+.dashboard-columns {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  align-items: stretch;
+
+  @include at-media('desktop') {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+}
+
+.dashboard-columns__main {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.dashboard-columns__side {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
 // ---- Data grid cards + mobile drawers (All Areas / County) ----
 
 .data-grid-section {
-  // 14px matches .dash-hero's margin-bottom (the hero-to-map-cards gap), so
-  // the map-cards-to-grid-cards gap reads the same as the gap above it.
-  margin-top: 14px;
   margin-bottom: units(4);
 }
 
@@ -179,10 +207,6 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   grid-template-columns: 1fr;
   gap: 14px;
   align-items: stretch;
-
-  @include at-media('desktop') {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  }
 }
 
 .data-grid-card {
@@ -204,10 +228,8 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 }
 
 .map-cards {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 14px;
-  align-items: stretch;
+  display: flex;
+  flex-direction: column;
 }
 
 .map-card {
@@ -291,9 +313,9 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 
 .data-grid-scroll {
   overflow: auto;
-  // ~10 data rows (36.5px: 16px padding + 19.5px line-height + 1px border)
+  // ~5 data rows (36.5px: 16px padding + 19.5px line-height + 1px border)
   // plus the ~32.5px sticky header, at this rule's current font/padding values.
-  max-height: 400px;
+  max-height: 215px;
   -webkit-overflow-scrolling: touch;
   scrollbar-gutter: stable;
   // Reserves space for the sticky header so scrollIntoView doesn't park a row underneath it.
@@ -336,9 +358,12 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 
 // :is(...) since the overlay reparents the same table node rather than
 // re-rendering it — see allAreas.js's openOverlay.
+//
+// width: 100% (not max-content) keeps the table within the card's width —
+// the name column below wraps instead of forcing horizontal scroll for
+// long state/county names.
 :is(.data-grid-card, .data-grid-overlay) table {
-  width: max-content;
-  min-width: 100%;
+  width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   font-size: 0.8125rem;
@@ -357,10 +382,13 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   white-space: nowrap;
 }
 
+// Name column wraps onto a second line for long state/county names instead
+// of forcing the whole table wider (see width: 100% above).
 :is(.data-grid-card, .data-grid-overlay) th:first-child,
 :is(.data-grid-card, .data-grid-overlay) td:first-child {
   text-align: left;
   font-weight: 600;
+  white-space: normal;
 }
 
 :is(.data-grid-card, .data-grid-overlay) thead th {
@@ -735,9 +763,9 @@ body.data-grid-drawer-open {
   top: 50%;
   left: 50%;
   z-index: 1001;
-  // Matches .dashboard-root's max-width: 1200px / padding: 0 20px (custom-styles.scss)
+  // Matches .dashboard-root's max-width: 1600px / padding: 0 20px (custom-styles.scss)
   // continuously across the ≥64em range, so this lines up with the hero card's width.
-  width: min(calc(100% - 40px), 1160px);
+  width: min(calc(100% - 40px), 1560px);
   max-height: 85vh;
   display: flex;
   flex-direction: column;
@@ -919,7 +947,6 @@ body.data-grid-overlay-open {
   flex: 1;
 }
 
-@media (max-width: 960px) {
-  .map-cards { grid-template-columns: 1fr; }
-  .chart-block .chart-figure { min-height: 220px; }
+@media (max-width: 63.99em) {
+  .chart-block .chart-figure { height: 220px; }
 }

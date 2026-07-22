@@ -121,11 +121,11 @@ export function appendTrendFigure(container, title) {
     .attr('role', 'img')
     .attr('aria-label', title);
 
-  // The figure is flexed to fill whatever height the card actually has
-  // (see .chart-figure / #chartsView in _dashboard-v2.scss), which varies
-  // with the map's real rendered height — so the viewBox is sized to match
-  // the figure's actual box rather than a fixed constant, letting the plot
-  // use all the available space without distortion or dead space.
+  // The figure has a fixed CSS height (see .chart-figure in
+  // _dashboard-v2.scss) that's the same on every render, so the viewBox is
+  // sized to match the figure's actual box rather than a fixed constant —
+  // this keeps the plot filling the box exactly (no distortion/dead space)
+  // while still adapting to the width the flex layout gives it.
   const rect = figure.node().getBoundingClientRect();
   const width = Math.round(rect.width) || TREND_CHART_WIDTH;
   const height = Math.round(rect.height) || TREND_CHART_HEIGHT;
@@ -145,11 +145,10 @@ export function appendTrendFigure(container, title) {
   };
 }
 
-// Re-measures `selector`'s box whenever it changes size (e.g. the map card
-// finishing its async load and growing taller, a breakpoint stacking the
-// grid, or a window resize) and calls `onResize` so charts can redraw at
-// the correct size. No-ops on browsers without ResizeObserver — charts just
-// keep their initial-render size.
+// Re-measures `selector`'s box whenever it changes size (e.g. a breakpoint
+// stacking the grid, or a window resize changing the available width) and
+// calls `onResize` so charts can redraw at the correct size. No-ops on
+// browsers without ResizeObserver — charts just keep their initial-render size.
 export function observeResize(selector, onResize) {
   if (typeof ResizeObserver === 'undefined') return undefined;
   const node = document.querySelector(selector);

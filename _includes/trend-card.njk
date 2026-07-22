@@ -1,0 +1,33 @@
+  <div class="card map-card">
+    <div class="map-card__body">
+      <div class="trend-head">
+        <div>
+          <span class="data-grid-card__title" id="national-trend-title">
+            Enrollment Trends
+          </span>
+          <p class="data-grid-card__instruction" id="national-trend-sub">National · Hospital / Medical</p>
+        </div>
+        <div class="tabs" id="national-range-tabs" role="tablist" aria-label="Time range">
+          <button type="button" role="tab" class="chart-range-tab" aria-selected="true" data-range="yearly">Yearly</button>
+          <button type="button" role="tab" class="chart-range-tab" aria-selected="false" data-range="monthly">12 months</button>
+        </div>
+      </div>
+
+      <div id="chartsView">
+        <div class="chart-block">
+          <div class="chart-block__head"><h4>Enrollment Count</h4><div class="legend" id="national-trend-line-legend"></div></div>
+          <div class="table-container" id="national-trend-line"></div>
+        </div>
+
+        {# Temporarily hidden — trend card shows just the line chart for now.
+           Kept in the DOM (not removed) because allAreas.js's renderNationalTrend()
+           always renders into #national-trend-bar via appendTrendFigure(), which
+           calls .node().getBoundingClientRect() and would throw if this node didn't
+           exist. Plan is to move this into an overlay later. #}
+        <div class="chart-block" hidden>
+          <div class="chart-block__head"><h4>Percent of Total Enrollment</h4><div class="legend" id="national-trend-bar-legend"></div></div>
+          <div class="table-container" id="national-trend-bar"></div>
+        </div>
+      </div>
+    </div>
+  </div>
