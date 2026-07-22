@@ -119,13 +119,8 @@ async function init() {
     renderNationalTrend();
     observeResize('#chartsView', renderNationalTrend);
 
-    // IMPORTANT: keep MA/MA-PD as the SECOND item in each array below.
-    // pieChart.js renders index 1 on the left side of the donut (both the
-    // arc and its label). If you reorder these or add a third Medicare
-    // program type, double-check pieChart.js's xPosition logic still does
-    // what you expect.
-    //
-    // currentYear assumes `yearlyWithLatest` has the latest year appearing first.
+    // IMPORTANT: keep MA/MA-PD SECOND in each array below — pieChart.js
+    // renders index 1 on the donut's left side. currentYear assumes yearlyWithLatest's latest year is first.
     const currentYear = yearlyWithLatest[0];
 
     // Config for the swappable card at #medicare-enrollment-hero, keyed by
@@ -292,8 +287,10 @@ async function init() {
     let resetMapToNational;
     let clearSelectedState;
 
-    // Forward-declared: the desktopMql listener below force-closes these,
-    // but they're defined later once their DOM refs exist.
+    // Forward-declared: each popup's mutual-exclusion hook needs to call the
+    // others' close(), but they're only assigned once createPopup builds them.
+    let closeDrawer;
+    let closeCountyDrawer;
     let closeOverlay;
     let closeCountyOverlay;
 
@@ -320,6 +317,14 @@ async function init() {
         return String(av).localeCompare(String(bv)) * dir;
       });
     };
+
+    // Flips {index, direction} for a newly-clicked column (resets to
+    // ascending on a column switch). Shared by both drawers and both grids.
+    const toggleSort = (current, index) => (
+      current.index === index
+        ? { index, direction: current.direction === 'asc' ? 'desc' : 'asc' }
+        : { index, direction: 'asc' }
+    );
 
     // Clicking the already-selected row again deselects it; a different
     // row swaps the map to that state, same as before.
@@ -359,6 +364,16 @@ async function init() {
           comboBoxSelector: '#drug-state-selector',
         },
       },
+    };
+
+    // Mirrors selectStateFromGrid's toggle behavior, reusing the existing
+    // dashboard:countyselect event so the map/drawer/grid all stay in sync.
+    const selectCountyFromGrid = (county) => {
+      const config = mapConfigs[activeDashboardType];
+      if (!config) return;
+      document.dispatchEvent(new CustomEvent('dashboard:countyselect', {
+        detail: { containerSelector: config.selector, county: selectedCounty === county ? null : county },
+      }));
     };
 
     const updateScrollAffordance = (scrollEl) => {
@@ -409,46 +424,198 @@ async function init() {
         isRowSelected: (row) => selectedState?.stateName === row.stateName,
         sortState: allAreasSort,
         onSort: (index) => {
-          allAreasSort = allAreasSort.index === index
-            ? { index, direction: allAreasSort.direction === 'asc' ? 'desc' : 'asc' }
-            : { index, direction: 'asc' };
+          allAreasSort = toggleSort(allAreasSort, index);
           renderAllAreasGrid(type);
         },
       });
       requestAnimationFrame(() => bindScrollAffordance(host));
     };
 
-    // ---- Mobile drawers (state-level, county-level) ----
+    // ---- Shared helpers for the mobile drawers + desktop expand overlays
+    // (state and county grids use the same drawer/overlay/sort behavior). ----
 
-    const drawerEls = {
-      trigger: document.querySelector('#all-areas-mobile-trigger'),
-      triggerValue: document.querySelector('#all-areas-mobile-trigger-value'),
-      triggerDot: document.querySelector('#all-areas-mobile-trigger-dot'),
-      triggerClear: document.querySelector('#all-areas-mobile-trigger-clear'),
-      overlay: document.querySelector('#all-areas-drawer-overlay'),
-      panel: document.querySelector('#all-areas-drawer'),
-      closeBtn: document.querySelector('#all-areas-drawer-close'),
-      search: document.querySelector('#all-areas-drawer-search'),
-      theadRow: document.querySelector('#all-areas-drawer-thead-row'),
-      tbody: document.querySelector('#all-areas-drawer-tbody'),
+    const getFocusableEls = (container) => Array.from(
+      container.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])'),
+    );
+
+    const makeDrawerEls = (prefix) => ({
+      trigger: document.querySelector(`#${prefix}-mobile-trigger`),
+      triggerValue: document.querySelector(`#${prefix}-mobile-trigger-value`),
+      triggerDot: document.querySelector(`#${prefix}-mobile-trigger-dot`),
+      triggerClear: document.querySelector(`#${prefix}-mobile-trigger-clear`),
+      overlay: document.querySelector(`#${prefix}-drawer-overlay`),
+      panel: document.querySelector(`#${prefix}-drawer`),
+      closeBtn: document.querySelector(`#${prefix}-drawer-close`),
+      search: document.querySelector(`#${prefix}-drawer-search`),
+      theadRow: document.querySelector(`#${prefix}-drawer-thead-row`),
+      tbody: document.querySelector(`#${prefix}-drawer-tbody`),
+    });
+
+    const makeOverlayEls = (prefix) => ({
+      trigger: document.querySelector(`#${prefix}-expand-trigger`),
+      scrim: document.querySelector(`#${prefix}-overlay-scrim`),
+      panel: document.querySelector(`#${prefix}-overlay`),
+      body: document.querySelector(`#${prefix}-overlay-body`),
+      closeBtn: document.querySelector(`#${prefix}-overlay-close`),
+    });
+
+    // Generic popup "chrome" shared by all 4 popups (2 drawers, 2 overlays).
+    // Popup-specific behavior (render a list, reparent a DOM node) comes in via hooks.
+    const createPopup = ({
+      scrim, panel, trigger, isDisabled = () => false,
+      bodyLockClass, focusOnOpen, onBeforeOpen, onOpen, onClose,
+    }) => {
+      let lastFocusedEl = null;
+      let onKeydown;
+
+      const isOpen = () => Boolean(panel?.classList.contains('is-open'));
+
+      const close = () => {
+        if (!isOpen()) return;
+        onClose?.();
+        scrim.classList.remove('is-open');
+        panel.classList.remove('is-open');
+        trigger?.setAttribute('aria-expanded', 'false');
+        document.body.classList.remove(bodyLockClass);
+        document.removeEventListener('keydown', onKeydown);
+        (lastFocusedEl || trigger)?.focus();
+      };
+
+      onKeydown = (event) => {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          close();
+          return;
+        }
+        if (event.key !== 'Tab' || !panel) return;
+        const focusable = getFocusableEls(panel);
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      };
+
+      const open = () => {
+        if (!panel || !scrim || isDisabled()) return;
+        onBeforeOpen?.();
+        lastFocusedEl = document.activeElement;
+        onOpen?.();
+        scrim.classList.add('is-open');
+        panel.classList.add('is-open');
+        trigger?.setAttribute('aria-expanded', 'true');
+        document.body.classList.add(bodyLockClass);
+        document.addEventListener('keydown', onKeydown);
+        focusOnOpen?.();
+      };
+
+      return { open, close, isOpen };
     };
 
-    const overlayEls = {
-      trigger: document.querySelector('#all-areas-expand-trigger'),
-      scrim: document.querySelector('#all-areas-overlay-scrim'),
-      panel: document.querySelector('#all-areas-overlay'),
-      body: document.querySelector('#all-areas-overlay-body'),
-      closeBtn: document.querySelector('#all-areas-overlay-close'),
+    const renderSortableDrawerHead = (theadRow, cols, sortState, onSortClick) => {
+      if (!theadRow) return;
+      theadRow.innerHTML = '';
+
+      cols.forEach((col, index) => {
+        const th = document.createElement('th');
+        th.scope = 'col';
+
+        const isActive = sortState.index === index;
+        let ariaSortValue = 'none';
+        let arrow = '';
+        if (isActive) {
+          ariaSortValue = sortState.direction === 'asc' ? 'ascending' : 'descending';
+          arrow = sortState.direction === 'asc' ? ' ▲' : ' ▼';
+        }
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'data-grid-drawer__sort-button';
+        button.classList.toggle('is-active', isActive);
+        button.setAttribute('aria-sort', ariaSortValue);
+        button.innerHTML = `${col.label}<span aria-hidden="true">${arrow}</span>`;
+        button.addEventListener('click', () => onSortClick(index));
+
+        th.appendChild(button);
+        theadRow.appendChild(th);
+      });
     };
+
+    // isRowSelectable/badge default to "no restriction" (county's case);
+    // the state grid overrides both (mappable-state check + abbreviation badge).
+    const renderDrawerRows = (tbody, rows, cols, {
+      emptyMessage, isRowSelectable = () => true, isRowSelected = () => false, badge, onSelectRow,
+    }) => {
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      if (!rows.length) {
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.className = 'data-grid-drawer__empty';
+        td.colSpan = cols.length;
+        td.textContent = emptyMessage;
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return;
+      }
+
+      rows.forEach((row) => {
+        const tr = document.createElement('tr');
+        const selectable = isRowSelectable(row);
+        tr.classList.toggle('is-selected', isRowSelected(row));
+
+        cols.forEach((col, index) => {
+          const td = document.createElement('td');
+          const cellHtml = col.html ? col.html(row) : null;
+          if (index === 0 && badge) {
+            td.innerHTML = `${badge(row)}${cellHtml ?? col.value(row)}`;
+          } else if (cellHtml != null) {
+            td.innerHTML = cellHtml;
+          } else {
+            td.textContent = col.value(row);
+          }
+          tr.appendChild(td);
+        });
+
+        if (selectable) {
+          tr.tabIndex = 0;
+          tr.classList.add('is-clickable');
+
+          const selectRow = () => onSelectRow(row);
+          tr.addEventListener('click', selectRow);
+          tr.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              selectRow();
+            }
+          });
+        } else {
+          tr.classList.add('is-unselectable');
+        }
+
+        tbody.appendChild(tr);
+      });
+    };
+
+    const filterAndSortDrawerRows = (rows, cols, sortState, searchTerm, matchesSearch) => {
+      const term = searchTerm.trim().toLowerCase();
+      const filtered = term ? rows.filter((row) => matchesSearch(row, term)) : rows;
+      return sortRows(filtered, cols, sortState);
+    };
+
+    // ---- State mobile drawer + desktop expand overlay ----
+
+    const drawerEls = makeDrawerEls('all-areas');
+    const overlayEls = makeOverlayEls('all-areas');
 
     let drawerSort = { index: 0, direction: 'asc' }; // State A→Z, matches desktop table's default
     let drawerSearchTerm = '';
-    let drawerLastFocusedEl = null;
-
-    let renderDrawerList;
-    let closeDrawer;
-    let renderCountyDrawerList;
-    let closeCountyDrawer;
 
     const updateDrawerTriggerValue = () => {
       if (!drawerEls.triggerValue) return;
@@ -461,168 +628,47 @@ async function init() {
       if (drawerEls.triggerClear) drawerEls.triggerClear.hidden = !isSelected;
     };
 
-    const drawerFilterSort = (type) => {
+    const renderDrawerList = (type = activeDashboardType) => {
       const cols = areaColumnsFor(type);
-      const term = drawerSearchTerm.trim().toLowerCase();
+      const rows = filterAndSortDrawerRows(
+        allStatesRows.filter((d) => rowTotal(type, d) > 0),
+        cols,
+        drawerSort,
+        drawerSearchTerm,
+        (row, term) => row.stateName.toLowerCase().includes(term),
+      );
 
-      let rows = allStatesRows.filter((d) => rowTotal(type, d) > 0);
-      if (term) {
-        rows = rows.filter((d) => d.stateName.toLowerCase().includes(term));
-      }
-
-      rows = sortRows(rows, cols, drawerSort);
-
-      return { rows, cols };
-    };
-
-    const renderDrawerHead = (cols) => {
-      if (!drawerEls.theadRow) return;
-      drawerEls.theadRow.innerHTML = '';
-
-      cols.forEach((col, index) => {
-        const th = document.createElement('th');
-        th.scope = 'col';
-
-        const isActive = drawerSort.index === index;
-        let ariaSortValue = 'none';
-        let arrow = '';
-        if (isActive) {
-          ariaSortValue = drawerSort.direction === 'asc' ? 'ascending' : 'descending';
-          arrow = drawerSort.direction === 'asc' ? ' ▲' : ' ▼';
-        }
-
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'data-grid-drawer__sort-button';
-        button.classList.toggle('is-active', isActive);
-        button.setAttribute('aria-sort', ariaSortValue);
-        button.innerHTML = `${col.label}<span aria-hidden="true">${arrow}</span>`;
-
-        button.addEventListener('click', () => {
-          drawerSort = drawerSort.index === index
-            ? { index, direction: drawerSort.direction === 'asc' ? 'desc' : 'asc' }
-            : { index, direction: 'asc' };
-          renderDrawerList();
-        });
-
-        th.appendChild(button);
-        drawerEls.theadRow.appendChild(th);
+      renderSortableDrawerHead(drawerEls.theadRow, cols, drawerSort, (index) => {
+        drawerSort = toggleSort(drawerSort, index);
+        renderDrawerList(type);
+      });
+      renderDrawerRows(drawerEls.tbody, rows, cols, {
+        emptyMessage: drawerSearchTerm ? `No states match "${drawerSearchTerm}".` : 'No data available.',
+        isRowSelectable: (row) => mappableStateNames.has(row.stateName),
+        isRowSelected: (row) => selectedState?.stateName === row.stateName,
+        badge: (row) => `<span class="data-grid-drawer__badge">${row.state || ''}</span>`,
+        onSelectRow: (row) => {
+          selectStateFromGrid(row.stateName);
+          closeDrawer();
+        },
       });
     };
 
-    const renderDrawerRows = (rows, cols) => {
-      if (!drawerEls.tbody) return;
-      drawerEls.tbody.innerHTML = '';
-
-      if (!rows.length) {
-        const tr = document.createElement('tr');
-        const td = document.createElement('td');
-        td.className = 'data-grid-drawer__empty';
-        td.colSpan = cols.length;
-        td.textContent = drawerSearchTerm ? `No states match "${drawerSearchTerm}".` : 'No data available.';
-        tr.appendChild(td);
-        drawerEls.tbody.appendChild(tr);
-        return;
-      }
-
-      rows.forEach((row) => {
-        const tr = document.createElement('tr');
-        const selectable = mappableStateNames.has(row.stateName);
-
-        cols.forEach((col, index) => {
-          const td = document.createElement('td');
-          if (index === 0) {
-            const name = col.html ? col.html(row) : col.value(row);
-            td.innerHTML = `<span class="data-grid-drawer__badge">${row.state || ''}</span>${name}`;
-          } else if (col.html) {
-            td.innerHTML = col.html(row);
-          } else {
-            td.textContent = col.value(row);
-          }
-          tr.appendChild(td);
-        });
-
-        if (selectable) {
-          tr.tabIndex = 0;
-          tr.classList.add('is-clickable');
-
-          const selectRow = () => {
-            selectStateFromGrid(row.stateName);
-            closeDrawer();
-          };
-          tr.addEventListener('click', selectRow);
-          tr.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault();
-              selectRow();
-            }
-          });
-        } else {
-          tr.classList.add('is-unselectable');
-        }
-
-        drawerEls.tbody.appendChild(tr);
-      });
-    };
-
-    renderDrawerList = (type = activeDashboardType) => {
-      const { rows, cols } = drawerFilterSort(type);
-      renderDrawerHead(cols);
-      renderDrawerRows(rows, cols);
-    };
-
-    const getFocusableEls = (container) => Array.from(
-      container.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])'),
-    );
-
-    const trapDrawerFocus = (event) => {
-      if (event.key !== 'Tab' || !drawerEls.panel) return;
-      const focusable = getFocusableEls(drawerEls.panel);
-      if (!focusable.length) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    const onDrawerKeydown = (event) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        closeDrawer();
-        return;
-      }
-      trapDrawerFocus(event);
-    };
-
-    const isDrawerOpen = () => Boolean(drawerEls.panel?.classList.contains('is-open'));
-
-    const openDrawer = () => {
-      if (!drawerEls.panel || !drawerEls.overlay) return;
-      closeCountyDrawer();
-      drawerLastFocusedEl = document.activeElement;
-      renderDrawerList();
-      drawerEls.overlay.classList.add('is-open');
-      drawerEls.panel.classList.add('is-open');
-      drawerEls.trigger?.setAttribute('aria-expanded', 'true');
-      document.body.classList.add('data-grid-drawer-open');
-      document.addEventListener('keydown', onDrawerKeydown);
-      drawerEls.search?.focus();
-    };
-
-    closeDrawer = () => {
-      if (!drawerEls.panel || !drawerEls.overlay) return;
-      drawerEls.overlay.classList.remove('is-open');
-      drawerEls.panel.classList.remove('is-open');
-      drawerEls.trigger?.setAttribute('aria-expanded', 'false');
-      document.body.classList.remove('data-grid-drawer-open');
-      document.removeEventListener('keydown', onDrawerKeydown);
-      (drawerLastFocusedEl || drawerEls.trigger)?.focus();
-    };
+    const stateDrawerPopup = createPopup({
+      scrim: drawerEls.overlay,
+      panel: drawerEls.panel,
+      trigger: drawerEls.trigger,
+      bodyLockClass: 'data-grid-drawer-open',
+      focusOnOpen: () => drawerEls.search?.focus(),
+      onBeforeOpen: () => closeCountyDrawer(),
+      onOpen: () => {
+        renderDrawerList();
+        drawerEls.tbody?.querySelector('tr.is-selected')?.scrollIntoView({ block: 'nearest' });
+      },
+    });
+    const openDrawer = stateDrawerPopup.open;
+    closeDrawer = stateDrawerPopup.close;
+    const isDrawerOpen = stateDrawerPopup.isOpen;
 
     if (drawerEls.trigger) {
       drawerEls.trigger.addEventListener('click', openDrawer);
@@ -647,35 +693,14 @@ async function init() {
       }
     });
 
-    // ---- County mobile drawer. DUPLICATE to the state drawer above rather
-    // than a shared logic (because county has unmappable rows,
-    // dropdown-based select vs. event dispatch) ----
-    // TODO implement county view on map?
+    // ---- County mobile drawer + desktop expand overlay. Dispatches
+    // dashboard:countyselect directly instead of driving a <select>. ----
 
-    const countyDrawerEls = {
-      trigger: document.querySelector('#county-mobile-trigger'),
-      triggerValue: document.querySelector('#county-mobile-trigger-value'),
-      triggerDot: document.querySelector('#county-mobile-trigger-dot'),
-      triggerClear: document.querySelector('#county-mobile-trigger-clear'),
-      overlay: document.querySelector('#county-drawer-overlay'),
-      panel: document.querySelector('#county-drawer'),
-      closeBtn: document.querySelector('#county-drawer-close'),
-      search: document.querySelector('#county-drawer-search'),
-      theadRow: document.querySelector('#county-drawer-thead-row'),
-      tbody: document.querySelector('#county-drawer-tbody'),
-    };
-
-    const countyOverlayEls = {
-      trigger: document.querySelector('#county-expand-trigger'),
-      scrim: document.querySelector('#county-overlay-scrim'),
-      panel: document.querySelector('#county-overlay'),
-      body: document.querySelector('#county-overlay-body'),
-      closeBtn: document.querySelector('#county-overlay-close'),
-    };
+    const countyDrawerEls = makeDrawerEls('county');
+    const countyOverlayEls = makeOverlayEls('county');
 
     let countyDrawerSort = { index: 0, direction: 'asc' };
     let countyDrawerSearchTerm = '';
-    let countyDrawerLastFocusedEl = null;
 
     const updateCountyDrawerTriggerValue = () => {
       if (!countyDrawerEls.triggerValue) return;
@@ -694,155 +719,47 @@ async function init() {
       if (countyOverlayEls.trigger) countyOverlayEls.trigger.disabled = !hasState;
     };
 
-    const countyDrawerFilterSort = (type) => {
+    const renderCountyDrawerList = (type = activeDashboardType) => {
       const cols = countyColumnsFor(type);
-      const term = countyDrawerSearchTerm.trim().toLowerCase();
+      const rows = filterAndSortDrawerRows(
+        currentCountyRows,
+        cols,
+        countyDrawerSort,
+        countyDrawerSearchTerm,
+        (row, term) => row.county.toLowerCase().includes(term),
+      );
 
-      let rows = currentCountyRows;
-      if (term) {
-        rows = rows.filter((d) => d.county.toLowerCase().includes(term));
-      }
-
-      rows = sortRows(rows, cols, countyDrawerSort);
-
-      return { rows, cols };
-    };
-
-    const renderCountyDrawerHead = (cols) => {
-      if (!countyDrawerEls.theadRow) return;
-      countyDrawerEls.theadRow.innerHTML = '';
-
-      cols.forEach((col, index) => {
-        const th = document.createElement('th');
-        th.scope = 'col';
-
-        const isActive = countyDrawerSort.index === index;
-        let ariaSortValue = 'none';
-        let arrow = '';
-        if (isActive) {
-          ariaSortValue = countyDrawerSort.direction === 'asc' ? 'ascending' : 'descending';
-          arrow = countyDrawerSort.direction === 'asc' ? ' ▲' : ' ▼';
-        }
-
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'data-grid-drawer__sort-button';
-        button.classList.toggle('is-active', isActive);
-        button.setAttribute('aria-sort', ariaSortValue);
-        button.innerHTML = `${col.label}<span aria-hidden="true">${arrow}</span>`;
-
-        button.addEventListener('click', () => {
-          countyDrawerSort = countyDrawerSort.index === index
-            ? { index, direction: countyDrawerSort.direction === 'asc' ? 'desc' : 'asc' }
-            : { index, direction: 'asc' };
-          renderCountyDrawerList();
-        });
-
-        th.appendChild(button);
-        countyDrawerEls.theadRow.appendChild(th);
+      renderSortableDrawerHead(countyDrawerEls.theadRow, cols, countyDrawerSort, (index) => {
+        countyDrawerSort = toggleSort(countyDrawerSort, index);
+        renderCountyDrawerList(type);
       });
-    };
-
-    const renderCountyDrawerRows = (rows, cols) => {
-      if (!countyDrawerEls.tbody) return;
-      countyDrawerEls.tbody.innerHTML = '';
-
-      if (!rows.length) {
-        const tr = document.createElement('tr');
-        const td = document.createElement('td');
-        td.className = 'data-grid-drawer__empty';
-        td.colSpan = cols.length;
-        td.textContent = countyDrawerSearchTerm ? `No counties match "${countyDrawerSearchTerm}".` : 'No data available.';
-        tr.appendChild(td);
-        countyDrawerEls.tbody.appendChild(tr);
-        return;
-      }
-
-      rows.forEach((row) => {
-        const tr = document.createElement('tr');
-        tr.tabIndex = 0;
-        tr.classList.add('is-clickable');
-
-        cols.forEach((col) => {
-          const td = document.createElement('td');
-          if (col.html) {
-            td.innerHTML = col.html(row);
-          } else {
-            td.textContent = col.value(row);
-          }
-          tr.appendChild(td);
-        });
-
-        const selectRow = () => {
+      renderDrawerRows(countyDrawerEls.tbody, rows, cols, {
+        emptyMessage: countyDrawerSearchTerm ? `No counties match "${countyDrawerSearchTerm}".` : 'No data available.',
+        isRowSelected: (row) => selectedCounty === row.county,
+        onSelectRow: (row) => {
           document.dispatchEvent(new CustomEvent('dashboard:countyselect', {
             detail: { containerSelector: mapConfigs[activeDashboardType].selector, county: row.county },
           }));
           closeCountyDrawer();
-        };
-        tr.addEventListener('click', selectRow);
-        tr.addEventListener('keydown', (event) => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            selectRow();
-          }
-        });
-
-        countyDrawerEls.tbody.appendChild(tr);
+        },
       });
     };
 
-    renderCountyDrawerList = (type = activeDashboardType) => {
-      const { rows, cols } = countyDrawerFilterSort(type);
-      renderCountyDrawerHead(cols);
-      renderCountyDrawerRows(rows, cols);
-    };
-
-    const trapCountyDrawerFocus = (event) => {
-      if (event.key !== 'Tab' || !countyDrawerEls.panel) return;
-      const focusable = getFocusableEls(countyDrawerEls.panel);
-      if (!focusable.length) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    const onCountyDrawerKeydown = (event) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        closeCountyDrawer();
-        return;
-      }
-      trapCountyDrawerFocus(event);
-    };
-
-    const openCountyDrawer = () => {
-      if (!countyDrawerEls.panel || !countyDrawerEls.overlay || countyDrawerEls.trigger?.disabled) return;
-      closeDrawer();
-      countyDrawerLastFocusedEl = document.activeElement;
-      renderCountyDrawerList();
-      countyDrawerEls.overlay.classList.add('is-open');
-      countyDrawerEls.panel.classList.add('is-open');
-      countyDrawerEls.trigger?.setAttribute('aria-expanded', 'true');
-      document.body.classList.add('data-grid-drawer-open');
-      document.addEventListener('keydown', onCountyDrawerKeydown);
-      countyDrawerEls.search?.focus();
-    };
-
-    closeCountyDrawer = () => {
-      if (!countyDrawerEls.panel || !countyDrawerEls.overlay) return;
-      countyDrawerEls.overlay.classList.remove('is-open');
-      countyDrawerEls.panel.classList.remove('is-open');
-      countyDrawerEls.trigger?.setAttribute('aria-expanded', 'false');
-      document.body.classList.remove('data-grid-drawer-open');
-      document.removeEventListener('keydown', onCountyDrawerKeydown);
-      (countyDrawerLastFocusedEl || countyDrawerEls.trigger)?.focus();
-    };
+    const countyDrawerPopup = createPopup({
+      scrim: countyDrawerEls.overlay,
+      panel: countyDrawerEls.panel,
+      trigger: countyDrawerEls.trigger,
+      isDisabled: () => Boolean(countyDrawerEls.trigger?.disabled),
+      bodyLockClass: 'data-grid-drawer-open',
+      focusOnOpen: () => countyDrawerEls.search?.focus(),
+      onBeforeOpen: () => closeDrawer(),
+      onOpen: () => {
+        renderCountyDrawerList();
+        countyDrawerEls.tbody?.querySelector('tr.is-selected')?.scrollIntoView({ block: 'nearest' });
+      },
+    });
+    const openCountyDrawer = countyDrawerPopup.open;
+    closeCountyDrawer = countyDrawerPopup.close;
 
     if (countyDrawerEls.trigger) {
       countyDrawerEls.trigger.addEventListener('click', openCountyDrawer);
@@ -860,83 +777,38 @@ async function init() {
       }));
     });
 
-    document.addEventListener('dashboard:countychange', (event) => {
-      selectedCounty = (event.detail || {}).county || null;
-      updateCountyDrawerTriggerValue();
-    });
-
-    // ---- Desktop "expand" overlays (state-level, county-level) ----
-    // Reparents the card's live .data-grid-scroll-wrap into the overlay body
-    // while open (and back on close) — nothing here re-renders the table.
+    // ---- Desktop "expand" overlays. Reparents the card's live
+    // .data-grid-scroll-wrap into the overlay body while open, and back on close. ----
 
     const allAreasScrollWrapEl = document.querySelector('#all-areas-table')?.closest('.data-grid-scroll-wrap');
     const allAreasScrollWrapHome = allAreasScrollWrapEl?.parentElement;
     const countyScrollWrapEl = document.querySelector('#county-table')?.closest('.data-grid-scroll-wrap');
     const countyScrollWrapHome = countyScrollWrapEl?.parentElement;
 
-    let overlayLastFocusedEl = null;
-    let countyOverlayLastFocusedEl = null;
-
-    const trapOverlayFocus = (panel, event) => {
-      if (event.key !== 'Tab' || !panel) return;
-      const focusable = getFocusableEls(panel);
-      if (!focusable.length) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    const onOverlayKeydown = (event) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        closeOverlay();
-        return;
-      }
-      trapOverlayFocus(overlayEls.panel, event);
-    };
-
-    const onCountyOverlayKeydown = (event) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
+    const stateOverlayPopup = createPopup({
+      scrim: overlayEls.scrim,
+      panel: overlayEls.panel,
+      trigger: overlayEls.trigger,
+      isDisabled: () => !allAreasScrollWrapEl,
+      bodyLockClass: 'data-grid-overlay-open',
+      focusOnOpen: () => overlayEls.closeBtn?.focus(),
+      onBeforeOpen: () => {
         closeCountyOverlay();
-        return;
-      }
-      trapOverlayFocus(countyOverlayEls.panel, event);
-    };
-
-    const openOverlay = () => {
-      if (!overlayEls.panel || !overlayEls.scrim || !allAreasScrollWrapEl) return;
-      closeCountyOverlay();
-      closeDrawer();
-      closeCountyDrawer();
-      overlayLastFocusedEl = document.activeElement;
-      overlayEls.body.appendChild(allAreasScrollWrapEl);
-      bindScrollAffordance(document.querySelector('#all-areas-table'));
-      overlayEls.scrim.classList.add('is-open');
-      overlayEls.panel.classList.add('is-open');
-      overlayEls.trigger?.setAttribute('aria-expanded', 'true');
-      document.body.classList.add('data-grid-overlay-open');
-      document.addEventListener('keydown', onOverlayKeydown);
-      overlayEls.closeBtn?.focus();
-    };
-
-    closeOverlay = () => {
-      if (!overlayEls.panel || !overlayEls.scrim || !allAreasScrollWrapHome) return;
-      allAreasScrollWrapHome.appendChild(allAreasScrollWrapEl);
-      bindScrollAffordance(document.querySelector('#all-areas-table'));
-      overlayEls.scrim.classList.remove('is-open');
-      overlayEls.panel.classList.remove('is-open');
-      overlayEls.trigger?.setAttribute('aria-expanded', 'false');
-      document.body.classList.remove('data-grid-overlay-open');
-      document.removeEventListener('keydown', onOverlayKeydown);
-      (overlayLastFocusedEl || overlayEls.trigger)?.focus();
-    };
+        closeDrawer();
+        closeCountyDrawer();
+      },
+      onOpen: () => {
+        overlayEls.body.appendChild(allAreasScrollWrapEl);
+        bindScrollAffordance(document.querySelector('#all-areas-table'));
+        document.querySelector('#all-areas-table tr.is-selected')?.scrollIntoView({ block: 'nearest' });
+      },
+      onClose: () => {
+        allAreasScrollWrapHome.appendChild(allAreasScrollWrapEl);
+        bindScrollAffordance(document.querySelector('#all-areas-table'));
+      },
+    });
+    const openOverlay = stateOverlayPopup.open;
+    closeOverlay = stateOverlayPopup.close;
 
     if (overlayEls.trigger) {
       overlayEls.trigger.addEventListener('click', openOverlay);
@@ -944,34 +816,30 @@ async function init() {
       overlayEls.scrim?.addEventListener('click', closeOverlay);
     }
 
-    const openCountyOverlay = () => {
-      if (!countyOverlayEls.panel || !countyOverlayEls.scrim || !countyScrollWrapEl
-        || countyOverlayEls.trigger?.disabled) return;
-      closeOverlay();
-      closeDrawer();
-      closeCountyDrawer();
-      countyOverlayLastFocusedEl = document.activeElement;
-      countyOverlayEls.body.appendChild(countyScrollWrapEl);
-      bindScrollAffordance(document.querySelector('#county-table'));
-      countyOverlayEls.scrim.classList.add('is-open');
-      countyOverlayEls.panel.classList.add('is-open');
-      countyOverlayEls.trigger?.setAttribute('aria-expanded', 'true');
-      document.body.classList.add('data-grid-overlay-open');
-      document.addEventListener('keydown', onCountyOverlayKeydown);
-      countyOverlayEls.closeBtn?.focus();
-    };
-
-    closeCountyOverlay = () => {
-      if (!countyOverlayEls.panel || !countyOverlayEls.scrim || !countyScrollWrapHome) return;
-      countyScrollWrapHome.appendChild(countyScrollWrapEl);
-      bindScrollAffordance(document.querySelector('#county-table'));
-      countyOverlayEls.scrim.classList.remove('is-open');
-      countyOverlayEls.panel.classList.remove('is-open');
-      countyOverlayEls.trigger?.setAttribute('aria-expanded', 'false');
-      document.body.classList.remove('data-grid-overlay-open');
-      document.removeEventListener('keydown', onCountyOverlayKeydown);
-      (countyOverlayLastFocusedEl || countyOverlayEls.trigger)?.focus();
-    };
+    const countyOverlayPopup = createPopup({
+      scrim: countyOverlayEls.scrim,
+      panel: countyOverlayEls.panel,
+      trigger: countyOverlayEls.trigger,
+      isDisabled: () => !countyScrollWrapEl || Boolean(countyOverlayEls.trigger?.disabled),
+      bodyLockClass: 'data-grid-overlay-open',
+      focusOnOpen: () => countyOverlayEls.closeBtn?.focus(),
+      onBeforeOpen: () => {
+        closeOverlay();
+        closeDrawer();
+        closeCountyDrawer();
+      },
+      onOpen: () => {
+        countyOverlayEls.body.appendChild(countyScrollWrapEl);
+        bindScrollAffordance(document.querySelector('#county-table'));
+        document.querySelector('#county-table tr.is-selected')?.scrollIntoView({ block: 'nearest' });
+      },
+      onClose: () => {
+        countyScrollWrapHome.appendChild(countyScrollWrapEl);
+        bindScrollAffordance(document.querySelector('#county-table'));
+      },
+    });
+    const openCountyOverlay = countyOverlayPopup.open;
+    closeCountyOverlay = countyOverlayPopup.close;
 
     if (countyOverlayEls.trigger) {
       countyOverlayEls.trigger.addEventListener('click', openCountyOverlay);
@@ -979,15 +847,17 @@ async function init() {
       countyOverlayEls.scrim?.addEventListener('click', closeCountyOverlay);
     }
 
-    // Base text read from the njk markup ("State data by county") so the
+    // Base text read from the njk markup ("County Enrollment") so the
     // state-name prefix stays in sync with it instead of duplicating the string.
     const countyGridTitleEl = document.querySelector('#county-grid-title');
     const countyOverlayTitleEl = document.querySelector('#county-overlay-title');
-    const countyGridBaseTitle = countyGridTitleEl?.textContent.trim() || 'State Data by County';
+    const countyDrawerTitleEl = document.querySelector('#county-drawer-title');
+    const countyGridBaseTitle = countyGridTitleEl?.textContent.trim() || 'County Enrollment';
     const updateCountyGridTitle = (stateName) => {
-      const text = stateName ? `${stateName} - ${countyGridBaseTitle}` : countyGridBaseTitle;
+      const text = stateName ? `${stateName} ${countyGridBaseTitle}` : countyGridBaseTitle;
       if (countyGridTitleEl) countyGridTitleEl.textContent = text;
       if (countyOverlayTitleEl) countyOverlayTitleEl.textContent = text;
+      if (countyDrawerTitleEl) countyDrawerTitleEl.textContent = text;
     };
 
     const renderCountyGridTable = (type = activeDashboardType) => {
@@ -995,15 +865,24 @@ async function init() {
       const rows = sortRows(currentCountyRows, cols, countyGridSort);
 
       renderTable('#county-table', cols, rows, {
+        onRowClick: (row) => selectCountyFromGrid(row.county),
+        isRowSelected: (row) => selectedCounty === row.county,
         sortState: countyGridSort,
         onSort: (index) => {
-          countyGridSort = countyGridSort.index === index
-            ? { index, direction: countyGridSort.direction === 'asc' ? 'desc' : 'asc' }
-            : { index, direction: 'asc' };
+          countyGridSort = toggleSort(countyGridSort, index);
           renderCountyGridTable(type);
         },
       });
     };
+
+    // Fires on any county selection source (map click, drawer row, or the
+    // grid's own row click below), so the grid's highlight always stays in sync.
+    document.addEventListener('dashboard:countychange', (event) => {
+      selectedCounty = (event.detail || {}).county || null;
+      updateCountyDrawerTriggerValue();
+      renderCountyGridTable(activeDashboardType);
+      document.querySelector('#county-table tr.is-selected')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
 
     const renderCountyGrid = async (stateAbbr, stateName, type = activeDashboardType) => {
       const host = document.querySelector('#county-table');
@@ -1038,9 +917,8 @@ async function init() {
       }
     };
 
-    // Re-renders a dashboard type's map fresh (always the national view,
-    // never a stale drilled-in county from before), so switching dashboard
-    // type is guaranteed to land on national regardless of prior drill state.
+    // Re-renders fresh (always national view), so switching type never
+    // leaves a stale drilled-in county from before.
     resetMapToNational = (type) => {
       const config = mapConfigs[type];
       if (!config) return;
@@ -1096,6 +974,7 @@ async function init() {
       updateDrawerTriggerValue();
       renderAllAreasGrid(activeDashboardType);
       renderCountyGrid(state, stateName, activeDashboardType);
+      document.querySelector('#all-areas-table tr.is-selected')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
 
     document.addEventListener('dashboard:stateclear', clearSelectedState);

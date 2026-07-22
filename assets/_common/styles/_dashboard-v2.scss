@@ -41,7 +41,7 @@ body {
   padding: 6px 14px; border-radius: 8px; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;
 }
 .segmented button[aria-pressed="true"] { background: var(--surface); color: var(--brand-ink); box-shadow: 0 1px 2px rgba(16,16,24,.12); border: 1px solid var(--border); }
-.segmented button svg { width: 16px; height: 16px; }
+.segmented button svg { width: 16px; height: 16px; flex-shrink: 0; }
 .hint { font-size: .8rem; color: var(--ink-2); font-weight: 600; }
 
 .topbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 12px; }
@@ -72,12 +72,13 @@ body {
 .dash-hero__val { display: inline-flex; align-items: baseline; gap: 8px; font-size: .78rem; color: var(--ink-2); font-weight: 600; white-space: nowrap; }
 .dash-hero__val b { color: var(--ink); font-weight: 700; font-size: .86rem; }
 
-// Used by the mobile drawers' <table class="data"> (data-grid-cards.njk).
-table.data { width: 100%; border-collapse: collapse; font-size: .81rem; }
+// Mobile drawers' <table class="data">. border-collapse:separate +
+// overflow:visible (undoes _dashboard.scss's legacy table rule) are both required for the sticky thead th below to work.
+table.data { width: 100%; border-collapse: separate; border-spacing: 0; overflow: visible; font-size: .81rem; }
 table.data th, table.data td { padding: 7px 11px; text-align: right; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; white-space: nowrap; }
 table.data th:first-child, table.data td:first-child { text-align: left; }
 table.data.two-label th:nth-child(2), table.data.two-label td:nth-child(2) { text-align: left; }
-table.data thead th { position: sticky; top: 0; background: var(--surface-2); color: var(--ink-2); font-weight: 700; font-size: .68rem; text-transform: uppercase; letter-spacing: .03em; box-shadow: inset 0 -1px 0 var(--border); }
+table.data thead th { position: sticky; top: 0; z-index: 1; background: var(--surface-2); color: var(--ink-2); font-weight: 700; font-size: .68rem; text-transform: uppercase; letter-spacing: .03em; box-shadow: inset 0 -1px 0 var(--border); }
 table.data tbody tr:last-child td { border-bottom: 0; }
 table.data tbody tr:hover td { background: var(--surface-2); }
 
@@ -121,7 +122,18 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 
 @media (max-width: 520px) {
   .segmented { width: 100%; }
-  .segmented button { flex: 1; justify-content: center; }
+  // min-width:0 lets flex:1 shrink the button; without it, nowrap text like
+  // "Prescription Drug" forces the row wider than the viewport instead of wrapping.
+  .segmented button {
+    flex: 1;
+    justify-content: center;
+    min-width: 0;
+    white-space: normal;
+    text-align: center;
+    font-size: .78rem;
+    padding: 6px 8px;
+    gap: 5px;
+  }
   .usa-combo-box__input { width: 50% } //here the combo-box width is decreased!
   .usa-combo-box__input-button-separator { display: none;}
 
@@ -140,6 +152,9 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   }
   .dash-hero__bar-row { display: contents; }
   .dash-hero__label, .dash-hero__val { justify-self: center; text-align: center; }
+  // Base rule is nowrap for desktop's layout; long labels need to wrap here
+  // or they spill past the card, same issue as the segmented buttons.
+  .dash-hero__label { white-space: normal; }
 
   #heroSegB { grid-area: barB; }
   #heroNameB { grid-area: labelB; }
@@ -153,7 +168,9 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 // ---- Data grid cards + mobile drawers (All Areas / County) ----
 
 .data-grid-section {
-  margin-top: units(5);
+  // 14px matches .dash-hero's margin-bottom (the hero-to-map-cards gap), so
+  // the map-cards-to-grid-cards gap reads the same as the gap above it.
+  margin-top: 14px;
   margin-bottom: units(4);
 }
 
@@ -279,6 +296,8 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   max-height: 400px;
   -webkit-overflow-scrolling: touch;
   scrollbar-gutter: stable;
+  // Reserves space for the sticky header so scrollIntoView doesn't park a row underneath it.
+  scroll-padding-top: 36px;
 }
 
 .data-grid-scroll::-webkit-scrollbar {
@@ -399,14 +418,14 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   outline-offset: -2px;
 }
 
-// Active row highlight -- bold + accent bar
-// Click the row again to clear
-:is(.data-grid-card, .data-grid-overlay) tbody tr.is-selected td {
+// Active row highlight -- bold + accent bar (also used by the mobile
+// drawer, which has no hover state). Click the row again to clear.
+:is(.data-grid-card, .data-grid-overlay, .data-grid-drawer) tbody tr.is-selected td {
   color: var(--brand-ink, #013b63);
   font-weight: 700;
 }
 
-:is(.data-grid-card, .data-grid-overlay) tbody tr.is-selected td:first-child {
+:is(.data-grid-card, .data-grid-overlay, .data-grid-drawer) tbody tr.is-selected td:first-child {
   box-shadow: inset 3px 0 0 var(--brand-ink, #013b63);
 }
 
@@ -668,7 +687,7 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 }
 
 .data-grid-drawer.is-open {
-  transform: translateY(0);
+  transform: none;
   visibility: visible;
   transition: transform 0.25s ease, visibility 0s linear 0s;
 }
@@ -749,9 +768,8 @@ body.data-grid-overlay-open {
   overflow: hidden;
 }
 
-// Desktop-only feature (mobile relies on the drawer instead); the JS's
-// desktopMql listener force-closes this when leaving desktop, and this
-// display:none is a defense-in-depth backstop for that.
+// Desktop-only (mobile uses the drawer instead); JS force-closes this on
+// leaving desktop — this display:none is a defense-in-depth backstop.
 @media (max-width: 63.99em) {
   .data-grid-overlay,
   .data-grid-overlay-scrim {
@@ -855,6 +873,8 @@ body.data-grid-overlay-open {
   overflow: auto;
   -webkit-overflow-scrolling: touch;
   padding: 0 14px 14px;
+  // Reserves space for the sticky thead so scrollIntoView doesn't park a row underneath it.
+  scroll-padding-top: 36px;
 }
 
 .data-grid-drawer__badge {

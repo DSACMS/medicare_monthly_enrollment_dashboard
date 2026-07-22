@@ -2,15 +2,15 @@
 
   <div class="card map-card dashboard-map-panel" data-map-dashboard-type="hospital" aria-hidden="false">
     <div class="map-card__body">
-      <span class="card__title">
-        Medicare Advantage enrollment by state
+      <span class="data-grid-card__title">
+        Medicare Advantage Enrollment by State
       </span>
-      <br>
-      <span class="lab">
+      <p class="data-grid-card__instruction">
         Share of Medicare enrollees in Medicare Advantage and other health plans
-      </span>
+      </p>
 
       <div class="state-map-selection">
+            <label class="usa-label" for="medicare-state-selector">Select a state</label>
             <div class="usa-combo-box">
                   <select class="usa-select" name="medicare-state" id="medicare-state-selector">
                     <option value="">Select a state</option>
@@ -26,15 +26,15 @@
 
   <div class="card map-card dashboard-map-panel" data-map-dashboard-type="drug" hidden aria-hidden="true">
     <div class="map-card__body">
-      <span class="card__title">
-        Prescription Drug enrollment by state
+      <span class="data-grid-card__title">
+        Prescription Drug Enrollment by State
       </span>
-      <br>
-      <span class="lab">
+      <p class="data-grid-card__instruction">
         Share of Medicare Prescription Drug enrollees in MAPD vs. PDP plans
-      </span>
+      </p>
 
       <div class="state-map-selection">
+            <label class="usa-label" for="drug-state-selector">Select a state</label>
             <div class="usa-combo-box">
                   <select class="usa-select" name="drug-state" id="drug-state-selector">
                     <option value="">Select a state</option>
@@ -52,10 +52,10 @@
     <div class="map-card__body">
       <div class="trend-head">
         <div>
-          <span class="card__title" id="national-trend-title">
-            Enrollment trends over time
+          <span class="data-grid-card__title" id="national-trend-title">
+            Enrollment Trends
           </span>
-          <p class="card__sub" id="national-trend-sub">National · Hospital / Medical</p>
+          <p class="data-grid-card__instruction" id="national-trend-sub">National · Hospital / Medical</p>
         </div>
         <div class="tabs" id="national-range-tabs" role="tablist" aria-label="Time range">
           <button type="button" role="tab" class="chart-range-tab" aria-selected="true" data-range="yearly">Yearly</button>
