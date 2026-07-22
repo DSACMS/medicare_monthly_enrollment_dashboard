@@ -12,12 +12,16 @@ const DEFAULT_COLORS = ['#f6e8a3', '#e08e6d', '#c0506b', '#7a3a87', '#3d1a5e'];
 const NO_DATA_FILL = '#979595';
 
 // us-atlas's states-10m.json is unprojected (raw lon/lat), so we project it
-// ourselves at render time. 975x610 is the viewport these scale/translate
-// values are tuned for, per the us-atlas README; 800 (vs. the README's
-// suggested 1300) was chosen here specifically to keep Alaska/Hawaii fully
-// inside the frame at this viewport size — bump it up if you want the
-// mainland states larger and don't mind clipping the insets.
-const PROJECTION_SCALE = 1300;
+// ourselves at render time. 800 (vs. the us-atlas README's suggested 1300)
+// is chosen specifically to keep Alaska/Hawaii fully inside the frame at
+// this viewport size — bump it up if you want the mainland states larger
+// and don't mind clipping the insets.
+const PROJECTION_SCALE = 800;
+// Mobile gets a bigger map — scale and height both increased by the same
+// ~25% factor (width stays 975 either way) so Alaska/Hawaii still fit
+// without clipping, same reasoning as PROJECTION_SCALE above.
+const PROJECTION_SCALE_MOBILE = 1000;
+const MOBILE_MEDIA_QUERY = '(max-width: 63.99em)';
 
 
 // Module-level (not inside renderStateMap, which runs repeatedly) so
@@ -137,8 +141,9 @@ function renderStateMap(containerSelector, data, config = {}) {
   // Lookup by full state name (matches us-atlas's properties.name field).
   const dataByName = new Map(data.map((d) => [d.stateName, d]));
 
+  const isMobile = window.matchMedia(MOBILE_MEDIA_QUERY).matches;
   const width = 975;
-  const height = 520;
+  const height = isMobile ? 650 : 520;
 
   const container = d3.select(containerSelector);
 
@@ -149,7 +154,7 @@ function renderStateMap(containerSelector, data, config = {}) {
 
   const projection = d3
     .geoAlbersUsa()
-    .scale(PROJECTION_SCALE)
+    .scale(isMobile ? PROJECTION_SCALE_MOBILE : PROJECTION_SCALE)
     .translate([width / 2, height / 2]);
   const path = d3.geoPath(projection);
 

@@ -4,6 +4,7 @@ import { createTooltip, moveTooltip, getCssVar } from './utils';
 import { joinCountyData, filterCountiesByState } from './joinCountyData';
 
 const NO_DATA_FILL = '#eee';
+const MOBILE_MEDIA_QUERY = '(max-width: 63.99em)';
 
 /**
  * Renders a single state's counties as a choropleth, colored by the same
@@ -58,8 +59,12 @@ function renderCountyMap(
   const stateFips = stateFeature.id;
   const stateCounties = filterCountiesByState(allCountyFeatures, stateFips);
 
+  // fitSize (below) auto-computes scale/translate to fill exactly whatever
+  // [width, height] we give it, so unlike renderStateMap.js's fixed-scale
+  // approach, bumping height on mobile is enough on its own — no clipping risk.
+  const isMobile = window.matchMedia(MOBILE_MEDIA_QUERY).matches;
   const width = 975;
-  const height = 520;
+  const height = isMobile ? 650 : 520;
 
   const container = d3.select(containerSelector);
   container.style('position', 'relative');

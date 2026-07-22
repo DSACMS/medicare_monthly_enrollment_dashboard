@@ -77,13 +77,17 @@ body {
 // overflow:visible (undoes _dashboard.scss's legacy table rule) are both required for the sticky thead th below to work.
 table.data { width: 100%; border-collapse: separate; border-spacing: 0; overflow: visible; font-size: .81rem; }
 table.data th, table.data td { padding: 7px 11px; text-align: right; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; white-space: nowrap; }
-table.data th:first-child, table.data td:first-child { text-align: left; }
+// Name column wraps instead of forcing horizontal scroll for long
+// state/county names — same fix as :is(.data-grid-card, .data-grid-overlay)
+// th/td:first-child above, applied here to the mobile drawer's table.
+table.data th:first-child, table.data td:first-child { text-align: left; white-space: normal; }
 table.data.two-label th:nth-child(2), table.data.two-label td:nth-child(2) { text-align: left; }
 table.data thead th { position: sticky; top: 0; z-index: 1; background: var(--surface-2); color: var(--ink-2); font-weight: 700; font-size: .68rem; text-transform: uppercase; letter-spacing: .03em; box-shadow: inset 0 -1px 0 var(--border); }
 table.data tbody tr:last-child td { border-bottom: 0; }
 table.data tbody tr:hover td { background: var(--surface-2); }
 
 .trend-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 2px; }
+.trend-head__controls { display: inline-flex; align-items: center; gap: 10px; }
 #chartsView { display: flex; flex-direction: column; }
 .tabs { display: inline-flex; gap: 4px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 3px; }
 .tabs button { appearance: none; border: 0; background: transparent; font: inherit; font-weight: 600; font-size: .8rem; color: var(--ink-2); padding: 6px 12px; border-radius: 8px; cursor: pointer; }
@@ -103,6 +107,100 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 .chart-block h4 span { color: var(--ink-2); font-weight: 500; font-size: .74rem; }
 .chart-svg { width: 100%; height: auto; display: block; overflow: visible; }
 .chart-block .chart-svg { height: 100%; }
+
+// Mobile-only trend-card carousel. Desktop keeps #chartsView's existing
+// display:flex; flex-direction:column untouched — .trend-panel carries no
+// styling outside this media query, so panel 1 (the real chart) is
+// inert/unaffected by its new class on desktop.
+@media (max-width: 63.99em) {
+  #chartsView {
+    flex-direction: row;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  #chartsView::-webkit-scrollbar { display: none; }
+
+  .trend-panel {
+    flex: 0 0 100%;
+    min-width: 0;
+    scroll-snap-align: start;
+  }
+}
+
+// Placeholder panels only exist for the mobile carousel — hidden on
+// desktop so #chartsView there shows exactly what it shows today.
+@media (min-width: 64em) {
+  .trend-panel--placeholder {
+    display: none;
+  }
+}
+
+.trend-panel__placeholder-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px; // matches the mobile .chart-figure height so swiping doesn't jump/resize
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+.trend-panel__placeholder-text {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.trend-carousel-dots { display: none; }
+
+@media (max-width: 63.99em) {
+  .trend-carousel-dots {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+}
+
+.trend-carousel-dot {
+  appearance: none;
+  padding: 0;
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  width: 8px;
+  height: 8px;
+  background: var(--surface-2);
+  cursor: pointer;
+}
+
+.trend-carousel-dot:hover { background: rgba(20, 20, 28, 0.06); }
+
+.trend-carousel-dot:focus-visible {
+  outline: 2px solid var(--focus, #009ad0);
+  outline-offset: 2px;
+}
+
+// Active state changes shape (round -> pill) + size, not color alone —
+// same non-color-only philosophy as .data-grid-view-tab[aria-selected].
+// Slightly more color reliance is acceptable here since dots are a
+// well-established, shape-differentiated carousel convention.
+.trend-carousel-dot[aria-pressed="true"] {
+  width: 20px;
+  border-radius: 5px;
+  background: var(--brand, #015390);
+  border-color: var(--brand, #015390);
+}
+
+@media (forced-colors: active) {
+  .trend-carousel-dot[aria-pressed="true"] {
+    border: 2px solid CanvasText;
+  }
+}
 
 .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; }
 .legend .item { display: flex; align-items: center; gap: 7px; font-size: .77rem; color: var(--ink-2); font-weight: 600; }
@@ -249,6 +347,16 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+// The map figure reuses the shared .table-container utility class, which
+// legacy _dashboard.scss gives overflow-x: auto (meant for scrollable data
+// tables). Since this is an SVG diagram, not a table, any sub-pixel
+// rounding during layout can flash a horizontal scrollbar that then
+// disappears once the layout settles — override back to visible, matching
+// how .chart-block .table-container already does for the trend charts.
+.map-card__body > .table-container {
+  overflow: visible;
 }
 
 .usa-combo-box {
@@ -989,6 +1097,18 @@ body.data-grid-overlay-open {
   flex-direction: column;
 }
 
+// The trend overlay's body is a short static placeholder (no reparented,
+// self-sizing table like the enrollment overlay), so give it deliberate
+// height and center the text instead of shrink-wrapping to one text line.
+// ID-scoped so the real enrollment overlay is unaffected.
+#trend-overlay-body {
+  min-height: 220px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+}
+
 // The reparented .data-grid-scroll otherwise keeps its card-sized cap —
 // flex-fill instead of a fixed calc() so this stays correct regardless of
 // how tall .data-grid-overlay__header ends up (title row + tabs row).
@@ -1063,19 +1183,6 @@ body.data-grid-overlay-open {
   padding: 0 14px 14px;
   // Reserves space for the sticky thead so scrollIntoView doesn't park a row underneath it.
   scroll-padding-top: 36px;
-}
-
-.data-grid-drawer__badge {
-  display: inline-block;
-  min-width: 2.25em;
-  margin-right: 8px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: var(--surface-2, #f7f8fa);
-  color: var(--ink-2, #54545f);
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-align: center;
 }
 
 .data-grid-drawer__sort-button {

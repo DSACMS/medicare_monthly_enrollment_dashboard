@@ -119,6 +119,54 @@ async function init() {
     renderNationalTrend();
     observeResize('#chartsView', renderNationalTrend);
 
+    // ---- Mobile trend-card carousel (line chart / bar placeholder / grid
+    // placeholder). Presentation-only: doesn't call renderNationalTrend or
+    // touch chart state. activeTrendView is deliberately independent of
+    // activeTrendRange/activeDashboardType — switching Yearly/12-months or
+    // hospital/drug never changes which carousel panel is showing. ----
+
+    const trendCarouselTrack = document.querySelector('#chartsView');
+    const trendPanels = Array.from(document.querySelectorAll('#chartsView > .trend-panel'));
+    const trendDots = Array.from(document.querySelectorAll('#trend-carousel-dots .trend-carousel-dot'));
+
+    let activeTrendView = 'line'; // 'line' | 'bar' | 'grid'
+
+    const trendPanelFor = (view) => trendPanels.find((panel) => panel.dataset.view === view);
+
+    const setActiveTrendDot = (view) => {
+      trendDots.forEach((dot) => dot.setAttribute('aria-pressed', String(dot.dataset.view === view)));
+    };
+
+    const scrollToTrendView = (view, behavior = 'smooth') => {
+      const panel = trendPanelFor(view);
+      if (!panel || !trendCarouselTrack) return;
+      trendCarouselTrack.scrollTo({ left: panel.offsetLeft, behavior });
+    };
+
+    trendDots.forEach((dot) => {
+      dot.addEventListener('click', () => {
+        activeTrendView = dot.dataset.view;
+        setActiveTrendDot(activeTrendView);
+        scrollToTrendView(activeTrendView);
+      });
+    });
+
+    // Keeps dots in sync when the user swipes instead of clicking a dot.
+    // Passive: never calls preventDefault, so it can't interfere with the
+    // native scroll-snap touch gesture.
+    if (trendCarouselTrack && trendPanels.length) {
+      trendCarouselTrack.addEventListener('scroll', () => {
+        const { scrollLeft } = trendCarouselTrack;
+        const closest = trendPanels.reduce((best, panel) => (
+          Math.abs(panel.offsetLeft - scrollLeft) < Math.abs(best.offsetLeft - scrollLeft) ? panel : best
+        ));
+        if (closest.dataset.view !== activeTrendView) {
+          activeTrendView = closest.dataset.view;
+          setActiveTrendDot(activeTrendView);
+        }
+      }, { passive: true });
+    }
+
     // IMPORTANT: keep MA/MA-PD SECOND in each array below — pieChart.js
     // renders index 1 on the donut's left side. currentYear assumes yearlyWithLatest's latest year is first.
     const currentYear = yearlyWithLatest[0];
@@ -292,6 +340,7 @@ async function init() {
     let closeDrawer;
     let closeCountyDrawer;
     let closeOverlay;
+    let closeTrendOverlay;
 
     // Desktop grids' sort state, one per grid. index 0/'asc' matches each
     // grid's previous hardcoded default (name column, A→Z).
@@ -548,10 +597,10 @@ async function init() {
       });
     };
 
-    // isRowSelectable/badge default to "no restriction" (county's case);
-    // the state grid overrides both (mappable-state check + abbreviation badge).
+    // isRowSelectable defaults to "no restriction" (county's case); the
+    // state grid overrides it with a mappable-state check.
     const renderDrawerRows = (tbody, rows, cols, {
-      emptyMessage, isRowSelectable = () => true, isRowSelected = () => false, badge, onSelectRow,
+      emptyMessage, isRowSelectable = () => true, isRowSelected = () => false, onSelectRow,
     }) => {
       if (!tbody) return;
       tbody.innerHTML = '';
@@ -572,12 +621,10 @@ async function init() {
         const selectable = isRowSelectable(row);
         tr.classList.toggle('is-selected', isRowSelected(row));
 
-        cols.forEach((col, index) => {
+        cols.forEach((col) => {
           const td = document.createElement('td');
           const cellHtml = col.html ? col.html(row) : null;
-          if (index === 0 && badge) {
-            td.innerHTML = `${badge(row)}${cellHtml ?? col.value(row)}`;
-          } else if (cellHtml != null) {
+          if (cellHtml != null) {
             td.innerHTML = cellHtml;
           } else {
             td.textContent = col.value(row);
@@ -615,6 +662,7 @@ async function init() {
 
     const drawerEls = makeDrawerEls('all-areas');
     const overlayEls = makeOverlayEls('enrollment');
+    const trendOverlayEls = makeOverlayEls('trend'); // tabsSlot resolves to null (no tabs-slot markup) and is unused
 
     let drawerSort = { index: 0, direction: 'asc' }; // State A→Z, matches desktop table's default
     let drawerSearchTerm = '';
@@ -648,7 +696,6 @@ async function init() {
         emptyMessage: drawerSearchTerm ? `No states match "${drawerSearchTerm}".` : 'No data available.',
         isRowSelectable: (row) => mappableStateNames.has(row.stateName),
         isRowSelected: (row) => selectedState?.stateName === row.stateName,
-        badge: (row) => `<span class="data-grid-drawer__badge">${row.state || ''}</span>`,
         onSelectRow: (row) => {
           selectStateFromGrid(row.stateName);
           closeDrawer();
@@ -689,8 +736,12 @@ async function init() {
       if (event.matches) {
         closeDrawer();
         closeCountyDrawer();
+        activeTrendView = 'line';
+        setActiveTrendDot('line');
+        scrollToTrendView('line', 'auto');
       } else {
         closeOverlay();
+        closeTrendOverlay();
       }
     });
 
@@ -816,6 +867,7 @@ async function init() {
       onBeforeOpen: () => {
         closeDrawer();
         closeCountyDrawer();
+        closeTrendOverlay();
       },
       onOpen: () => {
         overlayEls.tabsSlot.appendChild(viewTabsEl);
@@ -837,6 +889,31 @@ async function init() {
       overlayEls.trigger.addEventListener('click', openOverlay);
       overlayEls.closeBtn?.addEventListener('click', closeOverlay);
       overlayEls.scrim?.addEventListener('click', closeOverlay);
+    }
+
+    // ---- Desktop "expand" overlay for the trend card. No reparenting — the
+    // body is static placeholder markup baked into trend-card.njk, so this
+    // popup needs no onOpen/onClose hooks. ----
+
+    const trendOverlayPopup = createPopup({
+      scrim: trendOverlayEls.scrim,
+      panel: trendOverlayEls.panel,
+      trigger: trendOverlayEls.trigger,
+      bodyLockClass: 'data-grid-overlay-open',
+      focusOnOpen: () => trendOverlayEls.closeBtn?.focus(),
+      onBeforeOpen: () => {
+        closeDrawer();
+        closeCountyDrawer();
+        closeOverlay();
+      },
+    });
+    const openTrendOverlay = trendOverlayPopup.open;
+    closeTrendOverlay = trendOverlayPopup.close;
+
+    if (trendOverlayEls.trigger) {
+      trendOverlayEls.trigger.addEventListener('click', openTrendOverlay);
+      trendOverlayEls.closeBtn?.addEventListener('click', closeTrendOverlay);
+      trendOverlayEls.scrim?.addEventListener('click', closeTrendOverlay);
     }
 
     // Swaps which table (state/county) is visible, whether the card is
