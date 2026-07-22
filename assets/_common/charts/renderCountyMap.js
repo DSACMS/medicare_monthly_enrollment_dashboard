@@ -6,7 +6,7 @@ import { joinCountyData, filterCountiesByState } from './joinCountyData';
 const NO_DATA_FILL = '#eee';
 const buttonX = 10;
 const buttonY = 10;
-const buttonWidth = 120;
+const buttonWidth = 100;
 const buttonHeight = 40;
 const buttonRadius = 15;
 
