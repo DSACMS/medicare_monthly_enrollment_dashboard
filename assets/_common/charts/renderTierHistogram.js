@@ -63,8 +63,11 @@ function renderTierHistogram(
     .map((row) => Number(metricPercent(row)))
     .filter((value) => Number.isFinite(value));
 
+  const rawMax = d3.max(values) ?? 100;
+  const domainMax = Math.ceil(rawMax);
+
   const noDataCount = data.length - values.length;
-  const edges = [0, ...breakpoints, 100];
+  const edges = [0, ...breakpoints, domainMax];
 
   const tiers = colors.map((color, index) => {
     const lower = edges[index];
@@ -80,11 +83,10 @@ function renderTierHistogram(
       upper,
       color,
       count,
-      label: isLastTier
-        ? `${lower}%–100%`
-        : `${lower}%–<${upper}%`,
+      label: `${lower}%–${upper}%`,
     };
-  });
+  })
+  .filter((tier) => tier.count > 0);
 
   const title = contextLabel
     ? `${contextLabel}: ${areaLabel} by ${metricLabel} enrollment tier`
@@ -132,7 +134,7 @@ function renderTierHistogram(
 
   const x = d3
     .scaleLinear()
-    .domain([0, 100])
+    .domain([0, domainMax])
     .range([0, innerWidth]);
 
   const maxCount = d3.max(tiers, (tier) => tier.count) || 1;

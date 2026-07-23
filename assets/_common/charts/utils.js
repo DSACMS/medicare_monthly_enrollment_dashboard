@@ -1,4 +1,5 @@
 import * as d3 from 'd3';
+import { ckmeans } from 'simple-statistics';
 
 const MONTH_ORDER = {
   January: 1, February: 2, March: 3, April: 4, May: 5, June: 6,
@@ -19,6 +20,17 @@ export const LINE_CHART_COLORS = {
   pdp: '#f92c9a',
   total: '#1b1b1b'
 };
+
+export function computeJenksBreaks(values, numClasses = DEFAULT_COLORS.length) {
+  const clean = values.filter((v) => v !== null && v !== undefined && !Number.isNaN(v));
+  if (clean.length < numClasses) return DEFAULT_BREAKPOINTS;
+
+  const clusters = ckmeans(clean, numClasses);
+
+  breaks = clusters.slice(0, -1).map((cluster) => cluster[cluster.length - 1]);
+
+  return breaks.map((b) => Math.round(b));
+}
 
 export const TREND_MARGIN = {
   top: 12, right: 100, bottom: 30, left: 44,

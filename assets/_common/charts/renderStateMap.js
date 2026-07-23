@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
 import renderSrTable from './accessibility';
-import { createTooltip, moveTooltip, DEFAULT_BREAKPOINTS, DEFAULT_COLORS, NO_DATA_FILL } from './utils';
+import { createTooltip, moveTooltip, DEFAULT_BREAKPOINTS, DEFAULT_COLORS, NO_DATA_FILL, computeJenksBreaks } from './utils';
 import renderCountyMap from './renderCountyMap';
 import requestDataset from '../../../src/router';
 import renderTierHistogram from './renderTierHistogram';
@@ -243,6 +243,9 @@ function renderStateMap(containerSelector, data, config = {}) {
 
       if (requestId !== currentCountyRequestId) return;
 
+      const countyValues = countyRows.map(metricPercent);
+      const countyBreakpoints = computeJenksBreaks(countyValues, resolvedColors.length);
+
       const onBackFn = () => {
         document.dispatchEvent(new CustomEvent('dashboard:stateclear'));
         renderStateMap(containerSelector, data, config);
@@ -258,7 +261,7 @@ function renderStateMap(containerSelector, data, config = {}) {
             metricLabel,
             metricPercent,
             metricCount,
-            breakpoints: resolvedBreakpoints,
+            breakpoints: countyBreakpoints,
             colors: resolvedColors,
             selectedCounty,
             histogramSelector,
