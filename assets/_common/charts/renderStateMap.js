@@ -162,22 +162,47 @@ function renderStateMap(containerSelector, data, config = {}) {
     if (!comboBoxSelector) return;
 
     const select = document.querySelector(comboBoxSelector);
+    if (!select) return;
 
-    // Swaps the placeholder option's label — bail out
-    // rather than throw if the element isn't a populated <select> yet, e.g.
-    // letting it throw here would abort the rest of init()
-    if (!select?.options?.[0]) return;
+    const comboBox = select.closest('.usa-combo-box');
+    const comboBoxInput = comboBox?.querySelector(
+      '.usa-combo-box__input',
+    );
 
-    // Change the first option depending on the current view.
-    select.options[0].text = stateName
-      ? 'U.S. Map'
-      : 'Select a state';
+    const isCountyView = Boolean(stateName);
 
-    // Select either the state or the empty option.
-    select.value = stateName;
+    const usMapOption = select.querySelector(
+      'option[value="us-map"]',
+    );
+
+    // USWDS creates its own visible list from the original <select>.
+    const usMapListOption = Array.from(
+      comboBox?.querySelectorAll('.usa-combo-box__list-option') || [],
+    ).find((option) => (
+      option.dataset.value === 'us-map'
+      || option.textContent.trim() === 'U.S. Map'
+    ));
+
+    // Hide U.S. Map on the national map and show it in county view.
+    if (usMapOption) {
+      usMapOption.hidden = !isCountyView;
+    }
+
+    if (usMapListOption) {
+      usMapListOption.hidden = !isCountyView;
+    }
+
+    // Update the original select.
+    select.value = stateName || '';
+
+    // Update the visible USWDS input.
+    if (comboBoxInput) {
+      comboBoxInput.value = stateName || '';
+      comboBoxInput.placeholder = 'Select a state';
+    }
   };
 
-syncComboBox();
+  syncComboBox();
 
   container.style('position', 'relative');
   container.selectAll('*').remove();
@@ -260,25 +285,30 @@ syncComboBox();
         ]),
       );
 
-      d3.select(comboBoxSelector).on('change.state-map', async (event) => {
-        const selectedStateName = event.target.value;
+      d3.select(comboBoxSelector).on(
+        'change.state-map',
+        async (event) => {
+          const selectedValue = event.target.value;
 
-        if (!selectedStateName){
-          renderStateMap(containerSelector, data, config);
-          return;
-        } 
+          if (!selectedValue || selectedValue === 'us-map') {
+            document.dispatchEvent(
+              new CustomEvent('dashboard:stateclear'),
+            );
 
-        const stateData = dataByName.get(selectedStateName);
+            renderStateMap(containerSelector, data, config);
+            return;
+          }
 
-        if (!stateData) return;
+          const stateData = dataByName.get(selectedValue);
+          if (!stateData) return;
 
-        const stateFeature = featureByStateName.get(selectedStateName);
+          const stateFeature = featureByStateName.get(selectedValue);
+          if (!stateFeature) return;
 
-        if (!stateFeature) return;
-
-        emitStateChange(stateData);
-        await showCountyView(stateFeature, stateData);
-      });
+          emitStateChange(stateData);
+          await showCountyView(stateFeature, stateData);
+        },
+      );
       svg
         .append('g')
         .selectAll('path')
