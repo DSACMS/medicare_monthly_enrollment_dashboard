@@ -226,7 +226,7 @@ async function init() {
     const renderEnrollmentHeroCard = (type) => {
       const config = pieCardConfigs[type];
       if (!config) {
-        console.warn(`renderEnrollmentHeroCard: unknown dashboard type "${type}"`);
+        
         return;
       }
 

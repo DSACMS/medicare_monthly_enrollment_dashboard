@@ -126,7 +126,7 @@ function renderCountyMap(
     .attr('stroke', (entry) => (isSelected(entry) ? '#111' : '#fff'))
     .attr('stroke-width', (entry) => (isSelected(entry) ? 3 : 0.75))
     .style('cursor', 'pointer')
-    .on('mouseenter', function highlight_current(event, entry){
+    .on('mouseenter', function highlightCurrent(event, entry){
       const currentFill = getCountyFill(entry);
       d3.select(this)
         .raise()
@@ -154,7 +154,7 @@ function renderCountyMap(
 
       moveTooltip(tooltip, container.node(), event);
     })
-    .on('mouseleave', function leftover_outline (event, entry) {
+    .on('mouseleave', function leftoverOutline (event, entry) {
       // Revert to the selected-state stroke, not a flat reset — otherwise
       // leaving the selected county erases its highlight until re-render.
       d3.select(this)

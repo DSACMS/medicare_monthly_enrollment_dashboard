@@ -329,7 +329,7 @@ function renderStateMap(containerSelector, data, config = {}) {
         .attr('fill', getStateFill)
         .attr('stroke', '#fff')
         .style('cursor', 'pointer')
-        .on('mouseenter', function(event, d){
+        .on('mouseenter', function highlightCurrent(event, d){
           const currentFill = getStateFill(d);
           
           d3.select(this)
@@ -355,7 +355,7 @@ function renderStateMap(containerSelector, data, config = {}) {
           `);
           moveTooltip(tooltip, container.node(), event);
         })
-        .on('mouseleave', function (event, entry) {
+        .on('mouseleave', function selectHighlight(event, entry) {
             d3.select(this)
               .attr('fill', getStateFill(entry))
               .attr('stroke', '#fff')
