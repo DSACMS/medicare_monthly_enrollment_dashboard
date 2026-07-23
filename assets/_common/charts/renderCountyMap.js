@@ -64,7 +64,7 @@ function renderCountyMap(
   // approach, bumping height on mobile is enough on its own — no clipping risk.
   const isMobile = window.matchMedia(MOBILE_MEDIA_QUERY).matches;
   const width = 975;
-  const height = isMobile ? 650 : 520;
+  const height = isMobile ? 750 : 620;
 
   const getCountyFill = (entry) => {
     if (!entry.data) return NO_DATA_FILL;
