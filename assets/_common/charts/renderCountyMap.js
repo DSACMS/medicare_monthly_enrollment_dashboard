@@ -66,6 +66,13 @@ function renderCountyMap(
   const width = 975;
   const height = isMobile ? 650 : 520;
 
+  const getCountyFill = (entry) => {
+    if (!entry.data) return NO_DATA_FILL;
+
+    const percent = metricPercent(entry.data);
+    return Number.isFinite(percent) ? metricColor(percent) : NO_DATA_FILL;
+  };
+
   const container = d3.select(containerSelector);
   container.style('position', 'relative');
   container.selectAll('*').remove();
@@ -97,15 +104,18 @@ function renderCountyMap(
     .data(joined)
     .join('path')
     .attr('d', (entry) => path(entry.feature))
-    .attr('fill', (entry) => {
-      if (!entry.data) return NO_DATA_FILL;
-
-      const percent = metricPercent(entry.data);
-      return Number.isFinite(percent) ? metricColor(percent) : NO_DATA_FILL;
-    })
+    .attr('fill', getCountyFill)
     .attr('stroke', (entry) => (isSelected(entry) ? getCssVar('--brand-ink', '#013b63') : '#fff'))
     .attr('stroke-width', (entry) => (isSelected(entry) ? 3 : 0.75))
     .style('cursor', 'pointer')
+    .on('mouseenter', function(event, entry){
+      const currentFill = getCountyFill(entry);
+      d3.select(this)
+        .raise()
+        .attr('stroke', '#111')
+        .attr('stroke-width', 3)
+        .attr('fill', d3.color(currentFill).brighter(0.7).formatHex());
+    })
     .on('mousemove', (event, entry) => {
       const row = entry.data;
 
@@ -126,7 +136,14 @@ function renderCountyMap(
 
       moveTooltip(tooltip, container.node(), event);
     })
-    .on('mouseleave', () => {
+    .on('mouseleave', function (event, entry) {
+      // Revert to the selected-state stroke, not a flat reset — otherwise
+      // leaving the selected county erases its highlight until re-render.
+      d3.select(this)
+        .attr('fill', getCountyFill(entry))
+        .attr('stroke', isSelected(entry) ? getCssVar('--brand-ink', '#013b63') : '#fff')
+        .attr('stroke-width', isSelected(entry) ? 3 : 0.75);
+
       tooltip.style('opacity', 0).style('display', 'none');
     })
     .on('click', (event, entry) => {
