@@ -12,15 +12,17 @@ const DEFAULT_COLORS = ['#f6e8a3', '#e08e6d', '#c0506b', '#7a3a87', '#3d1a5e'];
 const NO_DATA_FILL = '#979595';
 
 // us-atlas's states-10m.json is unprojected (raw lon/lat), so we project it
-// ourselves at render time. 800 (vs. the us-atlas README's suggested 1300)
+// ourselves at render time. 950 (vs. the us-atlas README's suggested 1300)
 // is chosen specifically to keep Alaska/Hawaii fully inside the frame at
-// this viewport size — bump it up if you want the mainland states larger
-// and don't mind clipping the insets.
-const PROJECTION_SCALE = 800;
-// Mobile gets a bigger map — scale and height both increased by the same
-// ~25% factor (width stays 975 either way) so Alaska/Hawaii still fit
-// without clipping, same reasoning as PROJECTION_SCALE above.
-const PROJECTION_SCALE_MOBILE = 1000;
+// this viewport size (paired with height=620 below) — bump it up if you
+// want the mainland states larger and don't mind clipping the insets.
+// Only the national map uses this — renderCountyMap.js's per-state
+// drill-down map is untouched, it auto-fits via fitSize regardless.
+const PROJECTION_SCALE = 950;
+// Mobile gets a bigger map still — scale and height both increased by the
+// same ~15% factor over the desktop values (width stays 975 either way)
+// so Alaska/Hawaii still fit without clipping, same reasoning as above.
+const PROJECTION_SCALE_MOBILE = 1150;
 const MOBILE_MEDIA_QUERY = '(max-width: 63.99em)';
 
 
@@ -143,7 +145,7 @@ function renderStateMap(containerSelector, data, config = {}) {
 
   const isMobile = window.matchMedia(MOBILE_MEDIA_QUERY).matches;
   const width = 975;
-  const height = isMobile ? 650 : 520;
+  const height = isMobile ? 750 : 620;
 
   const container = d3.select(containerSelector);
 

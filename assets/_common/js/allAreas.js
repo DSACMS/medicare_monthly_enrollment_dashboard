@@ -984,6 +984,10 @@ async function init() {
       selectedCounty = (event.detail || {}).county || null;
       updateCountyDrawerTriggerValue();
       renderCountyGridTable(activeDashboardType);
+      // A real (non-clear) county selection should surface itself even if
+      // the desktop card is still showing the States view — e.g. selecting
+      // a county straight off the map while never having touched the tabs.
+      if (selectedCounty) setActiveGridView('county');
       document.querySelector('#county-table tr.is-selected')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
 

@@ -73,13 +73,8 @@ body {
 .dash-hero__val { display: inline-flex; align-items: baseline; gap: 8px; font-size: .78rem; color: var(--ink-2); font-weight: 600; white-space: nowrap; }
 .dash-hero__val b { color: var(--ink); font-weight: 700; font-size: .86rem; }
 
-// Mobile drawers' <table class="data">. border-collapse:separate +
-// overflow:visible (undoes _dashboard.scss's legacy table rule) are both required for the sticky thead th below to work.
 table.data { width: 100%; border-collapse: separate; border-spacing: 0; overflow: visible; font-size: .81rem; }
 table.data th, table.data td { padding: 7px 11px; text-align: right; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; white-space: nowrap; }
-// Name column wraps instead of forcing horizontal scroll for long
-// state/county names — same fix as :is(.data-grid-card, .data-grid-overlay)
-// th/td:first-child above, applied here to the mobile drawer's table.
 table.data th:first-child, table.data td:first-child { text-align: left; white-space: normal; }
 table.data.two-label th:nth-child(2), table.data.two-label td:nth-child(2) { text-align: left; }
 table.data thead th { position: sticky; top: 0; z-index: 1; background: var(--surface-2); color: var(--ink-2); font-weight: 700; font-size: .68rem; text-transform: uppercase; letter-spacing: .03em; box-shadow: inset 0 -1px 0 var(--border); }
@@ -94,24 +89,14 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 .tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(16,16,24,.12); }
 .chart-block { margin-top: 14px; display: flex; flex-direction: column; }
 .chart-block .table-container { overflow: visible; margin-top: 0; display: flex; flex-direction: column; }
-// Fixed (not fill-parent) height: the trend card is no longer grid-stretched
-// 1:1 against the map (it's one of two cards stacked in the right column),
-// so sizing the chart off the map's height would tie its box to whatever
-// else in that column is loading/resizing — see observeResize in charts/utils.js.
-// 300px is tuned (alongside .data-grid-scroll's row count below) so the
-// trend card + enrollment card split the right column evenly and the whole
-// column's total height roughly matches the hero+map column on the left.
-.chart-block .chart-figure { height: 300px; }
+.chart-block .chart-figure { height: 267px; }
 .chart-block__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 14px; margin-bottom: 4px; }
 .chart-block h4 { font-size: .82rem; font-weight: 700; margin: 0; }
 .chart-block h4 span { color: var(--ink-2); font-weight: 500; font-size: .74rem; }
 .chart-svg { width: 100%; height: auto; display: block; overflow: visible; }
 .chart-block .chart-svg { height: 100%; }
 
-// Mobile-only trend-card carousel. Desktop keeps #chartsView's existing
-// display:flex; flex-direction:column untouched — .trend-panel carries no
-// styling outside this media query, so panel 1 (the real chart) is
-// inert/unaffected by its new class on desktop.
+// Mobile-only trend-card carousel
 @media (max-width: 63.99em) {
   #chartsView {
     flex-direction: row;
@@ -185,10 +170,7 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   outline-offset: 2px;
 }
 
-// Active state changes shape (round -> pill) + size, not color alone —
-// same non-color-only philosophy as .data-grid-view-tab[aria-selected].
-// Slightly more color reliance is acceptable here since dots are a
-// well-established, shape-differentiated carousel convention.
+// Active state changes shape (round -> pill) + size, not color alone
 .trend-carousel-dot[aria-pressed="true"] {
   width: 20px;
   border-radius: 5px;
@@ -246,27 +228,13 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 
   .dash-hero__split {
     grid-template-columns: 1fr;
-    grid-template-areas:
-      "barB"
-      "labelB"
-      "valB"
-      "barA"
-      "labelA"
-      "valA";
     row-gap: 6px;
   }
-  .dash-hero__bar-row { display: contents; }
-  .dash-hero__label, .dash-hero__val { justify-self: center; text-align: center; }
-  // Base rule is nowrap for desktop's layout; long labels need to wrap here
-  // or they spill past the card, same issue as the segmented buttons.
+  .dash-hero__label { justify-self: start; text-align: left; }
+
   .dash-hero__label { white-space: normal; }
 
-  #heroSegB { grid-area: barB; }
-  #heroNameB { grid-area: labelB; }
-  #heroValB { grid-area: valB; }
-  #heroSegA { grid-area: barA; margin-top: 10px; }
-  #heroNameA { grid-area: labelA; }
-  #heroValA { grid-area: valA; }
+  #heroNameA { margin-top: 10px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 
@@ -349,14 +317,18 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   gap: 8px;
 }
 
-// The map figure reuses the shared .table-container utility class, which
-// legacy _dashboard.scss gives overflow-x: auto (meant for scrollable data
-// tables). Since this is an SVG diagram, not a table, any sub-pixel
-// rounding during layout can flash a horizontal scrollbar that then
-// disappears once the layout settles — override back to visible, matching
-// how .chart-block .table-container already does for the trend charts.
 .map-card__body > .table-container {
   overflow: visible;
+  flex: none;
+}
+
+.map-card__body > .table-container svg {
+  max-width: 100%;
+  max-height: 480px;
+  width: auto;
+  height: auto;
+  display: block;
+  margin: 0 auto;
 }
 
 .usa-combo-box {
@@ -417,6 +389,32 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   text-align: center;
 }
 
+@include at-media('desktop') {
+  .dash-hero {
+    height: 100px;
+  }
+
+  .dashboard-map-panel {
+    height: 650px;
+  }
+
+  .map-card__histogram-placeholder {
+    flex: 1;
+    min-height: 0;
+  }
+
+  // Right column total: 375 + 14 (gap) + 375 = 764px, matching the
+  // left column's 100 + 14 + 650 = 764px.
+  .map-card:not(.dashboard-map-panel) {
+    height: 375px;
+    overflow: hidden;
+  }
+
+  .data-grid-card--enrollment {
+    height: 375px;
+  }
+}
+
 .map-cards {
   display: flex;
   flex-direction: column;
@@ -455,8 +453,6 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   color: var(--ink-2, #54545f);
 }
 
-// Own visibility rule, not the header's clip-rect hidden trick below (that
-// one intentionally keeps the <h3> AT-reachable on mobile).
 .data-grid-card__expand {
   flex: none;
   display: inline-flex;
@@ -492,10 +488,6 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   border-bottom: 1px solid rgba(20, 20, 28, 0.10);
 }
 
-// Reuses .tabs/.tabs button (the trend chart's Yearly/12-months pattern) —
-// .data-grid-view-tab is a hook class for the tweaks below. .tabs button
-// (0-1-1) beats a bare .data-grid-view-tab (0-1-0), so overrides here use
-// the compound .data-grid-view-tabs .data-grid-view-tab form.
 .data-grid-view-tabs .data-grid-view-tab {
   font-size: 0.8rem;
   padding: 6px 14px;
@@ -508,9 +500,6 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   color: var(--ink, #15151b);
 }
 
-// Active state leans on more than color/hue: font-weight and an explicit
-// border (on top of the inherited box-shadow "lift") so it stays
-// distinguishable in grayscale, low-vision, and forced-colors contexts.
 .data-grid-view-tabs .data-grid-view-tab[aria-selected="true"] {
   font-weight: 700;
   border-color: var(--border, rgba(20, 20, 28, 0.10));
@@ -543,11 +532,12 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 
 .data-grid-scroll {
   overflow: auto;
-  // ~7 data rows (36.5px: 16px padding + 19.5px line-height + 1px border)
+  // ~6 data rows (36.5px: 16px padding + 19.5px line-height + 1px border)
   // plus the ~32.5px sticky header, at this rule's current font/padding values.
-  // Tuned alongside .chart-block .chart-figure's height above so the trend
-  // card + enrollment card split the right column evenly.
-  max-height: 288px;
+  // Tuned alongside .chart-block .chart-figure's height above so this card
+  // totals ~375px — half of the 750px target shared with the trend card
+  // above it, matching the hero+map column's own 750px target.
+  max-height: 259px;
   -webkit-overflow-scrolling: touch;
   scrollbar-gutter: stable;
   // Reserves space for the sticky header so scrollIntoView doesn't park a row underneath it.
@@ -588,11 +578,6 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   color: #54545f;
 }
 
-// :is(...) since the overlay reparents the same table node rather than
-// re-rendering it — see allAreas.js's openOverlay.
-//
-// width: 100% (not max-content) keeps the table within the card's width.
-// the name column below wraps
 :is(.data-grid-card, .data-grid-overlay) table {
   width: 100%;
   border-collapse: separate;
@@ -1008,9 +993,7 @@ body.data-grid-drawer-open {
   top: 50%;
   left: 50%;
   z-index: 1001;
-  // Matches .dashboard-root's max-width: 1600px / padding: 0 20px (custom-styles.scss)
-  // continuously across the ≥64em range, so this lines up with the hero card's width.
-  width: min(calc(100% - 40px), 1560px);
+  width: min(calc(100% - 100px), 1500px);
   max-height: 85vh;
   display: flex;
   flex-direction: column;
@@ -1088,8 +1071,6 @@ body.data-grid-overlay-open {
   cursor: pointer;
 }
 
-// No overflow here — .data-grid-scroll (reparented in) is the only
-// scrollable area, same as the minimized card, just bigger.
 .data-grid-overlay__body {
   flex: 1;
   min-height: 0;
@@ -1097,10 +1078,7 @@ body.data-grid-overlay-open {
   flex-direction: column;
 }
 
-// The trend overlay's body is a short static placeholder (no reparented,
-// self-sizing table like the enrollment overlay), so give it deliberate
-// height and center the text instead of shrink-wrapping to one text line.
-// ID-scoped so the real enrollment overlay is unaffected.
+// The trend overlay's body is a short static placeholder
 #trend-overlay-body {
   min-height: 220px;
   align-items: center;
@@ -1109,9 +1087,6 @@ body.data-grid-overlay-open {
   padding: 24px;
 }
 
-// The reparented .data-grid-scroll otherwise keeps its card-sized cap —
-// flex-fill instead of a fixed calc() so this stays correct regardless of
-// how tall .data-grid-overlay__header ends up (title row + tabs row).
 .data-grid-overlay__body .data-grid-scroll-wrap {
   display: flex;
   flex-direction: column;
