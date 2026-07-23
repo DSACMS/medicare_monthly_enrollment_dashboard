@@ -1,7 +1,8 @@
 import * as d3 from 'd3';
 import requestDataset from '../../../src/router';
 import renderTable from '../tables/renderTable';
-import { getCssVar, sortMonthlyAscending, observeResize } from '../charts/utils';
+import usStates from '../../../_data/usStates.json';
+import { getCssVar, sortMonthlyAscending, observeResize, DRUG_COLORS, DEFAULT_BREAKPOINTS } from '../charts/utils';
 import {
   renderHospitalYearlyLineChart,
   renderHospitalMonthlyLineChart,
@@ -18,6 +19,10 @@ import {
 } from '../charts/index';
 
 const formatNum = d3.format(',');
+
+// API's "State" geo level includes territories (e.g. Puerto Rico)
+// Can't be handed off to the map -> grid/drawer render them disabled w/ warning label
+const mappableStateNames = new Set(usStates);
 
 const columns = [
   { label: 'Year', value: (d) => d.year },
@@ -114,13 +119,56 @@ async function init() {
     renderNationalTrend();
     observeResize('#chartsView', renderNationalTrend);
 
-    // IMPORTANT: keep MA/MA-PD as the SECOND item in each array below.
-    // pieChart.js renders index 1 on the left side of the donut (both the
-    // arc and its label). If you reorder these or add a third Medicare
-    // program type, double-check pieChart.js's xPosition logic still does
-    // what you expect.
-    //
-    // currentYear assumes `yearlyWithLatest` has the latest year appearing first.
+    // ---- Mobile trend-card carousel (line chart / bar placeholder / grid
+    // placeholder). Presentation-only: doesn't call renderNationalTrend or
+    // touch chart state. activeTrendView is deliberately independent of
+    // activeTrendRange/activeDashboardType — switching Yearly/12-months or
+    // hospital/drug never changes which carousel panel is showing. ----
+
+    const trendCarouselTrack = document.querySelector('#chartsView');
+    const trendPanels = Array.from(document.querySelectorAll('#chartsView > .trend-panel'));
+    const trendDots = Array.from(document.querySelectorAll('#trend-carousel-dots .trend-carousel-dot'));
+
+    let activeTrendView = 'line'; // 'line' | 'bar' | 'grid'
+
+    const trendPanelFor = (view) => trendPanels.find((panel) => panel.dataset.view === view);
+
+    const setActiveTrendDot = (view) => {
+      trendDots.forEach((dot) => dot.setAttribute('aria-pressed', String(dot.dataset.view === view)));
+    };
+
+    const scrollToTrendView = (view, behavior = 'smooth') => {
+      const panel = trendPanelFor(view);
+      if (!panel || !trendCarouselTrack) return;
+      trendCarouselTrack.scrollTo({ left: panel.offsetLeft, behavior });
+    };
+
+    trendDots.forEach((dot) => {
+      dot.addEventListener('click', () => {
+        activeTrendView = dot.dataset.view;
+        setActiveTrendDot(activeTrendView);
+        scrollToTrendView(activeTrendView);
+      });
+    });
+
+    // Keeps dots in sync when the user swipes instead of clicking a dot.
+    // Passive: never calls preventDefault, so it can't interfere with the
+    // native scroll-snap touch gesture.
+    if (trendCarouselTrack && trendPanels.length) {
+      trendCarouselTrack.addEventListener('scroll', () => {
+        const { scrollLeft } = trendCarouselTrack;
+        const closest = trendPanels.reduce((best, panel) => (
+          Math.abs(panel.offsetLeft - scrollLeft) < Math.abs(best.offsetLeft - scrollLeft) ? panel : best
+        ));
+        if (closest.dataset.view !== activeTrendView) {
+          activeTrendView = closest.dataset.view;
+          setActiveTrendDot(activeTrendView);
+        }
+      }, { passive: true });
+    }
+
+    // IMPORTANT: keep MA/MA-PD SECOND in each array below — pieChart.js
+    // renders index 1 on the donut's left side. currentYear assumes yearlyWithLatest's latest year is first.
     const currentYear = yearlyWithLatest[0];
 
     // Config for the swappable card at #medicare-enrollment-hero, keyed by
@@ -134,8 +182,8 @@ async function init() {
         total: currentYear.totalEnrollees,
         options: {
           colors: [
-            getCssVar('--pie-medicare-ffs-color', '#961d56'),
-            getCssVar('--pie-medicare-ma-color', '#7928c9'),
+            getCssVar('--pie-medicare-ffs-color', '#7928c9'),
+            getCssVar('--pie-medicare-ma-color', '#961d56'),
           ],
           title: `Medicare enrollment by program type, ${currentYear.year}`,
           tableColumns: [
@@ -152,8 +200,8 @@ async function init() {
         total: currentYear.drugTotal,
         options: {
           colors: [
-            getCssVar('--pie-drug-pdp-color', '#89cc9e'),
-            getCssVar('--pie-drug-mapd-color', '#009ad0'),
+            getCssVar('--pie-drug-pdp-color', '#f92c9a'),
+            getCssVar('--pie-drug-mapd-color', '#0d4f4b'),
           ],
           title: `Medicare Prescription Drug enrollment by plan type, ${currentYear.year}`,
           tableColumns: [
@@ -178,7 +226,7 @@ async function init() {
     const renderEnrollmentHeroCard = (type) => {
       const config = pieCardConfigs[type];
       if (!config) {
-        console.warn(`renderEnrollmentHeroCard: unknown dashboard type "${type}"`);
+        
         return;
       }
 
@@ -203,8 +251,6 @@ async function init() {
     });
 
     const latestMonth = sortMonthlyAscending(monthly).at(-1);
-    d3.select('#medicare-enrollment-hero-footnote')
-      .text(`*Total Enrollment as of ${latestMonth.month} ${latestMonth.year}`);
     d3.select('#dashboard-title-date')
       .text(`${latestMonth.month} ${latestMonth.year}`);
 
@@ -230,58 +276,156 @@ async function init() {
         const n = getter(d);
         return `<span class="num-full">${formatNum(n)}</span><span class="num-abbr">${compactNum(n)}</span>`;
       },
+      sortValue: getter,
     });
 
+    const stateNameColumn = {
+      label: 'State',
+      value: (d) => d.stateName,
+      sortValue: (d) => d.stateName,
+      html: (d) => (mappableStateNames.has(d.stateName)
+        ? d.stateName
+        : `${d.stateName} <span class="data-grid-unmappable-note" title="Not part of the state map — this area can't be selected."><svg class="data-grid-unmappable-note__icon" aria-hidden="true" focusable="false"><use xlink:href="#svg-warning"></use></svg>Not on map</span>`),
+    };
+
     const hospitalAreaColumns = [
-      { label: 'State', value: (d) => d.stateName },
+      stateNameColumn,
       countCol('TOTAL', (d) => d.totalEnrollees),
       countCol('FFS', (d) => d.ffsCount),
       countCol('MA', (d) => d.maCount),
-      { label: 'FFS %', value: (d) => roundPct(d.ffsPercent) },
-      { label: 'MA %', value: (d) => roundPct(d.maPercent) },
+      { label: 'FFS %', value: (d) => roundPct(d.ffsPercent), sortValue: (d) => d.ffsPercent },
+      { label: 'MA %', value: (d) => roundPct(d.maPercent), sortValue: (d) => d.maPercent },
     ];
 
     const drugAreaColumns = [
-      { label: 'State', value: (d) => d.stateName },
+      stateNameColumn,
       countCol('TOTAL', (d) => d.drugTotal),
       countCol('PDP', (d) => d.pdpCount),
       countCol('MAPD', (d) => d.mapdCount),
-      { label: 'PDP %', value: (d) => roundPct(d.pdpPercent) },
-      { label: 'MAPD %', value: (d) => roundPct(d.mapdPercent) },
+      { label: 'PDP %', value: (d) => roundPct(d.pdpPercent), sortValue: (d) => d.pdpPercent },
+      { label: 'MAPD %', value: (d) => roundPct(d.mapdPercent), sortValue: (d) => d.mapdPercent },
     ];
 
     const hospitalCountyColumns = [
-      { label: 'County', value: (d) => d.county },
+      { label: 'County', value: (d) => d.county, sortValue: (d) => d.county },
       countCol('TOTAL', (d) => d.totalEnrollees),
       countCol('FFS', (d) => d.ffsCount),
       countCol('MA', (d) => d.maCount),
-      { label: 'FFS %', value: (d) => roundPct(d.ffsPercent) },
-      { label: 'MA %', value: (d) => roundPct(d.maPercent) },
+      { label: 'FFS %', value: (d) => roundPct(d.ffsPercent), sortValue: (d) => d.ffsPercent },
+      { label: 'MA %', value: (d) => roundPct(d.maPercent), sortValue: (d) => d.maPercent },
     ];
 
     const drugCountyColumns = [
-      { label: 'County', value: (d) => d.county },
+      { label: 'County', value: (d) => d.county, sortValue: (d) => d.county },
       countCol('TOTAL', (d) => d.drugTotal),
       countCol('PDP', (d) => d.pdpCount),
       countCol('MAPD', (d) => d.mapdCount),
-      { label: 'PDP %', value: (d) => roundPct(d.pdpPercent) },
-      { label: 'MAPD %', value: (d) => roundPct(d.mapdPercent) },
+      { label: 'PDP %', value: (d) => roundPct(d.pdpPercent), sortValue: (d) => d.pdpPercent },
+      { label: 'MAPD %', value: (d) => roundPct(d.mapdPercent), sortValue: (d) => d.mapdPercent },
     ];
 
     let allStatesRows = [];
     let selectedState = null;
+    let selectedCounty = null;
+    let currentCountyRows = [];
     let activeDashboardType = 'hospital';
+
+    // Forward-declared: selectStateFromGrid (below) calls these, but they're
+    // defined later once mapConfigs/renderCountyGrid etc. exist.
+    let resetMapToNational;
+    let clearSelectedState;
+
+    // Forward-declared: each popup's mutual-exclusion hook needs to call the
+    // others' close(), but they're only assigned once createPopup builds them.
+    let closeDrawer;
+    let closeCountyDrawer;
+    let closeOverlay;
+    let closeTrendOverlay;
+
+    // Desktop grids' sort state, one per grid. index 0/'asc' matches each
+    // grid's previous hardcoded default (name column, A→Z).
+    let allAreasSort = { index: 0, direction: 'asc' };
+    let countyGridSort = { index: 0, direction: 'asc' };
 
     const areaColumnsFor = (type) => (type === 'drug' ? drugAreaColumns : hospitalAreaColumns);
     const countyColumnsFor = (type) => (type === 'drug' ? drugCountyColumns : hospitalCountyColumns);
     const rowTotal = (type, d) => (type === 'drug' ? d.drugTotal : d.totalEnrollees);
 
+    // Shared by the desktop grids and both mobile drawers (each keeps its
+    // own {index, direction} state, but the comparator logic is identical).
+    const sortRows = (rows, cols, sortState) => {
+      const col = cols[sortState.index] || cols[0];
+      const getSortValue = col.sortValue || col.value || (() => '');
+      const dir = sortState.direction === 'desc' ? -1 : 1;
+
+      return [...rows].sort((a, b) => {
+        const av = getSortValue(a);
+        const bv = getSortValue(b);
+        if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
+        return String(av).localeCompare(String(bv)) * dir;
+      });
+    };
+
+    // Flips {index, direction} for a newly-clicked column (resets to
+    // ascending on a column switch). Shared by both drawers and both grids.
+    const toggleSort = (current, index) => (
+      current.index === index
+        ? { index, direction: current.direction === 'asc' ? 'desc' : 'asc' }
+        : { index, direction: 'asc' }
+    );
+
+    // Clicking the already-selected row again deselects it; a different
+    // row swaps the map to that state, same as before.
     const selectStateFromGrid = (stateName) => {
+      if (selectedState?.stateName === stateName) {
+        clearSelectedState();
+        resetMapToNational(activeDashboardType);
+        return;
+      }
+
       const selectorId = activeDashboardType === 'drug' ? '#drug-state-selector' : '#medicare-state-selector';
       const select = document.querySelector(selectorId);
       if (!select) return;
       select.value = stateName;
       select.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+
+    const mapConfigs = {
+      hospital: {
+        selector: '#medicare-enrollment-state-map',
+        options: {
+          title: 'Medicare Advantage enrollment by state',
+          comboBoxSelector: '#medicare-state-selector',
+          backButtonSelector: '#medicare-map-back',
+          histogramSelector: '#medicare-tier-histogram',
+        },
+      },
+      drug: {
+        selector: '#medicare-mapd-state-map',
+        options: {
+          metricLabel: 'MAPD',
+          metricPercent: (d) => d.mapdPercent,
+          metricCount: (d) => d.mapdCount,
+          breakpoints: DEFAULT_BREAKPOINTS,
+          colors: DRUG_COLORS,
+          comparisonLabel: 'PDP',
+          comparisonPercent: (d) => d.pdpPercent,
+          comparisonCount: (d) => d.pdpCount,
+          comboBoxSelector: '#drug-state-selector',
+          backButtonSelector: '#drug-map-back',
+          histogramSelector: '#drug-tier-histogram',
+        },
+      },
+    };
+
+    // Mirrors selectStateFromGrid's toggle behavior, reusing the existing
+    // dashboard:countyselect event so the map/drawer/grid all stay in sync.
+    const selectCountyFromGrid = (county) => {
+      const config = mapConfigs[activeDashboardType];
+      if (!config) return;
+      document.dispatchEvent(new CustomEvent('dashboard:countyselect', {
+        detail: { containerSelector: config.selector, county: selectedCounty === county ? null : county },
+      }));
     };
 
     const updateScrollAffordance = (scrollEl) => {
@@ -319,43 +463,588 @@ async function init() {
       const host = document.querySelector('#all-areas-table');
       if (!host || !allStatesRows.length) return;
 
-      const rows = [...allStatesRows]
-        .filter((d) => rowTotal(type, d) > 0)
-        .sort((a, b) => a.stateName.localeCompare(b.stateName));
+      const cols = areaColumnsFor(type);
+      const rows = sortRows(
+        allStatesRows.filter((d) => rowTotal(type, d) > 0),
+        cols,
+        allAreasSort,
+      );
 
-      renderTable('#all-areas-table', areaColumnsFor(type), rows, {
+      renderTable('#all-areas-table', cols, rows, {
         onRowClick: (row) => selectStateFromGrid(row.stateName),
+        isRowSelectable: (row) => mappableStateNames.has(row.stateName),
+        isRowSelected: (row) => selectedState?.stateName === row.stateName,
+        sortState: allAreasSort,
+        onSort: (index) => {
+          allAreasSort = toggleSort(allAreasSort, index);
+          renderAllAreasGrid(type);
+        },
       });
       requestAnimationFrame(() => bindScrollAffordance(host));
     };
 
+    // ---- Shared helpers for the mobile drawers + desktop expand overlays
+    // (state and county grids use the same drawer/overlay/sort behavior). ----
+
+    const getFocusableEls = (container) => Array.from(
+      container.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])'),
+    );
+
+    const makeDrawerEls = (prefix) => ({
+      trigger: document.querySelector(`#${prefix}-mobile-trigger`),
+      triggerValue: document.querySelector(`#${prefix}-mobile-trigger-value`),
+      triggerDot: document.querySelector(`#${prefix}-mobile-trigger-dot`),
+      triggerClear: document.querySelector(`#${prefix}-mobile-trigger-clear`),
+      overlay: document.querySelector(`#${prefix}-drawer-overlay`),
+      panel: document.querySelector(`#${prefix}-drawer`),
+      closeBtn: document.querySelector(`#${prefix}-drawer-close`),
+      search: document.querySelector(`#${prefix}-drawer-search`),
+      theadRow: document.querySelector(`#${prefix}-drawer-thead-row`),
+      tbody: document.querySelector(`#${prefix}-drawer-tbody`),
+    });
+
+    const makeOverlayEls = (prefix) => ({
+      trigger: document.querySelector(`#${prefix}-expand-trigger`),
+      scrim: document.querySelector(`#${prefix}-overlay-scrim`),
+      panel: document.querySelector(`#${prefix}-overlay`),
+      body: document.querySelector(`#${prefix}-overlay-body`),
+      closeBtn: document.querySelector(`#${prefix}-overlay-close`),
+      tabsSlot: document.querySelector(`#${prefix}-overlay-tabs-slot`),
+    });
+
+    // Generic popup "chrome" shared by all 4 popups (2 drawers, 2 overlays).
+    // Popup-specific behavior (render a list, reparent a DOM node) comes in via hooks.
+    const createPopup = ({
+      scrim, panel, trigger, isDisabled = () => false,
+      bodyLockClass, focusOnOpen, onBeforeOpen, onOpen, onClose,
+    }) => {
+      let lastFocusedEl = null;
+      let onKeydown;
+
+      const isOpen = () => Boolean(panel?.classList.contains('is-open'));
+
+      const close = () => {
+        if (!isOpen()) return;
+        onClose?.();
+        scrim.classList.remove('is-open');
+        panel.classList.remove('is-open');
+        trigger?.setAttribute('aria-expanded', 'false');
+        document.body.classList.remove(bodyLockClass);
+        document.removeEventListener('keydown', onKeydown);
+        (lastFocusedEl || trigger)?.focus();
+      };
+
+      onKeydown = (event) => {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          close();
+          return;
+        }
+        if (event.key !== 'Tab' || !panel) return;
+        const focusable = getFocusableEls(panel);
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      };
+
+      const open = () => {
+        if (!panel || !scrim || isDisabled()) return;
+        onBeforeOpen?.();
+        lastFocusedEl = document.activeElement;
+        onOpen?.();
+        scrim.classList.add('is-open');
+        panel.classList.add('is-open');
+        trigger?.setAttribute('aria-expanded', 'true');
+        document.body.classList.add(bodyLockClass);
+        document.addEventListener('keydown', onKeydown);
+        focusOnOpen?.();
+      };
+
+      return { open, close, isOpen };
+    };
+
+    const renderSortableDrawerHead = (theadRow, cols, sortState, onSortClick) => {
+      if (!theadRow) return;
+      theadRow.innerHTML = '';
+
+      cols.forEach((col, index) => {
+        const th = document.createElement('th');
+        th.scope = 'col';
+
+        const isActive = sortState.index === index;
+        let ariaSortValue = 'none';
+        let arrow = '';
+        if (isActive) {
+          ariaSortValue = sortState.direction === 'asc' ? 'ascending' : 'descending';
+          arrow = sortState.direction === 'asc' ? ' ▲' : ' ▼';
+        }
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'data-grid-drawer__sort-button';
+        button.classList.toggle('is-active', isActive);
+        button.setAttribute('aria-sort', ariaSortValue);
+        button.innerHTML = `${col.label}<span aria-hidden="true">${arrow}</span>`;
+        button.addEventListener('click', () => onSortClick(index));
+
+        th.appendChild(button);
+        theadRow.appendChild(th);
+      });
+    };
+
+    // isRowSelectable defaults to "no restriction" (county's case); the
+    // state grid overrides it with a mappable-state check.
+    const renderDrawerRows = (tbody, rows, cols, {
+      emptyMessage, isRowSelectable = () => true, isRowSelected = () => false, onSelectRow,
+    }) => {
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      if (!rows.length) {
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.className = 'data-grid-drawer__empty';
+        td.colSpan = cols.length;
+        td.textContent = emptyMessage;
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return;
+      }
+
+      rows.forEach((row) => {
+        const tr = document.createElement('tr');
+        const selectable = isRowSelectable(row);
+        tr.classList.toggle('is-selected', isRowSelected(row));
+
+        cols.forEach((col) => {
+          const td = document.createElement('td');
+          const cellHtml = col.html ? col.html(row) : null;
+          if (cellHtml != null) {
+            td.innerHTML = cellHtml;
+          } else {
+            td.textContent = col.value(row);
+          }
+          tr.appendChild(td);
+        });
+
+        if (selectable) {
+          tr.tabIndex = 0;
+          tr.classList.add('is-clickable');
+
+          const selectRow = () => onSelectRow(row);
+          tr.addEventListener('click', selectRow);
+          tr.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              selectRow();
+            }
+          });
+        } else {
+          tr.classList.add('is-unselectable');
+        }
+
+        tbody.appendChild(tr);
+      });
+    };
+
+    const filterAndSortDrawerRows = (rows, cols, sortState, searchTerm, matchesSearch) => {
+      const term = searchTerm.trim().toLowerCase();
+      const filtered = term ? rows.filter((row) => matchesSearch(row, term)) : rows;
+      return sortRows(filtered, cols, sortState);
+    };
+
+    // ---- State mobile drawer + desktop expand overlay ----
+
+    const drawerEls = makeDrawerEls('all-areas');
+    const overlayEls = makeOverlayEls('enrollment');
+    const trendOverlayEls = makeOverlayEls('trend'); // tabsSlot resolves to null (no tabs-slot markup) and is unused
+
+    let drawerSort = { index: 0, direction: 'asc' }; // State A→Z, matches desktop table's default
+    let drawerSearchTerm = '';
+
+    const updateDrawerTriggerValue = () => {
+      if (!drawerEls.triggerValue) return;
+      const isSelected = Boolean(selectedState);
+      drawerEls.triggerValue.textContent = isSelected
+        ? `${selectedState.stateName} · ${selectedState.state}`
+        : 'No state selected';
+      drawerEls.triggerValue.classList.toggle('is-selected', isSelected);
+      drawerEls.triggerDot?.classList.toggle('is-selected', isSelected);
+      if (drawerEls.triggerClear) drawerEls.triggerClear.hidden = !isSelected;
+    };
+
+    const renderDrawerList = (type = activeDashboardType) => {
+      const cols = areaColumnsFor(type);
+      const rows = filterAndSortDrawerRows(
+        allStatesRows.filter((d) => rowTotal(type, d) > 0),
+        cols,
+        drawerSort,
+        drawerSearchTerm,
+        (row, term) => row.stateName.toLowerCase().includes(term),
+      );
+
+      renderSortableDrawerHead(drawerEls.theadRow, cols, drawerSort, (index) => {
+        drawerSort = toggleSort(drawerSort, index);
+        renderDrawerList(type);
+      });
+      renderDrawerRows(drawerEls.tbody, rows, cols, {
+        emptyMessage: drawerSearchTerm ? `No states match "${drawerSearchTerm}".` : 'No data available.',
+        isRowSelectable: (row) => mappableStateNames.has(row.stateName),
+        isRowSelected: (row) => selectedState?.stateName === row.stateName,
+        onSelectRow: (row) => {
+          selectStateFromGrid(row.stateName);
+          closeDrawer();
+        },
+      });
+    };
+
+    const stateDrawerPopup = createPopup({
+      scrim: drawerEls.overlay,
+      panel: drawerEls.panel,
+      trigger: drawerEls.trigger,
+      bodyLockClass: 'data-grid-drawer-open',
+      focusOnOpen: () => drawerEls.search?.focus(),
+      onBeforeOpen: () => closeCountyDrawer(),
+      onOpen: () => {
+        renderDrawerList();
+        drawerEls.tbody?.querySelector('tr.is-selected')?.scrollIntoView({ block: 'nearest' });
+      },
+    });
+    const openDrawer = stateDrawerPopup.open;
+    closeDrawer = stateDrawerPopup.close;
+    const isDrawerOpen = stateDrawerPopup.isOpen;
+
+    if (drawerEls.trigger) {
+      drawerEls.trigger.addEventListener('click', openDrawer);
+      drawerEls.closeBtn?.addEventListener('click', closeDrawer);
+      drawerEls.overlay?.addEventListener('click', closeDrawer);
+      drawerEls.search?.addEventListener('input', (event) => {
+        drawerSearchTerm = event.target.value;
+        renderDrawerList();
+      });
+    }
+
+    // Force-close the drawers on entering desktop, and the expand overlays
+    // on leaving it — matches each one's own CSS display:none guard.
+    const desktopMql = window.matchMedia('(min-width: 64em)');
+    desktopMql.addEventListener('change', (event) => {
+      if (event.matches) {
+        closeDrawer();
+        closeCountyDrawer();
+        activeTrendView = 'line';
+        setActiveTrendDot('line');
+        scrollToTrendView('line', 'auto');
+      } else {
+        closeOverlay();
+        closeTrendOverlay();
+      }
+    });
+
+    // ---- County mobile drawer. Dispatches dashboard:countyselect directly
+    // instead of driving a <select>. ----
+
+    const countyDrawerEls = makeDrawerEls('county');
+
+    let countyDrawerSort = { index: 0, direction: 'asc' };
+    let countyDrawerSearchTerm = '';
+
+    const updateCountyDrawerTriggerValue = () => {
+      if (!countyDrawerEls.triggerValue) return;
+      const hasState = Boolean(selectedState);
+      const hasCounty = Boolean(selectedCounty);
+
+      let statusText = 'Select a state first';
+      if (hasState) {
+        statusText = `${selectedState.stateName} — ${hasCounty ? selectedCounty : 'No county selected'}`;
+      }
+      countyDrawerEls.triggerValue.textContent = statusText;
+      countyDrawerEls.triggerValue.classList.toggle('is-selected', hasCounty);
+      countyDrawerEls.triggerDot?.classList.toggle('is-selected', hasCounty);
+      if (countyDrawerEls.triggerClear) countyDrawerEls.triggerClear.hidden = !hasCounty;
+      if (countyDrawerEls.trigger) countyDrawerEls.trigger.disabled = !hasState;
+    };
+
+    const renderCountyDrawerList = (type = activeDashboardType) => {
+      const cols = countyColumnsFor(type);
+      const rows = filterAndSortDrawerRows(
+        currentCountyRows,
+        cols,
+        countyDrawerSort,
+        countyDrawerSearchTerm,
+        (row, term) => row.county.toLowerCase().includes(term),
+      );
+
+      renderSortableDrawerHead(countyDrawerEls.theadRow, cols, countyDrawerSort, (index) => {
+        countyDrawerSort = toggleSort(countyDrawerSort, index);
+        renderCountyDrawerList(type);
+      });
+      renderDrawerRows(countyDrawerEls.tbody, rows, cols, {
+        emptyMessage: countyDrawerSearchTerm ? `No counties match "${countyDrawerSearchTerm}".` : 'No data available.',
+        isRowSelected: (row) => selectedCounty === row.county,
+        onSelectRow: (row) => {
+          document.dispatchEvent(new CustomEvent('dashboard:countyselect', {
+            detail: { containerSelector: mapConfigs[activeDashboardType].selector, county: row.county },
+          }));
+          closeCountyDrawer();
+        },
+      });
+    };
+
+    const countyDrawerPopup = createPopup({
+      scrim: countyDrawerEls.overlay,
+      panel: countyDrawerEls.panel,
+      trigger: countyDrawerEls.trigger,
+      isDisabled: () => Boolean(countyDrawerEls.trigger?.disabled),
+      bodyLockClass: 'data-grid-drawer-open',
+      focusOnOpen: () => countyDrawerEls.search?.focus(),
+      onBeforeOpen: () => closeDrawer(),
+      onOpen: () => {
+        renderCountyDrawerList();
+        countyDrawerEls.tbody?.querySelector('tr.is-selected')?.scrollIntoView({ block: 'nearest' });
+      },
+    });
+    const openCountyDrawer = countyDrawerPopup.open;
+    closeCountyDrawer = countyDrawerPopup.close;
+
+    if (countyDrawerEls.trigger) {
+      countyDrawerEls.trigger.addEventListener('click', openCountyDrawer);
+      countyDrawerEls.closeBtn?.addEventListener('click', closeCountyDrawer);
+      countyDrawerEls.overlay?.addEventListener('click', closeCountyDrawer);
+      countyDrawerEls.search?.addEventListener('input', (event) => {
+        countyDrawerSearchTerm = event.target.value;
+        renderCountyDrawerList();
+      });
+    }
+
+    countyDrawerEls.triggerClear?.addEventListener('click', () => {
+      document.dispatchEvent(new CustomEvent('dashboard:countyselect', {
+        detail: { containerSelector: mapConfigs[activeDashboardType].selector, county: null },
+      }));
+    });
+
+    // ---- Desktop "expand" overlay for the merged Enrollment Table card.
+    // Reparents whichever .data-grid-scroll-wrap (state or county) is
+    // currently active into the overlay body while open, and back on close.
+    // The tabs element itself is reparented alongside it, so switching
+    // state/county view works the same way whether the card is expanded
+    // or not — see setActiveGridView below. ----
+
+    const allAreasScrollWrapEl = document.querySelector('#all-areas-table')?.closest('.data-grid-scroll-wrap');
+    const allAreasScrollWrapHome = allAreasScrollWrapEl?.parentElement;
+    const countyScrollWrapEl = document.querySelector('#county-table')?.closest('.data-grid-scroll-wrap');
+    const countyScrollWrapHome = countyScrollWrapEl?.parentElement;
+
+    const viewTabsEl = document.querySelector('#enrollment-view-tabs');
+    const viewTabsHome = viewTabsEl?.parentElement;
+
+    let activeGridView = 'state'; // 'state' | 'county'
+
+    const enrollmentTabState = document.querySelector('#enrollment-tab-state');
+    const enrollmentTabCounty = document.querySelector('#enrollment-tab-county');
+    const enrollmentInstructionEl = document.querySelector('#enrollment-instruction');
+
+    const viewInstructions = {
+      state: 'Click a state to display on the map. Click again to deselect.',
+      county: 'Click a county to display on the map. Click again to deselect.',
+    };
+
+    const scrollWrapFor = (view) => (view === 'county' ? countyScrollWrapEl : allAreasScrollWrapEl);
+    const scrollWrapHomeFor = (view) => (view === 'county' ? countyScrollWrapHome : allAreasScrollWrapHome);
+    const tableSelectorFor = (view) => (view === 'county' ? '#county-table' : '#all-areas-table');
+
+    const enrollmentOverlayPopup = createPopup({
+      scrim: overlayEls.scrim,
+      panel: overlayEls.panel,
+      trigger: overlayEls.trigger,
+      isDisabled: () => !allAreasScrollWrapEl && !countyScrollWrapEl,
+      bodyLockClass: 'data-grid-overlay-open',
+      focusOnOpen: () => overlayEls.closeBtn?.focus(),
+      onBeforeOpen: () => {
+        closeDrawer();
+        closeCountyDrawer();
+        closeTrendOverlay();
+      },
+      onOpen: () => {
+        overlayEls.tabsSlot.appendChild(viewTabsEl);
+        overlayEls.body.appendChild(scrollWrapFor(activeGridView));
+        bindScrollAffordance(document.querySelector(tableSelectorFor(activeGridView)));
+        document.querySelector(`${tableSelectorFor(activeGridView)} tr.is-selected`)?.scrollIntoView({ block: 'nearest' });
+      },
+      onClose: () => {
+        scrollWrapHomeFor(activeGridView).appendChild(scrollWrapFor(activeGridView));
+        viewTabsHome.appendChild(viewTabsEl);
+        bindScrollAffordance(document.querySelector(tableSelectorFor(activeGridView)));
+      },
+    });
+    const openOverlay = enrollmentOverlayPopup.open;
+    closeOverlay = enrollmentOverlayPopup.close;
+    const isOverlayOpen = enrollmentOverlayPopup.isOpen;
+
+    if (overlayEls.trigger) {
+      overlayEls.trigger.addEventListener('click', openOverlay);
+      overlayEls.closeBtn?.addEventListener('click', closeOverlay);
+      overlayEls.scrim?.addEventListener('click', closeOverlay);
+    }
+
+    // ---- Desktop "expand" overlay for the trend card. No reparenting — the
+    // body is static placeholder markup baked into trend-card.njk, so this
+    // popup needs no onOpen/onClose hooks. ----
+
+    const trendOverlayPopup = createPopup({
+      scrim: trendOverlayEls.scrim,
+      panel: trendOverlayEls.panel,
+      trigger: trendOverlayEls.trigger,
+      bodyLockClass: 'data-grid-overlay-open',
+      focusOnOpen: () => trendOverlayEls.closeBtn?.focus(),
+      onBeforeOpen: () => {
+        closeDrawer();
+        closeCountyDrawer();
+        closeOverlay();
+      },
+    });
+    const openTrendOverlay = trendOverlayPopup.open;
+    closeTrendOverlay = trendOverlayPopup.close;
+
+    if (trendOverlayEls.trigger) {
+      trendOverlayEls.trigger.addEventListener('click', openTrendOverlay);
+      trendOverlayEls.closeBtn?.addEventListener('click', closeTrendOverlay);
+      trendOverlayEls.scrim?.addEventListener('click', closeTrendOverlay);
+    }
+
+    // Swaps which table (state/county) is visible, whether the card is
+    // expanded into the overlay or not — reused both for a direct tab click
+    // and for the forced state-cleared reset in updateCountyGridTitle below.
+    const setActiveGridView = (view) => {
+      if (view === activeGridView || (view === 'county' && enrollmentTabCounty.hidden)) return;
+      const previousView = activeGridView;
+      activeGridView = view;
+
+      enrollmentTabState.setAttribute('aria-selected', String(view === 'state'));
+      enrollmentTabCounty.setAttribute('aria-selected', String(view === 'county'));
+      enrollmentInstructionEl.textContent = viewInstructions[view];
+
+      scrollWrapFor(previousView).hidden = true;
+      scrollWrapFor(view).hidden = false;
+
+      if (isOverlayOpen()) {
+        scrollWrapHomeFor(previousView).appendChild(scrollWrapFor(previousView));
+        overlayEls.body.appendChild(scrollWrapFor(view));
+      }
+
+      bindScrollAffordance(document.querySelector(tableSelectorFor(view)));
+    };
+
+    [enrollmentTabState, enrollmentTabCounty].forEach((tab) => {
+      tab.addEventListener('click', () => setActiveGridView(tab.dataset.view));
+    });
+
+    // Base text read from the njk markup ("County Enrollment") so the
+    // state-name prefix stays in sync with it instead of duplicating the string.
+    const countyDrawerTitleEl = document.querySelector('#county-drawer-title');
+    const countyDrawerBaseTitle = countyDrawerTitleEl?.textContent.trim() || 'County Enrollment';
+    const updateCountyGridTitle = (stateName) => {
+      const hasState = Boolean(stateName);
+
+      enrollmentTabCounty.hidden = !hasState;
+      enrollmentTabCounty.textContent = hasState ? `${stateName} Counties` : 'Counties';
+
+      // Edge case: state cleared while county view was active — force back to state view.
+      if (!hasState && activeGridView === 'county') {
+        setActiveGridView('state');
+      }
+
+      if (countyDrawerTitleEl) {
+        countyDrawerTitleEl.textContent = hasState ? `${stateName} ${countyDrawerBaseTitle}` : countyDrawerBaseTitle;
+      }
+    };
+
+    const renderCountyGridTable = (type = activeDashboardType) => {
+      const cols = countyColumnsFor(type);
+      const rows = sortRows(currentCountyRows, cols, countyGridSort);
+
+      renderTable('#county-table', cols, rows, {
+        onRowClick: (row) => selectCountyFromGrid(row.county),
+        isRowSelected: (row) => selectedCounty === row.county,
+        sortState: countyGridSort,
+        onSort: (index) => {
+          countyGridSort = toggleSort(countyGridSort, index);
+          renderCountyGridTable(type);
+        },
+      });
+    };
+
+    // Fires on any county selection source (map click, drawer row, or the
+    // grid's own row click below), so the grid's highlight always stays in sync.
+    document.addEventListener('dashboard:countychange', (event) => {
+      selectedCounty = (event.detail || {}).county || null;
+      updateCountyDrawerTriggerValue();
+      renderCountyGridTable(activeDashboardType);
+      // A real (non-clear) county selection should surface itself even if
+      // the desktop card is still showing the States view — e.g. selecting
+      // a county straight off the map while never having touched the tabs.
+      if (selectedCounty) setActiveGridView('county');
+      document.querySelector('#county-table tr.is-selected')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+
     const renderCountyGrid = async (stateAbbr, stateName, type = activeDashboardType) => {
       const host = document.querySelector('#county-table');
-      const titleEl = document.querySelector('#county-grid-title');
       if (!host) return;
 
+      updateCountyGridTitle(stateName);
+
+      selectedCounty = null;
+      if (countyDrawerEls.panel?.classList.contains('is-open')) closeCountyDrawer();
+
       if (!stateAbbr) {
-        if (titleEl) titleEl.textContent = 'Select a state';
+        currentCountyRows = [];
+        updateCountyDrawerTriggerValue();
         host.innerHTML = '<p class="data-grid-placeholder">Select a state on the map or from the dropdown to view county enrollment.</p>';
         updateScrollAffordance(host);
         return;
       }
 
-      if (titleEl) titleEl.textContent = stateName || stateAbbr;
       host.innerHTML = '<p class="data-grid-placeholder">Loading counties…</p>';
 
       try {
         const counties = await requestDataset('countyEnrollment', { state: stateAbbr });
-        const rows = counties
-          .filter((d) => rowTotal(type, d) > 0)
-          .sort((a, b) => a.county.localeCompare(b.county));
+        currentCountyRows = counties.filter((d) => rowTotal(type, d) > 0);
 
-        renderTable('#county-table', countyColumnsFor(type), rows);
+        renderCountyGridTable(type);
+        updateCountyDrawerTriggerValue();
         requestAnimationFrame(() => bindScrollAffordance(host));
       } catch {
+        currentCountyRows = [];
+        updateCountyDrawerTriggerValue();
         host.innerHTML = '<p class="data-grid-placeholder" role="alert">County data could not be loaded.</p>';
       }
     };
+
+    // Re-renders fresh (always national view), so switching type never
+    // leaves a stale drilled-in county from before.
+    resetMapToNational = (type) => {
+      const config = mapConfigs[type];
+      if (!config) return;
+      renderStateMap(config.selector, allStatesRows, config.options);
+    };
+
+    clearSelectedState = () => {
+      selectedState = null;
+      updateDrawerTriggerValue();
+      renderAllAreasGrid(activeDashboardType);
+      renderCountyGrid(null, null, activeDashboardType);
+    };
+
+    drawerEls.triggerClear?.addEventListener('click', () => {
+      clearSelectedState();
+      resetMapToNational(activeDashboardType);
+    });
 
     const loadStateMap = async () => {
       const recentRows = await requestDataset('stateEnrollment', { state: 'NY', type: 'monthly' });
@@ -366,23 +1055,10 @@ async function init() {
       });
 
       renderAllAreasGrid('hospital');
+      updateDrawerTriggerValue();
 
-      renderStateMap('#medicare-enrollment-state-map', allStatesRows, {
-        title: 'Medicare Advantage enrollment by state',
-        comboBoxSelector: '#medicare-state-selector',
-      });
-
-      renderStateMap('#medicare-mapd-state-map', allStatesRows, {
-        metricLabel: 'MAPD',
-        metricPercent: (d) => d.mapdPercent,
-        metricCount: (d) => d.mapdCount,
-        breakpoints: [21, 40, 60, 79],
-        colors: ['#f4f1a3', '#75c3a3', '#3d8b6f', '#aac4e8', '#3a5fa0'],
-        comparisonLabel: 'PDP',
-        comparisonPercent: (d) => d.pdpPercent,
-        comparisonCount: (d) => d.pdpCount,
-        comboBoxSelector: '#drug-state-selector',
-      });
+      resetMapToNational('hospital');
+      resetMapToNational('drug');
     };
 
     document.addEventListener('dashboard:typechange', (event) => {
@@ -390,18 +1066,27 @@ async function init() {
       if (!type) return;
       activeDashboardType = type;
       setMapPanelVisibility(type);
+      selectedState = null;
+      updateDrawerTriggerValue();
       renderAllAreasGrid(type);
-      if (selectedState) {
-        renderCountyGrid(selectedState.state, selectedState.stateName, type);
+      if (isDrawerOpen()) {
+        renderDrawerList(type);
       }
+      renderCountyGrid(null, null, type);
+      resetMapToNational(type);
     });
 
     document.addEventListener('dashboard:statechange', (event) => {
       const { state, stateName } = event.detail || {};
       if (!state) return;
       selectedState = { state, stateName };
+      updateDrawerTriggerValue();
+      renderAllAreasGrid(activeDashboardType);
       renderCountyGrid(state, stateName, activeDashboardType);
+      document.querySelector('#all-areas-table tr.is-selected')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
+
+    document.addEventListener('dashboard:stateclear', clearSelectedState);
 
     await loadStateMap();
   } catch (error) {

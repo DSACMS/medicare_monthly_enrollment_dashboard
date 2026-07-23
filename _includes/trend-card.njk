@@ -1,0 +1,101 @@
+  <div class="card map-card">
+    <div class="map-card__body">
+      <div class="trend-head">
+        <div>
+          <span class="data-grid-card__title" id="national-trend-title">
+            Enrollment Trends
+          </span>
+          <p class="data-grid-card__instruction" id="national-trend-sub">National · Hospital / Medical</p>
+        </div>
+        <div class="trend-head__controls">
+          <div class="tabs" id="national-range-tabs" role="tablist" aria-label="Time range">
+            <button type="button" role="tab" class="chart-range-tab" aria-selected="true" data-range="yearly">Yearly</button>
+            <button type="button" role="tab" class="chart-range-tab" aria-selected="false" data-range="monthly">12 months</button>
+          </div>
+          <button
+            type="button"
+            class="data-grid-card__expand"
+            id="trend-expand-trigger"
+            aria-haspopup="dialog"
+            aria-expanded="false"
+            aria-controls="trend-overlay"
+            aria-label="Expand Enrollment Trends"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+              <path d="M6 2H2v4M10 2h4v4M2 10v4h4M14 10v4h-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div id="chartsView">
+        <div class="chart-block trend-panel" data-view="line" id="trend-panel-line">
+          <div class="chart-block__head"><h4>Enrollment Count</h4><div class="legend" id="national-trend-line-legend"></div></div>
+          <div class="table-container" id="national-trend-line"></div>
+        </div>
+
+        {# New: mobile-only carousel panel 2 — purely decorative static
+           placeholder, NOT a repurposing of the real (still-hidden)
+           #national-trend-bar block below. That block stays completely
+           untouched for whenever the bar chart is built out for real. #}
+        <div class="chart-block trend-panel trend-panel--placeholder" data-view="bar" id="trend-panel-bar">
+          <div class="trend-panel__placeholder-body">
+            <p class="trend-panel__placeholder-text">Bar chart placeholder</p>
+          </div>
+        </div>
+
+        {# New: mobile-only carousel panel 3 — static placeholder for the future grid view. #}
+        <div class="chart-block trend-panel trend-panel--placeholder" data-view="grid" id="trend-panel-grid">
+          <div class="trend-panel__placeholder-body">
+            <p class="trend-panel__placeholder-text">Grid placeholder</p>
+          </div>
+        </div>
+
+        {# Temporarily hidden — trend card shows just the line chart for now.
+           Kept in the DOM (not removed) because allAreas.js's renderNationalTrend()
+           always renders into #national-trend-bar via appendTrendFigure(), which
+           calls .node().getBoundingClientRect() and would throw if this node didn't
+           exist. Plan is to move this into an overlay later. #}
+        <div class="chart-block" hidden>
+          <div class="chart-block__head"><h4>Percent of Total Enrollment</h4><div class="legend" id="national-trend-bar-legend"></div></div>
+          <div class="table-container" id="national-trend-bar"></div>
+        </div>
+      </div>
+
+      <div class="trend-carousel-dots" id="trend-carousel-dots">
+        <button type="button" class="trend-carousel-dot" data-view="line" aria-pressed="true" aria-controls="trend-panel-line" aria-label="Show enrollment line chart"></button>
+        <button type="button" class="trend-carousel-dot" data-view="bar" aria-pressed="false" aria-controls="trend-panel-bar" aria-label="Show bar chart placeholder"></button>
+        <button type="button" class="trend-carousel-dot" data-view="grid" aria-pressed="false" aria-controls="trend-panel-grid" aria-label="Show grid placeholder"></button>
+      </div>
+    </div>
+  </div>
+
+  <!--
+    Desktop "expand" overlay for the trend card. Unlike the enrollment
+    overlay, this has no live content to reparent — the body is static
+    placeholder markup baked in from the start. Real chart/bar/grid content
+    will replace this WIP text in a later pass. See allAreas.js's
+    openTrendOverlay/closeTrendOverlay.
+  -->
+  <div class="data-grid-overlay-scrim" id="trend-overlay-scrim"></div>
+  <div
+    class="data-grid-overlay"
+    id="trend-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="trend-overlay-title"
+  >
+    <header class="data-grid-overlay__header">
+      <div class="data-grid-overlay__header-row">
+        <h3 class="data-grid-overlay__title" id="trend-overlay-title">Enrollment Trends</h3>
+        <button type="button" class="data-grid-overlay__close" id="trend-overlay-close" aria-label="Minimize Enrollment Trends">
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+            <path d="M2 2l12 12M14 2L2 14" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+          </svg>
+        </button>
+      </div>
+    </header>
+    <div class="data-grid-overlay__body" id="trend-overlay-body">
+      <p class="data-grid-placeholder">Full view of line chart, bar chart, and grid — WIP</p>
+    </div>
+  </div>

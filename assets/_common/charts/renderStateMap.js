@@ -1,24 +1,37 @@
 import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
 import renderSrTable from './accessibility';
-import { createTooltip, moveTooltip } from './utils';
+import { createTooltip, moveTooltip, DEFAULT_BREAKPOINTS, DEFAULT_COLORS, NO_DATA_FILL } from './utils';
 import renderCountyMap from './renderCountyMap';
 import requestDataset from '../../../src/router';
-
-// These are the breakpoints and colors for the legend design
-// (5 bands: 1-17%, 17-34%, 34-51%, 51-67%, 67-87%).
-const DEFAULT_PERCENT_BREAKPOINTS = [17, 34, 51, 67];
-const DEFAULT_COLORS = ['#f6e8a3', '#e08e6d', '#c0506b', '#7a3a87', '#3d1a5e'];
-const NO_DATA_FILL = '#979595';
+import renderTierHistogram from './renderTierHistogram';
 
 // us-atlas's states-10m.json is unprojected (raw lon/lat), so we project it
-// ourselves at render time. 975x610 is the viewport these scale/translate
-// values are tuned for, per the us-atlas README; 800 (vs. the README's
-// suggested 1300) was chosen here specifically to keep Alaska/Hawaii fully
-// inside the frame at this viewport size — bump it up if you want the
-// mainland states larger and don't mind clipping the insets.
-const PROJECTION_SCALE = 1300;
+// ourselves at render time. 950 (vs. the us-atlas README's suggested 1300)
+// is chosen specifically to keep Alaska/Hawaii fully inside the frame at
+// this viewport size (paired with height=620 below) — bump it up if you
+// want the mainland states larger and don't mind clipping the insets.
+// Only the national map uses this — renderCountyMap.js's per-state
+// drill-down map is untouched, it auto-fits via fitSize regardless.
+const PROJECTION_SCALE = 950;
+// Mobile gets a bigger map still — scale and height both increased by the
+// same ~15% factor over the desktop values (width stays 975 either way)
+// so Alaska/Hawaii still fit without clipping, same reasoning as above.
+const PROJECTION_SCALE_MOBILE = 1150;
+const MOBILE_MEDIA_QUERY = '(max-width: 63.99em)';
 
+
+// Module-level (not inside renderStateMap, which runs repeatedly) so
+// document only ever gets one dashboard:countyselect listener.
+const countyViewRegistry = {};
+
+document.addEventListener('dashboard:countyselect', (event) => {
+  const { containerSelector, county } = event.detail || {};
+  const entry = countyViewRegistry[containerSelector];
+  if (!entry) return;
+  entry.rerender(county);
+  document.dispatchEvent(new CustomEvent('dashboard:countychange', { detail: { county } }));
+});
 
 let cachedCountyFeatures = null;
 
@@ -68,7 +81,7 @@ async function getStateFeatures() {
  * @param {Function} [config.comparisonCount] - (row) => raw count for the
  *   comparison row. Defaults to FFS count (d => d.ffsCount).
  * @param {number[]} [config.breakpoints] - 4 cutoff values defining the 5
- *   color bands (e.g. [17, 34, 51, 67]). Falls back to DEFAULT_PERCENT_BREAKPOINTS.
+ *   color bands (e.g. [17, 34, 51, 67]). Falls back to DEFAULT_BREAKPOINTS.
  * @param {string[]} [config.colors] - 5 hex colors, one per band, low-to-high.
  *   Falls back to DEFAULT_COLORS if omitted or incomplete.
  * @param {string} [config.title] - Accessible name for the chart; used as the
@@ -80,6 +93,9 @@ async function getStateFeatures() {
  */
 
 function renderStateMap(containerSelector, data, config = {}) {
+  // Reaching here always means this container is back on the national view.
+  delete countyViewRegistry[containerSelector];
+
   let currentCountyRequestId = 0;
   if (!data?.length) {
     return {
@@ -105,19 +121,38 @@ function renderStateMap(containerSelector, data, config = {}) {
       { label: 'Total enrollees', value: (d) => d.totalEnrollees.toLocaleString() },
     ],
     comboBoxSelector,
+    backButtonSelector,
+    histogramSelector,
   } = config;
 
+  // Reaching here always means we're back on the national view — the button
+  // only makes sense while showCountyView below has drilled into a state.
+  const backButtonEl = backButtonSelector ? document.querySelector(backButtonSelector) : null;
+  if (backButtonEl) backButtonEl.hidden = true;
+
   const resolvedBreakpoints =
-    breakpoints && breakpoints.length === 4 ? breakpoints : DEFAULT_PERCENT_BREAKPOINTS;
+    breakpoints && breakpoints.length === 4 ? breakpoints : DEFAULT_BREAKPOINTS;
   const resolvedColors = colors && colors.length === 5 ? colors : DEFAULT_COLORS;
+
+  if (histogramSelector) {
+    renderTierHistogram(histogramSelector, data, {
+      metricPercent,
+      metricLabel,
+      breakpoints: resolvedBreakpoints,
+      colors: resolvedColors,
+      areaLabel: 'States',
+      contextLabel: 'United States',
+    });
+  }
 
   const metricColor = d3.scaleThreshold().domain(resolvedBreakpoints).range(resolvedColors);
 
   // Lookup by full state name (matches us-atlas's properties.name field).
   const dataByName = new Map(data.map((d) => [d.stateName, d]));
 
+  const isMobile = window.matchMedia(MOBILE_MEDIA_QUERY).matches;
   const width = 975;
-  const height = 610;
+  const height = isMobile ? 750 : 620;
 
   const getStateFill = (stateFeature) => {
     const row = dataByName.get(stateFeature.properties.name);
@@ -134,19 +169,50 @@ function renderStateMap(containerSelector, data, config = {}) {
     if (!comboBoxSelector) return;
 
     const select = document.querySelector(comboBoxSelector);
-
     if (!select) return;
 
-    // Change the first option depending on the current view.
-    select.options[0].text = stateName
-      ? 'U.S. Map'
-      : 'Select a state';
+    const comboBox = select.closest('.usa-combo-box');
+    const comboBoxInput = comboBox?.querySelector(
+      '.usa-combo-box__input',
+    );
 
-    // Select either the state or the empty option.
-    select.value = stateName;
+    const isCountyView = Boolean(stateName);
+
+    const usMapOption = select.querySelector(
+      'option[value="us-map"]',
+    );
+
+    // USWDS creates its own visible list from the original <select>.
+    const usMapListOption = Array.from(
+      comboBox?.querySelectorAll('.usa-combo-box__list-option') || [],
+    ).find((option) => (
+      option.dataset.value === 'us-map'
+      || option.textContent.trim() === 'U.S. Map'
+    ));
+
+    // Hide U.S. Map on the national map and show it in county view.
+    if (usMapOption) {
+      usMapOption.hidden = !isCountyView;
+    }
+
+    if (usMapListOption) {
+      usMapListOption.hidden = !isCountyView;
+    }
+
+    // Update the original select.
+    select.value = stateName || '';
+
+    // Update the visible USWDS input.
+    if (comboBoxInput) {
+      comboBoxInput.value = stateName || '';
+      comboBoxInput.placeholder = 'Select a state';
+    }
   };
 
-syncComboBox();
+  syncComboBox();
+
+  document.querySelectorAll('.usa-combo-box__clear-input')
+  .forEach((button) => button.remove());
 
   container.style('position', 'relative');
   container.selectAll('*').remove();
@@ -155,7 +221,7 @@ syncComboBox();
 
   const projection = d3
     .geoAlbersUsa()
-    .scale(PROJECTION_SCALE)
+    .scale(isMobile ? PROJECTION_SCALE_MOBILE : PROJECTION_SCALE)
     .translate([width / 2, height / 2]);
   const path = d3.geoPath(projection);
 
@@ -177,20 +243,35 @@ syncComboBox();
 
       if (requestId !== currentCountyRequestId) return;
 
-      renderCountyMap(
-        containerSelector,
-        countyFeatures,
-        stateFeature,
-        countyRows,
-        () => renderStateMap(containerSelector, data, config),
-        {
-          metricLabel,
-          metricPercent,
-          metricCount,
-          breakpoints: resolvedBreakpoints,
-          colors: resolvedColors,
-        },
-      );
+      const onBackFn = () => {
+        document.dispatchEvent(new CustomEvent('dashboard:stateclear'));
+        renderStateMap(containerSelector, data, config);
+      };
+
+      countyViewRegistry[containerSelector] = {
+        rerender: (selectedCounty) => renderCountyMap(
+          containerSelector,
+          countyFeatures,
+          stateFeature,
+          countyRows,
+          {
+            metricLabel,
+            metricPercent,
+            metricCount,
+            breakpoints: resolvedBreakpoints,
+            colors: resolvedColors,
+            selectedCounty,
+            histogramSelector,
+          },
+        ),
+      };
+
+      countyViewRegistry[containerSelector].rerender(null);
+
+      if (backButtonEl) {
+        backButtonEl.hidden = false;
+        backButtonEl.onclick = onBackFn;
+      }
     } catch (error) {
       if (requestId !== currentCountyRequestId) return;
       container.append('p').attr('role', 'alert').text('County map could not be loaded.');
@@ -215,25 +296,30 @@ syncComboBox();
         ]),
       );
 
-      d3.select(comboBoxSelector).on('change.state-map', async (event) => {
-        const selectedStateName = event.target.value;
+      d3.select(comboBoxSelector).on(
+        'change.state-map',
+        async (event) => {
+          const selectedValue = event.target.value;
 
-        if (!selectedStateName){
-          renderStateMap(containerSelector, data, config);
-          return;
-        } 
+          if (!selectedValue || selectedValue === 'us-map') {
+            document.dispatchEvent(
+              new CustomEvent('dashboard:stateclear'),
+            );
 
-        const stateData = dataByName.get(selectedStateName);
+            renderStateMap(containerSelector, data, config);
+            return;
+          }
 
-        if (!stateData) return;
+          const stateData = dataByName.get(selectedValue);
+          if (!stateData) return;
 
-        const stateFeature = featureByStateName.get(selectedStateName);
+          const stateFeature = featureByStateName.get(selectedValue);
+          if (!stateFeature) return;
 
-        if (!stateFeature) return;
-
-        emitStateChange(stateData);
-        await showCountyView(stateFeature, stateData);
-      });
+          emitStateChange(stateData);
+          await showCountyView(stateFeature, stateData);
+        },
+      );
       svg
         .append('g')
         .selectAll('path')
@@ -243,7 +329,7 @@ syncComboBox();
         .attr('fill', getStateFill)
         .attr('stroke', '#fff')
         .style('cursor', 'pointer')
-        .on('mouseenter', function(event, d){
+        .on('mouseenter', function highlightCurrent(event, d){
           const currentFill = getStateFill(d);
           
           d3.select(this)
@@ -269,7 +355,7 @@ syncComboBox();
           `);
           moveTooltip(tooltip, container.node(), event);
         })
-        .on('mouseleave', function (event, entry) {
+        .on('mouseleave', function selectHighlight(event, entry) {
             d3.select(this)
               .attr('fill', getStateFill(entry))
               .attr('stroke', '#fff')

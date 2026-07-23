@@ -8,6 +8,18 @@ const MONTH_ORDER = {
 export const TREND_CHART_WIDTH = 560;
 export const TREND_CHART_HEIGHT = 270;
 
+export const DEFAULT_BREAKPOINTS = [17, 34, 51, 67];
+export const  NO_DATA_FILL = '#eee';
+export const DEFAULT_COLORS = ['#E9A5C1', '#D96A99', '#C4407E', '#AF2A69', '#961D56'];
+export const DRUG_COLORS = ['#b8ece4', '#7fd8ca', '#36b3a8', '#1d7f78', '#0d4f4b'];
+export const LINE_CHART_COLORS = {
+  ma:'#961D56',
+  ffs: '#7928c9',
+  mapd:'#0d4f4b',
+  pdp: '#f92c9a',
+  total: '#1b1b1b'
+};
+
 export const TREND_MARGIN = {
   top: 12, right: 100, bottom: 30, left: 44,
 };
@@ -121,11 +133,11 @@ export function appendTrendFigure(container, title) {
     .attr('role', 'img')
     .attr('aria-label', title);
 
-  // The figure is flexed to fill whatever height the card actually has
-  // (see .chart-figure / #chartsView in _dashboard-v2.scss), which varies
-  // with the map's real rendered height — so the viewBox is sized to match
-  // the figure's actual box rather than a fixed constant, letting the plot
-  // use all the available space without distortion or dead space.
+  // The figure has a fixed CSS height (see .chart-figure in
+  // _dashboard-v2.scss) that's the same on every render, so the viewBox is
+  // sized to match the figure's actual box rather than a fixed constant —
+  // this keeps the plot filling the box exactly (no distortion/dead space)
+  // while still adapting to the width the flex layout gives it.
   const rect = figure.node().getBoundingClientRect();
   const width = Math.round(rect.width) || TREND_CHART_WIDTH;
   const height = Math.round(rect.height) || TREND_CHART_HEIGHT;
@@ -145,11 +157,10 @@ export function appendTrendFigure(container, title) {
   };
 }
 
-// Re-measures `selector`'s box whenever it changes size (e.g. the map card
-// finishing its async load and growing taller, a breakpoint stacking the
-// grid, or a window resize) and calls `onResize` so charts can redraw at
-// the correct size. No-ops on browsers without ResizeObserver — charts just
-// keep their initial-render size.
+// Re-measures `selector`'s box whenever it changes size (e.g. a breakpoint
+// stacking the grid, or a window resize changing the available width) and
+// calls `onResize` so charts can redraw at the correct size. No-ops on
+// browsers without ResizeObserver — charts just keep their initial-render size.
 export function observeResize(selector, onResize) {
   if (typeof ResizeObserver === 'undefined') return undefined;
   const node = document.querySelector(selector);

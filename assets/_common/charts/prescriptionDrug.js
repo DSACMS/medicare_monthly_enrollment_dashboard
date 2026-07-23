@@ -4,19 +4,19 @@ import {
   sortYearlyAscending,
   sortMonthlyAscending,
   formatPeriod,
+  LINE_CHART_COLORS
 } from './utils';
-import { SERIES_COLORS } from './colors';
 import { drugYearly, drugMonthly } from '../tables/prescriptionDrug/tableColumns';
 
 const DRUG_LINE_SERIES = [
-  { key: 'drugTotal', label: 'TOTAL', color: SERIES_COLORS.total, primary: true },
-  { key: 'mapdCount', label: 'MA-PD', color: SERIES_COLORS.ma },
-  { key: 'pdpCount', label: 'PDP', color: SERIES_COLORS.ffs },
+  { key: 'drugTotal', label: 'TOTAL', color: LINE_CHART_COLORS.total, primary: true },
+  { key: 'mapdCount', label: 'MA-PD', color: LINE_CHART_COLORS.mapd },
+  { key: 'pdpCount', label: 'PDP', color: LINE_CHART_COLORS.pdp },
 ];
 
 const DRUG_STACK_SEGMENTS = [
-  { key: 'pdpPercent', countKey: 'pdpCount', label: 'PDP', color: SERIES_COLORS.ffs },
-  { key: 'mapdPercent', countKey: 'mapdCount', label: 'MA-PD', color: SERIES_COLORS.ma },
+  { key: 'pdpPercent', countKey: 'pdpCount', label: 'PDP', color: LINE_CHART_COLORS.pdp },
+  { key: 'mapdPercent', countKey: 'mapdCount', label: 'MA-PD', color: LINE_CHART_COLORS.mapd },
 ];
 
 const monthTick = (d) => d.month.slice(0, 3);
