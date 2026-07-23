@@ -1,9 +1,10 @@
 import * as d3 from 'd3';
 import renderSrTable from './accessibility';
-import { createTooltip, moveTooltip, getCssVar } from './utils';
+import { createTooltip, moveTooltip, DEFAULT_BREAKPOINTS, NO_DATA_FILL, DEFAULT_COLORS } from './utils';
 import { joinCountyData, filterCountiesByState } from './joinCountyData';
+import renderTierHistogram from './renderTierHistogram';
 
-const NO_DATA_FILL = '#eee';
+
 const MOBILE_MEDIA_QUERY = '(max-width: 63.99em)';
 
 /**
@@ -39,6 +40,7 @@ function renderCountyMap(
     breakpoints,
     colors,
     selectedCounty = null,
+    histogramSelector,
     title = `${stateFeature.properties.name} counties`,
     tableColumns = [
       { label: 'County', value: (d) => d.county },
@@ -47,12 +49,20 @@ function renderCountyMap(
     ],
   } = config;
 
-  const DEFAULT_BREAKPOINTS = [17, 34, 51, 67];
-  const DEFAULT_COLORS = ['#f6e8a3', '#e08e6d', '#c0506b', '#7a3a87', '#3d1a5e'];
 
   const resolvedBreakpoints =
     breakpoints && breakpoints.length === 4 ? breakpoints : DEFAULT_BREAKPOINTS;
   const resolvedColors = colors && colors.length === 5 ? colors : DEFAULT_COLORS;
+  if (histogramSelector) {
+    renderTierHistogram(histogramSelector, countyRows, {
+      metricPercent,
+      metricLabel,
+      breakpoints: resolvedBreakpoints,
+      colors: resolvedColors,
+      areaLabel: 'Counties',
+      contextLabel: stateFeature.properties.name,
+    });
+  }
 
   const metricColor = d3.scaleThreshold().domain(resolvedBreakpoints).range(resolvedColors);
 
@@ -64,7 +74,7 @@ function renderCountyMap(
   // approach, bumping height on mobile is enough on its own — no clipping risk.
   const isMobile = window.matchMedia(MOBILE_MEDIA_QUERY).matches;
   const width = 975;
-  const height = isMobile ? 650 : 520;
+  const height = isMobile ? 750 : 620;
 
   const getCountyFill = (entry) => {
     if (!entry.data) return NO_DATA_FILL;
@@ -98,17 +108,25 @@ function renderCountyMap(
 
   const isSelected = (entry) => Boolean(entry.data) && entry.data.county === selectedCounty;
 
+  const getDisplayedFill = (entry) => {
+  const fill = getCountyFill(entry);
+
+  return isSelected(entry)
+    ? d3.color(fill).brighter(0.7).formatHex()
+    : fill;
+};
+
   const countyPaths = svg
     .append('g')
     .selectAll('path')
     .data(joined)
     .join('path')
     .attr('d', (entry) => path(entry.feature))
-    .attr('fill', getCountyFill)
-    .attr('stroke', (entry) => (isSelected(entry) ? getCssVar('--brand-ink', '#013b63') : '#fff'))
+    .attr('fill', getDisplayedFill)
+    .attr('stroke', (entry) => (isSelected(entry) ? '#111' : '#fff'))
     .attr('stroke-width', (entry) => (isSelected(entry) ? 3 : 0.75))
     .style('cursor', 'pointer')
-    .on('mouseenter', function(event, entry){
+    .on('mouseenter', function highlightCurrent(event, entry){
       const currentFill = getCountyFill(entry);
       d3.select(this)
         .raise()
@@ -136,12 +154,12 @@ function renderCountyMap(
 
       moveTooltip(tooltip, container.node(), event);
     })
-    .on('mouseleave', function (event, entry) {
+    .on('mouseleave', function leftoverOutline (event, entry) {
       // Revert to the selected-state stroke, not a flat reset — otherwise
       // leaving the selected county erases its highlight until re-render.
       d3.select(this)
-        .attr('fill', getCountyFill(entry))
-        .attr('stroke', isSelected(entry) ? getCssVar('--brand-ink', '#013b63') : '#fff')
+        .attr('fill', getDisplayedFill(entry))
+        .attr('stroke', isSelected(entry) ? '#111' : '#fff')
         .attr('stroke-width', isSelected(entry) ? 3 : 0.75);
 
       tooltip.style('opacity', 0).style('display', 'none');

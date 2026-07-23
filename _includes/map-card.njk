@@ -20,6 +20,7 @@
           <div class="usa-combo-box">
                 <select class="usa-select" name="medicare-state" id="medicare-state-selector">
                   <option value="">Select a state</option>
+                  
                   {% for state in usStates %}
                   <option value="{{ state }}">{{ state }}</option>
                   {% endfor %}
@@ -32,9 +33,7 @@
 
       <hr class="map-card__divider">
 
-      <div class="map-card__histogram-placeholder">
-        States by tier — histogram coming soon
-      </div>
+      <div class="map-card__tier-histogram" id="medicare-tier-histogram"></div>
     </div>
   </div>
 
@@ -58,6 +57,7 @@
           <div class="usa-combo-box">
                 <select class="usa-select" name="drug-state" id="drug-state-selector">
                   <option value="">Select a state</option>
+                  
                   {% for state in usStates %}
                   <option value="{{ state }}">{{ state }}</option>
                   {% endfor %}
@@ -67,12 +67,8 @@
       </div>
 
       <div class="table-container width-full margin-top-2" id="medicare-mapd-state-map"></div>
-
       <hr class="map-card__divider">
-
-      <div class="map-card__histogram-placeholder">
-        States by tier — histogram coming soon
-      </div>
+      <div class="map-card__tier-histogram" id="drug-tier-histogram"></div>
     </div>
   </div>
 

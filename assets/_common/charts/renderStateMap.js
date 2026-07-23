@@ -1,15 +1,10 @@
 import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
 import renderSrTable from './accessibility';
-import { createTooltip, moveTooltip } from './utils';
+import { createTooltip, moveTooltip, DEFAULT_BREAKPOINTS, DEFAULT_COLORS, NO_DATA_FILL } from './utils';
 import renderCountyMap from './renderCountyMap';
 import requestDataset from '../../../src/router';
-
-// These are the breakpoints and colors for the legend design
-// (5 bands: 1-17%, 17-34%, 34-51%, 51-67%, 67-87%).
-const DEFAULT_PERCENT_BREAKPOINTS = [17, 34, 51, 67];
-const DEFAULT_COLORS = ['#f6e8a3', '#e08e6d', '#c0506b', '#7a3a87', '#3d1a5e'];
-const NO_DATA_FILL = '#979595';
+import renderTierHistogram from './renderTierHistogram';
 
 // us-atlas's states-10m.json is unprojected (raw lon/lat), so we project it
 // ourselves at render time. 950 (vs. the us-atlas README's suggested 1300)
@@ -86,7 +81,7 @@ async function getStateFeatures() {
  * @param {Function} [config.comparisonCount] - (row) => raw count for the
  *   comparison row. Defaults to FFS count (d => d.ffsCount).
  * @param {number[]} [config.breakpoints] - 4 cutoff values defining the 5
- *   color bands (e.g. [17, 34, 51, 67]). Falls back to DEFAULT_PERCENT_BREAKPOINTS.
+ *   color bands (e.g. [17, 34, 51, 67]). Falls back to DEFAULT_BREAKPOINTS.
  * @param {string[]} [config.colors] - 5 hex colors, one per band, low-to-high.
  *   Falls back to DEFAULT_COLORS if omitted or incomplete.
  * @param {string} [config.title] - Accessible name for the chart; used as the
@@ -127,6 +122,7 @@ function renderStateMap(containerSelector, data, config = {}) {
     ],
     comboBoxSelector,
     backButtonSelector,
+    histogramSelector,
   } = config;
 
   // Reaching here always means we're back on the national view — the button
@@ -135,8 +131,19 @@ function renderStateMap(containerSelector, data, config = {}) {
   if (backButtonEl) backButtonEl.hidden = true;
 
   const resolvedBreakpoints =
-    breakpoints && breakpoints.length === 4 ? breakpoints : DEFAULT_PERCENT_BREAKPOINTS;
+    breakpoints && breakpoints.length === 4 ? breakpoints : DEFAULT_BREAKPOINTS;
   const resolvedColors = colors && colors.length === 5 ? colors : DEFAULT_COLORS;
+
+  if (histogramSelector) {
+    renderTierHistogram(histogramSelector, data, {
+      metricPercent,
+      metricLabel,
+      breakpoints: resolvedBreakpoints,
+      colors: resolvedColors,
+      areaLabel: 'States',
+      contextLabel: 'United States',
+    });
+  }
 
   const metricColor = d3.scaleThreshold().domain(resolvedBreakpoints).range(resolvedColors);
 
@@ -162,22 +169,50 @@ function renderStateMap(containerSelector, data, config = {}) {
     if (!comboBoxSelector) return;
 
     const select = document.querySelector(comboBoxSelector);
+    if (!select) return;
 
-    // Swaps the placeholder option's label — bail out
-    // rather than throw if the element isn't a populated <select> yet, e.g.
-    // letting it throw here would abort the rest of init()
-    if (!select?.options?.[0]) return;
+    const comboBox = select.closest('.usa-combo-box');
+    const comboBoxInput = comboBox?.querySelector(
+      '.usa-combo-box__input',
+    );
 
-    // Change the first option depending on the current view.
-    select.options[0].text = stateName
-      ? 'U.S. Map'
-      : 'Select a state';
+    const isCountyView = Boolean(stateName);
 
-    // Select either the state or the empty option.
-    select.value = stateName;
+    const usMapOption = select.querySelector(
+      'option[value="us-map"]',
+    );
+
+    // USWDS creates its own visible list from the original <select>.
+    const usMapListOption = Array.from(
+      comboBox?.querySelectorAll('.usa-combo-box__list-option') || [],
+    ).find((option) => (
+      option.dataset.value === 'us-map'
+      || option.textContent.trim() === 'U.S. Map'
+    ));
+
+    // Hide U.S. Map on the national map and show it in county view.
+    if (usMapOption) {
+      usMapOption.hidden = !isCountyView;
+    }
+
+    if (usMapListOption) {
+      usMapListOption.hidden = !isCountyView;
+    }
+
+    // Update the original select.
+    select.value = stateName || '';
+
+    // Update the visible USWDS input.
+    if (comboBoxInput) {
+      comboBoxInput.value = stateName || '';
+      comboBoxInput.placeholder = 'Select a state';
+    }
   };
 
-syncComboBox();
+  syncComboBox();
+
+  document.querySelectorAll('.usa-combo-box__clear-input')
+  .forEach((button) => button.remove());
 
   container.style('position', 'relative');
   container.selectAll('*').remove();
@@ -226,6 +261,7 @@ syncComboBox();
             breakpoints: resolvedBreakpoints,
             colors: resolvedColors,
             selectedCounty,
+            histogramSelector,
           },
         ),
       };
@@ -260,25 +296,30 @@ syncComboBox();
         ]),
       );
 
-      d3.select(comboBoxSelector).on('change.state-map', async (event) => {
-        const selectedStateName = event.target.value;
+      d3.select(comboBoxSelector).on(
+        'change.state-map',
+        async (event) => {
+          const selectedValue = event.target.value;
 
-        if (!selectedStateName){
-          renderStateMap(containerSelector, data, config);
-          return;
-        } 
+          if (!selectedValue || selectedValue === 'us-map') {
+            document.dispatchEvent(
+              new CustomEvent('dashboard:stateclear'),
+            );
 
-        const stateData = dataByName.get(selectedStateName);
+            renderStateMap(containerSelector, data, config);
+            return;
+          }
 
-        if (!stateData) return;
+          const stateData = dataByName.get(selectedValue);
+          if (!stateData) return;
 
-        const stateFeature = featureByStateName.get(selectedStateName);
+          const stateFeature = featureByStateName.get(selectedValue);
+          if (!stateFeature) return;
 
-        if (!stateFeature) return;
-
-        emitStateChange(stateData);
-        await showCountyView(stateFeature, stateData);
-      });
+          emitStateChange(stateData);
+          await showCountyView(stateFeature, stateData);
+        },
+      );
       svg
         .append('g')
         .selectAll('path')
@@ -288,7 +329,7 @@ syncComboBox();
         .attr('fill', getStateFill)
         .attr('stroke', '#fff')
         .style('cursor', 'pointer')
-        .on('mouseenter', function(event, d){
+        .on('mouseenter', function highlightCurrent(event, d){
           const currentFill = getStateFill(d);
           
           d3.select(this)
@@ -314,7 +355,7 @@ syncComboBox();
           `);
           moveTooltip(tooltip, container.node(), event);
         })
-        .on('mouseleave', function (event, entry) {
+        .on('mouseleave', function selectHighlight(event, entry) {
             d3.select(this)
               .attr('fill', getStateFill(entry))
               .attr('stroke', '#fff')
