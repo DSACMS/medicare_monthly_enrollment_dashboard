@@ -1,9 +1,9 @@
 import * as d3 from 'd3';
-import { CHART_COLORS } from './colors';
+
 import renderSrTable from './accessibility';
 
 // Default colors used if the caller doesn't supply both colors for the two slices.
-const DEFAULT_COLORS = [CHART_COLORS.primary, CHART_COLORS.secondary];
+const DEFAULT_COLORS = null;
 
 // The circle's diameter. Its container lays the circle out in a real CSS
 // grid alongside its two value labels (see .pie-chart-inner in

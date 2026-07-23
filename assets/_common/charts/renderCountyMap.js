@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 import renderSrTable from './accessibility';
-import { createTooltip, moveTooltip, getCssVar, DEFAULT_BREAKPOINTS, NO_DATA_FILL, DEFAULT_COLORS } from './utils';
+import { createTooltip, moveTooltip, DEFAULT_BREAKPOINTS, NO_DATA_FILL, DEFAULT_COLORS } from './utils';
 import { joinCountyData, filterCountiesByState } from './joinCountyData';
 import renderTierHistogram from './renderTierHistogram';
 
@@ -108,17 +108,25 @@ function renderCountyMap(
 
   const isSelected = (entry) => Boolean(entry.data) && entry.data.county === selectedCounty;
 
+  const getDisplayedFill = (entry) => {
+  const fill = getCountyFill(entry);
+
+  return isSelected(entry)
+    ? d3.color(fill).brighter(0.7).formatHex()
+    : fill;
+};
+
   const countyPaths = svg
     .append('g')
     .selectAll('path')
     .data(joined)
     .join('path')
     .attr('d', (entry) => path(entry.feature))
-    .attr('fill', getCountyFill)
-    .attr('stroke', (entry) => (isSelected(entry) ? getCssVar('--brand-ink', '#013b63') : '#fff'))
+    .attr('fill', getDisplayedFill)
+    .attr('stroke', (entry) => (isSelected(entry) ? '#111' : '#fff'))
     .attr('stroke-width', (entry) => (isSelected(entry) ? 3 : 0.75))
     .style('cursor', 'pointer')
-    .on('mouseenter', function(event, entry){
+    .on('mouseenter', function highlight_current(event, entry){
       const currentFill = getCountyFill(entry);
       d3.select(this)
         .raise()
@@ -146,12 +154,12 @@ function renderCountyMap(
 
       moveTooltip(tooltip, container.node(), event);
     })
-    .on('mouseleave', function (event, entry) {
+    .on('mouseleave', function leftover_outline (event, entry) {
       // Revert to the selected-state stroke, not a flat reset — otherwise
       // leaving the selected county erases its highlight until re-render.
       d3.select(this)
-        .attr('fill', getCountyFill(entry))
-        .attr('stroke', isSelected(entry) ? getCssVar('--brand-ink', '#013b63') : '#fff')
+        .attr('fill', getDisplayedFill(entry))
+        .attr('stroke', isSelected(entry) ? '#111' : '#fff')
         .attr('stroke-width', isSelected(entry) ? 3 : 0.75);
 
       tooltip.style('opacity', 0).style('display', 'none');
