@@ -204,6 +204,9 @@ function renderStateMap(containerSelector, data, config = {}) {
 
   syncComboBox();
 
+  document.querySelectorAll('.usa-combo-box__clear-input')
+  .forEach((button) => button.remove());
+
   container.style('position', 'relative');
   container.selectAll('*').remove();
 
