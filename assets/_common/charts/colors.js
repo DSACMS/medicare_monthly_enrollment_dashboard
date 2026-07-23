@@ -11,8 +11,3 @@ export const CHART_COLORS = {
   accent: '#961d56',    // --cms-magenta
 };
 
-export const SERIES_COLORS = {
-  ffs: getCssVar('--ffs', '#961d56'),
-  ma: getCssVar('--ma', '#7928c9'),
-  total: getCssVar('--total', '#1b1b1b'),
-};

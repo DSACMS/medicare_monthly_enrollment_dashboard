@@ -4,19 +4,19 @@ import {
   sortYearlyAscending,
   sortMonthlyAscending,
   formatPeriod,
+  LINE_CHART_COLORS
 } from './utils';
-import { SERIES_COLORS } from './colors';
 import { hospitalYearly, hospitalMonthly } from '../tables/hospitalMedical/tableColumns';
 
 const HOSPITAL_LINE_SERIES = [
-  { key: 'totalEnrollees', label: 'TOTAL', color: SERIES_COLORS.total, primary: true },
-  { key: 'maCount', label: 'MA', color: SERIES_COLORS.ma },
-  { key: 'ffsCount', label: 'FFS', color: SERIES_COLORS.ffs },
+  { key: 'totalEnrollees', label: 'TOTAL', color: LINE_CHART_COLORS.total, primary: true },
+  { key: 'maCount', label: 'MA', color: LINE_CHART_COLORS.ma },
+  { key: 'ffsCount', label: 'FFS', color: LINE_CHART_COLORS.ffs },
 ];
 
 const HOSPITAL_STACK_SEGMENTS = [
-  { key: 'ffsPercent', countKey: 'ffsCount', label: 'FFS', color: SERIES_COLORS.ffs },
-  { key: 'maPercent', countKey: 'maCount', label: 'MA', color: SERIES_COLORS.ma },
+  { key: 'ffsPercent', countKey: 'ffsCount', label: 'FFS', color: LINE_CHART_COLORS.ffs },
+  { key: 'maPercent', countKey: 'maCount', label: 'MA', color: LINE_CHART_COLORS.ma },
 ];
 
 const monthTick = (d) => d.month.slice(0, 3);

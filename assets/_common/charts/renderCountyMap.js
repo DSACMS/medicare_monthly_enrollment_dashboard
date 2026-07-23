@@ -1,9 +1,9 @@
 import * as d3 from 'd3';
 import renderSrTable from './accessibility';
-import { createTooltip, moveTooltip, getCssVar } from './utils';
+import { createTooltip, moveTooltip, getCssVar, DEFAULT_BREAKPOINTS, NO_DATA_FILL, DEFAULT_COLORS } from './utils';
 import { joinCountyData, filterCountiesByState } from './joinCountyData';
 
-const NO_DATA_FILL = '#eee';
+
 const MOBILE_MEDIA_QUERY = '(max-width: 63.99em)';
 
 /**
@@ -47,8 +47,6 @@ function renderCountyMap(
     ],
   } = config;
 
-  const DEFAULT_BREAKPOINTS = [17, 34, 51, 67];
-  const DEFAULT_COLORS = ['#f6e8a3', '#e08e6d', '#c0506b', '#7a3a87', '#3d1a5e'];
 
   const resolvedBreakpoints =
     breakpoints && breakpoints.length === 4 ? breakpoints : DEFAULT_BREAKPOINTS;

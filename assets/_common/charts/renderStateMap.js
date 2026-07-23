@@ -1,15 +1,14 @@
 import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
 import renderSrTable from './accessibility';
-import { createTooltip, moveTooltip } from './utils';
+import { createTooltip, moveTooltip, DEFAULT_BREAKPOINTS, DEFAULT_COLORS, NO_DATA_FILL } from './utils';
 import renderCountyMap from './renderCountyMap';
 import requestDataset from '../../../src/router';
 
 // These are the breakpoints and colors for the legend design
 // (5 bands: 1-17%, 17-34%, 34-51%, 51-67%, 67-87%).
-const DEFAULT_PERCENT_BREAKPOINTS = [17, 34, 51, 67];
-const DEFAULT_COLORS = ['#f6e8a3', '#e08e6d', '#c0506b', '#7a3a87', '#3d1a5e'];
-const NO_DATA_FILL = '#979595';
+
+
 
 // us-atlas's states-10m.json is unprojected (raw lon/lat), so we project it
 // ourselves at render time. 950 (vs. the us-atlas README's suggested 1300)
@@ -86,7 +85,7 @@ async function getStateFeatures() {
  * @param {Function} [config.comparisonCount] - (row) => raw count for the
  *   comparison row. Defaults to FFS count (d => d.ffsCount).
  * @param {number[]} [config.breakpoints] - 4 cutoff values defining the 5
- *   color bands (e.g. [17, 34, 51, 67]). Falls back to DEFAULT_PERCENT_BREAKPOINTS.
+ *   color bands (e.g. [17, 34, 51, 67]). Falls back to DEFAULT_BREAKPOINTS.
  * @param {string[]} [config.colors] - 5 hex colors, one per band, low-to-high.
  *   Falls back to DEFAULT_COLORS if omitted or incomplete.
  * @param {string} [config.title] - Accessible name for the chart; used as the
@@ -135,7 +134,7 @@ function renderStateMap(containerSelector, data, config = {}) {
   if (backButtonEl) backButtonEl.hidden = true;
 
   const resolvedBreakpoints =
-    breakpoints && breakpoints.length === 4 ? breakpoints : DEFAULT_PERCENT_BREAKPOINTS;
+    breakpoints && breakpoints.length === 4 ? breakpoints : DEFAULT_BREAKPOINTS;
   const resolvedColors = colors && colors.length === 5 ? colors : DEFAULT_COLORS;
 
   const metricColor = d3.scaleThreshold().domain(resolvedBreakpoints).range(resolvedColors);

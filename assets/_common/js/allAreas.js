@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import requestDataset from '../../../src/router';
 import renderTable from '../tables/renderTable';
 import usStates from '../../../_data/usStates.json';
-import { getCssVar, sortMonthlyAscending, observeResize } from '../charts/utils';
+import { getCssVar, sortMonthlyAscending, observeResize, DRUG_COLORS, DEFAULT_BREAKPOINTS } from '../charts/utils';
 import {
   renderHospitalYearlyLineChart,
   renderHospitalMonthlyLineChart,
@@ -182,8 +182,8 @@ async function init() {
         total: currentYear.totalEnrollees,
         options: {
           colors: [
-            getCssVar('--pie-medicare-ffs-color', '#961d56'),
-            getCssVar('--pie-medicare-ma-color', '#7928c9'),
+            getCssVar('--pie-medicare-ffs-color', '#7928c9'),
+            getCssVar('--pie-medicare-ma-color', '#961d56'),
           ],
           title: `Medicare enrollment by program type, ${currentYear.year}`,
           tableColumns: [
@@ -200,8 +200,8 @@ async function init() {
         total: currentYear.drugTotal,
         options: {
           colors: [
-            getCssVar('--pie-drug-pdp-color', '#89cc9e'),
-            getCssVar('--pie-drug-mapd-color', '#009ad0'),
+            getCssVar('--pie-drug-pdp-color', '#f92c9a'),
+            getCssVar('--pie-drug-mapd-color', '#0d4f4b'),
           ],
           title: `Medicare Prescription Drug enrollment by plan type, ${currentYear.year}`,
           tableColumns: [
@@ -405,8 +405,8 @@ async function init() {
           metricLabel: 'MAPD',
           metricPercent: (d) => d.mapdPercent,
           metricCount: (d) => d.mapdCount,
-          breakpoints: [21, 40, 60, 79],
-          colors: ['#f4f1a3', '#75c3a3', '#3d8b6f', '#aac4e8', '#3a5fa0'],
+          breakpoints: DEFAULT_BREAKPOINTS,
+          colors: DRUG_COLORS,
           comparisonLabel: 'PDP',
           comparisonPercent: (d) => d.pdpPercent,
           comparisonCount: (d) => d.pdpCount,
