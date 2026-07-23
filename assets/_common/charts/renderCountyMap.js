@@ -2,6 +2,7 @@ import * as d3 from 'd3';
 import renderSrTable from './accessibility';
 import { createTooltip, moveTooltip, getCssVar, DEFAULT_BREAKPOINTS, NO_DATA_FILL, DEFAULT_COLORS } from './utils';
 import { joinCountyData, filterCountiesByState } from './joinCountyData';
+import renderTierHistogram from './renderTierHistogram';
 
 
 const MOBILE_MEDIA_QUERY = '(max-width: 63.99em)';
@@ -39,6 +40,7 @@ function renderCountyMap(
     breakpoints,
     colors,
     selectedCounty = null,
+    histogramSelector,
     title = `${stateFeature.properties.name} counties`,
     tableColumns = [
       { label: 'County', value: (d) => d.county },
@@ -51,6 +53,16 @@ function renderCountyMap(
   const resolvedBreakpoints =
     breakpoints && breakpoints.length === 4 ? breakpoints : DEFAULT_BREAKPOINTS;
   const resolvedColors = colors && colors.length === 5 ? colors : DEFAULT_COLORS;
+  if (histogramSelector) {
+    renderTierHistogram(histogramSelector, countyRows, {
+      metricPercent,
+      metricLabel,
+      breakpoints: resolvedBreakpoints,
+      colors: resolvedColors,
+      areaLabel: 'Counties',
+      contextLabel: stateFeature.properties.name,
+    });
+  }
 
   const metricColor = d3.scaleThreshold().domain(resolvedBreakpoints).range(resolvedColors);
 

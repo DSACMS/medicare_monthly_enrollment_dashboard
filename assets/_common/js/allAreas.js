@@ -397,6 +397,7 @@ async function init() {
           title: 'Medicare Advantage enrollment by state',
           comboBoxSelector: '#medicare-state-selector',
           backButtonSelector: '#medicare-map-back',
+          histogramSelector: '#medicare-tier-histogram',
         },
       },
       drug: {
@@ -412,6 +413,7 @@ async function init() {
           comparisonCount: (d) => d.pdpCount,
           comboBoxSelector: '#drug-state-selector',
           backButtonSelector: '#drug-map-back',
+          histogramSelector: '#drug-tier-histogram',
         },
       },
     };

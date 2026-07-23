@@ -4,11 +4,7 @@ import renderSrTable from './accessibility';
 import { createTooltip, moveTooltip, DEFAULT_BREAKPOINTS, DEFAULT_COLORS, NO_DATA_FILL } from './utils';
 import renderCountyMap from './renderCountyMap';
 import requestDataset from '../../../src/router';
-
-// These are the breakpoints and colors for the legend design
-// (5 bands: 1-17%, 17-34%, 34-51%, 51-67%, 67-87%).
-
-
+import renderTierHistogram from './renderTierHistogram';
 
 // us-atlas's states-10m.json is unprojected (raw lon/lat), so we project it
 // ourselves at render time. 950 (vs. the us-atlas README's suggested 1300)
@@ -126,6 +122,7 @@ function renderStateMap(containerSelector, data, config = {}) {
     ],
     comboBoxSelector,
     backButtonSelector,
+    histogramSelector,
   } = config;
 
   // Reaching here always means we're back on the national view — the button
@@ -136,6 +133,17 @@ function renderStateMap(containerSelector, data, config = {}) {
   const resolvedBreakpoints =
     breakpoints && breakpoints.length === 4 ? breakpoints : DEFAULT_BREAKPOINTS;
   const resolvedColors = colors && colors.length === 5 ? colors : DEFAULT_COLORS;
+
+  if (histogramSelector) {
+    renderTierHistogram(histogramSelector, data, {
+      metricPercent,
+      metricLabel,
+      breakpoints: resolvedBreakpoints,
+      colors: resolvedColors,
+      areaLabel: 'States',
+      contextLabel: 'United States',
+    });
+  }
 
   const metricColor = d3.scaleThreshold().domain(resolvedBreakpoints).range(resolvedColors);
 
@@ -253,6 +261,7 @@ function renderStateMap(containerSelector, data, config = {}) {
             breakpoints: resolvedBreakpoints,
             colors: resolvedColors,
             selectedCounty,
+            histogramSelector,
           },
         ),
       };

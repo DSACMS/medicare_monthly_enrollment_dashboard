@@ -374,17 +374,7 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   border-top: 1px solid var(--border);
 }
 
-.map-card__histogram-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 120px;
-  border: 1px dashed var(--baseline);
-  border-radius: 12px;
-  color: var(--ink-2);
-  font-size: 0.85rem;
-  text-align: center;
-}
+
 
 @include at-media('desktop') {
   .dash-hero {
@@ -392,13 +382,11 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   }
 
   .dashboard-map-panel {
-    height: 650px;
+    height: auto;
+    min-height: 650px;
   }
 
-  .map-card__histogram-placeholder {
-    flex: 1;
-    min-height: 0;
-  }
+
 
   // Right column total: 375 + 14 (gap) + 375 = 764px, matching the
   // left column's 100 + 14 + 650 = 764px.
@@ -1188,4 +1176,83 @@ body.data-grid-overlay-open {
 
 @media (max-width: 63.99em) {
   .chart-block .chart-figure { height: 220px; }
+}
+
+.map-tier-histogram {
+  width: 100%;
+}
+
+.map-tier-histogram__title {
+  margin: 0 0 0.75rem;
+  font-weight: 700;
+}
+
+.map-tier-histogram__figure {
+  width: 100%;
+  min-width: 0;
+}
+
+.map-tier-histogram__figure svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.map-tier-histogram__bar {
+  stroke: #fff;
+  stroke-width: 1px;
+}
+
+.map-tier-histogram__divider {
+  stroke: rgba(27, 27, 27, 0.45);
+  stroke-dasharray: 3 3;
+  pointer-events: none;
+}
+
+.map-tier-histogram__count {
+  fill: #1b1b1b;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.map-tier-histogram__axis-label {
+  fill: #454545;
+  font-size: 0.75rem;
+}
+
+.map-tier-histogram__x-axis,
+.map-tier-histogram__y-axis {
+  color: #565c65;
+  font-size: 0.75rem;
+}
+
+.map-tier-histogram__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin-top: 0.75rem;
+}
+
+.map-tier-histogram__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+}
+
+.map-tier-histogram__legend-swatch {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 1rem;
+  border: 1px solid rgba(27, 27, 27, 0.25);
+}
+
+.map-tier-histogram__legend-swatch--no-data {
+  background: #eee;
+}
+
+.map-tier-histogram__empty {
+  margin: 0;
+  color: #565c65;
 }
