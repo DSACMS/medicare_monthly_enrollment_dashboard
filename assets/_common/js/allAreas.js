@@ -459,6 +459,50 @@ async function init() {
       updateScrollAffordance(scrollEl);
     };
 
+    const scrollRowIntoView = (row, { smooth = false } = {}) => {
+      const container = row?.closest('.data-grid-scroll');
+      if (!container) return;
+
+      const containerRect = container.getBoundingClientRect();
+      const rowRect = row.getBoundingClientRect();
+      const headerHeight = container.querySelector('thead')?.getBoundingClientRect().height || 0;
+
+      let delta = 0;
+      if (rowRect.top < containerRect.top + headerHeight) {
+        delta = rowRect.top - (containerRect.top + headerHeight);
+      } else if (rowRect.bottom > containerRect.bottom) {
+        delta = rowRect.bottom - containerRect.bottom;
+      }
+
+      if (delta !== 0) container.scrollBy({ top: delta, behavior: smooth ? 'smooth' : 'auto' });
+    };
+
+    const syncColumnHeights = () => {
+      const columnsEl = document.querySelector('.dashboard-columns');
+      const main = document.querySelector('.dashboard-columns__main');
+      const side = document.querySelector('.dashboard-columns__side');
+      if (!columnsEl || !main || !side) return;
+
+      const isTwoColumn = getComputedStyle(columnsEl).gridTemplateColumns.trim().split(/\s+/).length >= 2;
+      if (!isTwoColumn) {
+        main.style.height = '';
+        side.style.height = '';
+        return;
+      }
+
+      const prevTarget = main.style.height;
+
+      // Reset first so the offsetHeight reads below reflect natural content,
+      // not a height we applied on a previous pass.
+      main.style.height = '';
+      side.style.height = '';
+      const target = `${Math.max(main.offsetHeight, side.offsetHeight)}px`;
+
+      if (target === prevTarget) return;
+      main.style.height = target;
+      side.style.height = target;
+    };
+
     const renderAllAreasGrid = (type = activeDashboardType) => {
       const host = document.querySelector('#all-areas-table');
       if (!host || !allStatesRows.length) return;
@@ -832,8 +876,7 @@ async function init() {
     // ---- Desktop "expand" overlay for the merged Enrollment Table card.
     // Reparents whichever .data-grid-scroll-wrap (state or county) is
     // currently active into the overlay body while open, and back on close.
-    // The tabs element itself is reparented alongside it, so switching
-    // state/county view works the same way whether the card is expanded
+    // Switching state/county view works the same way whether the card is expanded
     // or not — see setActiveGridView below. ----
 
     const allAreasScrollWrapEl = document.querySelector('#all-areas-table')?.closest('.data-grid-scroll-wrap');
@@ -875,7 +918,7 @@ async function init() {
         overlayEls.tabsSlot.appendChild(viewTabsEl);
         overlayEls.body.appendChild(scrollWrapFor(activeGridView));
         bindScrollAffordance(document.querySelector(tableSelectorFor(activeGridView)));
-        document.querySelector(`${tableSelectorFor(activeGridView)} tr.is-selected`)?.scrollIntoView({ block: 'nearest' });
+        scrollRowIntoView(document.querySelector(`${tableSelectorFor(activeGridView)} tr.is-selected`));
       },
       onClose: () => {
         scrollWrapHomeFor(activeGridView).appendChild(scrollWrapFor(activeGridView));
@@ -986,11 +1029,9 @@ async function init() {
       selectedCounty = (event.detail || {}).county || null;
       updateCountyDrawerTriggerValue();
       renderCountyGridTable(activeDashboardType);
-      // A real (non-clear) county selection should surface itself even if
-      // the desktop card is still showing the States view — e.g. selecting
-      // a county straight off the map while never having touched the tabs.
+ 
       if (selectedCounty) setActiveGridView('county');
-      document.querySelector('#county-table tr.is-selected')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      scrollRowIntoView(document.querySelector('#county-table tr.is-selected'), { smooth: true });
     });
 
     const renderCountyGrid = async (stateAbbr, stateName, type = activeDashboardType) => {
@@ -1083,12 +1124,16 @@ async function init() {
       updateDrawerTriggerValue();
       renderAllAreasGrid(activeDashboardType);
       renderCountyGrid(state, stateName, activeDashboardType);
-      document.querySelector('#all-areas-table tr.is-selected')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      scrollRowIntoView(document.querySelector('#all-areas-table tr.is-selected'), { smooth: true });
     });
 
     document.addEventListener('dashboard:stateclear', clearSelectedState);
 
     await loadStateMap();
+
+    requestAnimationFrame(syncColumnHeights);
+    observeResize('.dashboard-columns__main', syncColumnHeights);
+    observeResize('.dashboard-columns__side', syncColumnHeights);
   } catch (error) {
     throw new Error(`Failed to load national data: ${error.message}`);
   }

@@ -1,16 +1,12 @@
   <div class="card map-card">
     <div class="map-card__body">
       <div class="trend-head">
-        <div>
-          <span class="data-grid-card__title" id="national-trend-title">
-            Enrollment Trends
-          </span>
-          <p class="data-grid-card__instruction" id="national-trend-sub">National · Hospital / Medical</p>
-        </div>
-        <div class="trend-head__controls">
-          <div class="tabs" id="national-range-tabs" role="tablist" aria-label="Time range">
-            <button type="button" role="tab" class="chart-range-tab" aria-selected="true" data-range="yearly">Yearly</button>
-            <button type="button" role="tab" class="chart-range-tab" aria-selected="false" data-range="monthly">12 months</button>
+        <div class="trend-head__top">
+          <div class="trend-head__heading">
+            <span class="data-grid-card__title" id="national-trend-title">
+              Enrollment Trends
+            </span>
+            <p class="data-grid-card__instruction" id="national-trend-sub">National · Hospital / Medical</p>
           </div>
           <button
             type="button"
@@ -25,6 +21,12 @@
               <path d="M6 2H2v4M10 2h4v4M2 10v4h4M14 10v4h-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
           </button>
+        </div>
+        <div class="trend-head__controls">
+          <div class="tabs" id="national-range-tabs" role="tablist" aria-label="Time range">
+            <button type="button" role="tab" class="chart-range-tab" aria-selected="true" data-range="yearly">Yearly</button>
+            <button type="button" role="tab" class="chart-range-tab" aria-selected="false" data-range="monthly">12 months</button>
+          </div>
         </div>
       </div>
 
