@@ -10,7 +10,9 @@ $bullet-spacing: 1.25rem;
   font-size: clamp(15px, 4cqi, 18px);
 }
 
-// Self-hosted (not USWDS-bundled); used only by .title-bar__heading below.
+// Self-hosted (not USWDS-bundled). Currently orphaned (its only consumer,
+// .title-bar__heading, was removed as dead CSS) — left in place pending a
+// follow-up decision on whether to delete it too.
 @font-face {
   font-family: 'Montserrat';
   font-style: normal;
@@ -26,92 +28,6 @@ $bullet-spacing: 1.25rem;
   max-width: 1600px;
   margin: 0 auto;
   padding: 0 20px;
-}
-
-.US_MAPS {
-  width: 100%;
-  max-width: 100%;
-  margin: 0 0 2rem;
-}
-
-.US_MAPS .usa-card,
-.US_MAPS .usa-card__container,
-.US_MAPS .usa-card-group,
-.US_MAPS .usa-card__body {
-  width: 100%;
-  max-width: 100%;
-}
-
-.US_MAPS[hidden] {
-  display: none !important;
-}
-.title-bar {
-  background-color: color('primary');
-  padding: units(1);
-  margin: 10px;
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.25);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: units(3);
-  min-width: 280px;
-
-}
-.title-bar__heading {
-  // font-size() resolves the 'heading' scale token to a usable rem value.
-  font-size: font-size('heading', $theme-h1-font-size);
-  font-family: 'Montserrat', sans-serif;
-  color: color('white');
-  font-weight: 600;
-  margin: 0;
-  text-align: center;
-}
-
-.dashboard-card {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-height: 300px;
-  margin: 10px;
-  overflow: hidden;
-  container-type: inline-size;
-  background-color: var(--card-background);
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.25);
-}
-
-.usa-button svg {
-  fill: white;
-  width: 1em;
-  height: 1em;
-  vertical-align: middle;
-  flex-shrink: 0;
-}
-
-
-
-// Highlight TODO links to make them visually standout
-.todo-link,
-a[href*="/TODO/"] {
-  color: color('blue-80v') !important;
-  background-color: color('gold-10v') !important;
-  padding: 0 units(0.5);
-
-  &:after  {
-    content: ' [link TBD]';
-  }
-
-  &:visited {
-    color: color('blue-80v') !important;
-  }
-}
-.todo-link.usa-link--external:after,
-a[href*="/TODO/"].usa-link--external:after {
-  background-color: inherit;
-  background-image: none;
-  margin-left: 0;
-  padding-left: units(0.5);
-  vertical-align: baseline;
-  -webkit-mask-image: none;
 }
 
 // Set heading colors
@@ -138,190 +54,12 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-// usa-prose overrides
-.usa-prose {
-  blockquote {
-    max-width: measure(2);
-  }
-
-  code {
-    word-wrap: break-word;
-  }
-
-  h2, h3, h4, h5, h6 {
-      // prevent orphans and use balance if pretty is not available
-      text-wrap: balance;
-      text-wrap: pretty;
-  }
-
-  h2 {
-    margin-top: units(5);
-    &.page-title {
-      margin-top: units(0);
-      &.derisking {
-        padding-top: units(1);
-        border-top: 1px solid #1C304A;
-      }
-    }
-  }
-
-  li p {
-    margin-bottom: 0;
-  }
-}
-
-
-// usa-section overrides
-.hero .section__heading--white {
-  color: color('white');
-}
-
-// accent button
-a.usa-button--accent {
-  color: color('primary-darker');
-  background-color: color('accent-cool');
-
-  &:visited {
-    color: color('primary-darker');
-    background-color: inherit;
-  }
-
-  &:focus,
-  &:hover {
-    color: color('primary-darker');
-    background-color: color('accent-cool-lighter');
-  }
-
-  &:active {
-    background-color: color('accent-cool-lightest');
-  }
-}
-
-// Custom utilities
-.width-200 {
-  width: 200px;
-}
-
-// De-risking guide
-.first_page > h1 {
-  @include u-font('sans', '3xl');
-}
-
-.first_page > h2 {
-  @include u-font('sans', '2xl');
-  border-top: 1px solid color('primary-dark');
-  padding-top: units(1.5);
-}
-
-#footnotes {
-  @include u-font('sans', 'md');
-  border-top: 1px solid color('primary-dark');
-  padding-top: units(1.5);
-}
-
-.footnotes-list {
-  @include u-font('sans', 'xs');
-  max-width: measure(5);
-  padding-left: units(2);
-}
-
 figcaption {
   font-style: italic;
 }
 
 figcaption details {
   font-style: normal;
-}
-
-// Engineering Guide
-.heading-md {
-  @include u-font('sans', 'md');
-}
-
-h2.heading-md {
-  margin-top: units(2);
-}
-
-/* checklists and key questions */
-.guide-checklist,
-.key-questions {
-  @include u-font('sans','md');
-  color: color('white');
-  padding: units(1);
-}
-
-.guide-checklist {
-  background-color: color('primary');
-}
-
-.key-questions {
-  background-color: color('primary-darker');
-}
-
-.guide-checklist + ul,
-.key-questions + ul {
-  background-color: color('blue-5');
-  margin-top:0;
-  padding-top: units(1);
-  padding-right: units(2);
-  padding-bottom: units(1);
-}
-
-.guide-checklist + ul li,
-.key-questions + ul li {
-  margin-bottom: units(1);
-}
-
-.guide-checklist + ul,
-.guide-checklist + ul ul,
-.guide-checklist--single + ul {
-  list-style: none;
-  margin-left: 0;
-  padding-left: units(1);
-}
-
-.guide-checklist + ul li,
-.guide-checklist--single + ul li {
-  padding-left: $bullet-spacing;
-  text-indent: (-1 * $bullet-spacing);
-
-  &:before {
-    content: '\25A1';
-    padding-right: units(1);
-  }
-}
-
-/* interview templates */
-
-.example-user-interview-script code {
-  background: yellow;
-}
-
-/* Touchpoints feedback button */
-#touchpoints-form {
-  @include u-font('sans', '3xs');
-  background-color: $brand-color-medium;
-  border-radius: 0.25rem 0.25rem 0 0;
-  bottom: 0;
-  position: fixed;
-  right: 0.75rem;
-  z-index: 9999;
-
-  span .usa-icon {
-    font-size: size('body', 'sm');
-    vertical-align: middle;
-  }
-}
-
-/* Primary navigation icons */
-.usa-nav__primary-item .usa-nav__link .download-icon {
-  padding-left: 2px;
-
-  .usa-icon {
-    min-height: 1rem;
-    min-width: 1rem;
-    vertical-align: middle;
-  }
 }
 
 .chart-tooltip {
@@ -352,15 +90,3 @@ h2.heading-md {
 .chart-tooltip__label {
   color: color('base');
 }
-
-.bg-custom-1 { background-color: #f6e8a3; }
-.bg-custom-2 { background-color: #e08e6d; }
-.bg-custom-3 { background-color: #c0506b; }
-.bg-custom-4 { background-color: #7a3a87; }
-.bg-custom-5 { background-color: #3d1a5e; }
-.bg-custom-6 { background-color: #f4f1a3; }
-.bg-custom-7 { background-color: #75c3a3; }
-.bg-custom-8 { background-color: #3d8b6f; }
-.bg-custom-9 { background-color: #aac4e8; }
-.bg-custom-10 { background-color: #3a5fa0; }
-

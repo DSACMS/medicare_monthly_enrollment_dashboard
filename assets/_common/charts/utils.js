@@ -140,11 +140,12 @@ export function appendTrendFigure(container, title) {
     .attr('role', 'img')
     .attr('aria-label', title);
 
-  // The figure has a fixed CSS height (see .chart-figure in
-  // _dashboard-v2.scss) that's the same on every render, so the viewBox is
-  // sized to match the figure's actual box rather than a fixed constant —
-  // this keeps the plot filling the box exactly (no distortion/dead space)
-  // while still adapting to the width the flex layout gives it.
+  // The figure's height is flex-grown to fill its card on desktop (see
+  // .chart-figure in _dashboard-v2.scss), so the viewBox is sized to match
+  // the figure's actual box rather than a fixed constant — this keeps the
+  // plot filling the box exactly (no distortion/dead space) at whatever
+  // size the flex layout gives it, and stays correct across resizes via
+  // the ResizeObserver in allAreas.js (observeResize('#chartsView', ...)).
   const rect = figure.node().getBoundingClientRect();
   const width = Math.round(rect.width) || TREND_CHART_WIDTH;
   const height = Math.round(rect.height) || TREND_CHART_HEIGHT;
