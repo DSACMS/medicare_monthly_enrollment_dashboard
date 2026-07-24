@@ -25,7 +25,7 @@
         <div class="trend-head__controls">
           <div class="tabs" id="national-range-tabs" role="tablist" aria-label="Time range">
             <button type="button" role="tab" class="chart-range-tab" aria-selected="true" data-range="yearly">Yearly</button>
-            <button type="button" role="tab" class="chart-range-tab" aria-selected="false" data-range="monthly">12 months</button>
+            <button type="button" role="tab" class="chart-range-tab" aria-selected="false" data-range="monthly">Monthly</button>
           </div>
         </div>
       </div>
@@ -36,37 +36,44 @@
           <div class="table-container" id="national-trend-line"></div>
         </div>
 
-        {# New: mobile-only carousel panel 2 — purely decorative static
-           placeholder, NOT a repurposing of the real (still-hidden)
-           #national-trend-bar block below. That block stays completely
-           untouched for whenever the bar chart is built out for real. #}
-        <div class="chart-block trend-panel trend-panel--placeholder" data-view="bar" id="trend-panel-bar">
-          <div class="trend-panel__placeholder-body">
-            <p class="trend-panel__placeholder-text">Bar chart placeholder</p>
-          </div>
-        </div>
-
-        {# New: mobile-only carousel panel 3 — static placeholder for the future grid view. #}
-        <div class="chart-block trend-panel trend-panel--placeholder" data-view="grid" id="trend-panel-grid">
-          <div class="trend-panel__placeholder-body">
-            <p class="trend-panel__placeholder-text">Grid placeholder</p>
-          </div>
-        </div>
-
-        {# Temporarily hidden — trend card shows just the line chart for now.
-           Kept in the DOM (not removed) because allAreas.js's renderNationalTrend()
-           always renders into #national-trend-bar via appendTrendFigure(), which
-           calls .node().getBoundingClientRect() and would throw if this node didn't
-           exist. Plan is to move this into an overlay later. #}
-        <div class="chart-block" hidden>
+        {# Mobile-only carousel panel 2 — real bar chart, same #national-trend-bar
+           id renderTrend() already targets, so it's scope-aware (national/state/
+           county) the same way the line panel above is. #}
+        <div class="chart-block trend-panel trend-panel--mobile-only" data-view="bar" id="trend-panel-bar">
           <div class="chart-block__head"><h4>Percent of Total Enrollment</h4><div class="legend" id="national-trend-bar-legend"></div></div>
           <div class="table-container" id="national-trend-bar"></div>
+        </div>
+
+        {# Mobile-only carousel panel 3 — tap to open #trend-drawer, showing
+           the full yearly/monthly trend data table. #}
+        <div class="chart-block trend-panel trend-panel--mobile-only" data-view="grid" id="trend-panel-grid">
+          <div class="data-grid-card__mobile-trigger-wrap">
+            <button
+              type="button"
+              class="data-grid-card__mobile-trigger"
+              id="trend-mobile-trigger"
+              aria-haspopup="dialog"
+              aria-expanded="false"
+              aria-controls="trend-drawer"
+            >
+              <span class="data-grid-card__mobile-trigger-top">
+                <span class="data-grid-card__mobile-trigger-heading">
+                  <span class="data-grid-card__mobile-trigger-title">Trend Data Table</span>
+                </span>
+                <svg class="data-grid-card__mobile-trigger-chevron" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+                  <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
+              <span class="data-grid-card__mobile-trigger-desc" id="trend-mobile-trigger-desc">Open to view the full yearly trend data table.</span>
+            </button>
+          </div>
+          <hr class="data-grid-card__mobile-divider" aria-hidden="true">
         </div>
       </div>
 
       <div class="trend-carousel-dots" id="trend-carousel-dots">
         <button type="button" class="trend-carousel-dot" data-view="line" aria-pressed="true" aria-controls="trend-panel-line" aria-label="Show enrollment line chart"></button>
-        <button type="button" class="trend-carousel-dot" data-view="bar" aria-pressed="false" aria-controls="trend-panel-bar" aria-label="Show bar chart placeholder"></button>
+        <button type="button" class="trend-carousel-dot" data-view="bar" aria-pressed="false" aria-controls="trend-panel-bar" aria-label="Show percent of total enrollment chart"></button>
         <button type="button" class="trend-carousel-dot" data-view="grid" aria-pressed="false" aria-controls="trend-panel-grid" aria-label="Show grid placeholder"></button>
       </div>
     </div>
@@ -102,7 +109,7 @@
       <div class="data-grid-overlay__tabs-slot trend-overlay__toolbar">
         <div class="tabs" id="trend-overlay-range" role="tablist" aria-label="Time range">
           <button type="button" role="tab" class="chart-range-tab" data-range="yearly" aria-selected="true">Yearly</button>
-          <button type="button" role="tab" class="chart-range-tab" data-range="monthly" aria-selected="false">12 months</button>
+          <button type="button" role="tab" class="chart-range-tab" data-range="monthly" aria-selected="false">Monthly</button>
         </div>
         <div class="segmented trend-overlay__types" id="trend-overlay-types" role="group" aria-label="Chart type">
           <button type="button" data-view="line" aria-pressed="true">
@@ -130,4 +137,29 @@
         <div class="data-grid-scroll-wrap"><div class="data-grid-scroll" id="trend-overlay-grid"></div></div>
       </div>
     </div>
+  </div>
+
+  <!--
+    Mobile-only bottom-sheet drawer for the trend data table, opened from
+    #trend-panel-grid (carousel page 3). Simpler than the state/county
+    drawers -- no search box, just the current yearly/monthly table.
+  -->
+  <div class="data-grid-drawer-overlay" id="trend-drawer-overlay"></div>
+  <div
+    class="data-grid-drawer"
+    id="trend-drawer"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="trend-drawer-title"
+  >
+    <div class="data-grid-drawer__handle" aria-hidden="true"></div>
+    <header class="data-grid-drawer__header">
+      <h3 class="data-grid-drawer__title" id="trend-drawer-title">Trend Data Table</h3>
+      <button type="button" class="data-grid-drawer__close" id="trend-drawer-close" aria-label="Close trend data table">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <path d="M2 2l12 12M14 2L2 14" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+        </svg>
+      </button>
+    </header>
+    <div class="data-grid-drawer__list-wrap" id="trend-drawer-body"></div>
   </div>

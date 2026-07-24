@@ -14,6 +14,8 @@ const PRIMARY_STROKE_WIDTH = 3;
 const DEFAULT_STROKE_WIDTH = 2;
 const PRIMARY_AREA_OPACITY = 0.08;
 const END_LABEL_MIN_GAP = 12;
+// .series-line has stroke-linecap: round, so a short dash + round cap renders as dots.
+const DASH_PATTERNS = { dotted: '1,6', dashed: '9,6' };
 
 /**
  * Renders a multi-series enrollment count line chart with y-axis origin at 0.
@@ -112,6 +114,7 @@ function renderLineChart(selector, data, config) {
       .attr('class', 'series-line')
       .attr('stroke', s.color)
       .style('stroke-width', s.primary ? PRIMARY_STROKE_WIDTH : DEFAULT_STROKE_WIDTH)
+      .style('stroke-dasharray', DASH_PATTERNS[s.dash] || null)
       .attr('d', lineGenerator(points));
 
     svg.append('circle')
@@ -126,7 +129,8 @@ function renderLineChart(selector, data, config) {
     const legendItems = series.map((s) => ({
       label: `${s.label} ${yTickFormat(lastRow[s.key] || 0)}`,
       color: s.color,
-      dot: true,
+      dot: !s.dash,
+      dashStyle: s.dash,
     }));
     resolveLegendTarget(container, legendSelector).html(buildLegendHtml(legendItems));
   } else {

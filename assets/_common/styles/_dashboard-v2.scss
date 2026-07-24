@@ -17,12 +17,6 @@
   --brand:     #015390;
   --brand-ink: #013b63;
   --focus:     #009ad0;
-
-  // Consumed at runtime by allAreas.js's getCssVar() for the enrollment pie charts.
-  --pie-medicare-ffs-color: #961d56;
-  --pie-medicare-ma-color:  #7928c9;
-  --pie-drug-pdp-color:     #89cc9e;
-  --pie-drug-mapd-color:    #009ad0;
 }
 
 * { box-sizing: border-box; }
@@ -115,28 +109,11 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   }
 }
 
-// Placeholder panels only exist for the mobile carousel.
+// These panels only exist for the mobile carousel; desktop shows just the line chart inline.
 @media (min-width: 64em) {
-  .trend-panel--placeholder {
+  .trend-panel--mobile-only {
     display: none;
   }
-}
-
-.trend-panel__placeholder-body {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 220px; // matches the mobile .chart-figure height so swiping doesn't jump/resize
-  border: 1px dashed var(--border);
-  border-radius: 10px;
-  background: var(--surface-2);
-}
-
-.trend-panel__placeholder-text {
-  margin: 0;
-  color: var(--ink-2);
-  font-size: 0.85rem;
-  font-weight: 600;
 }
 
 .trend-carousel-dots { display: none; }
@@ -173,8 +150,8 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 .trend-carousel-dot[aria-pressed="true"] {
   width: 20px;
   border-radius: 5px;
-  background: var(--brand, #015390);
-  border-color: var(--brand, #015390);
+  background: var(--ink-2, #54545f);
+  border-color: var(--ink-2, #54545f);
 }
 
 @media (forced-colors: active) {
@@ -185,8 +162,11 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 
 .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; }
 .legend .item { display: flex; align-items: center; gap: 7px; font-size: .77rem; color: var(--ink-2); font-weight: 600; }
-.legend .key { width: 17px; height: 3px; border-radius: 2px; }
-.legend .key.dot { width: 11px; height: 11px; border-radius: 50%; }
+.legend .key { width: 22px; height: 4px; border-radius: 2px; background: var(--legend-color); }
+.legend .key.dot { width: 9px; height: 9px; border-radius: 50%; }
+.legend .key--dotted { background: repeating-linear-gradient(to right, var(--legend-color) 0 2px, transparent 2px 6px); border-radius: 0; }
+.legend .key--dashed { background: repeating-linear-gradient(to right, var(--legend-color) 0 8px, transparent 8px 13px); border-radius: 0; }
+.legend .key--hatched { background: repeating-linear-gradient(45deg, var(--legend-color) 0 2px, transparent 2px 5px); border-radius: 0; }
 
 .gridline { stroke: var(--grid); stroke-width: 1; }
 .axis-base { stroke: var(--baseline); stroke-width: 1; }
@@ -764,7 +744,7 @@ table.data tbody tr:hover td { background: var(--surface-2); }
     display: none;
   }
 
-  .data-grid-card--enrollment .data-grid-card__mobile-trigger {
+  :is(.data-grid-card--enrollment, #trend-panel-grid) .data-grid-card__mobile-trigger {
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -1195,6 +1175,56 @@ body.data-grid-overlay-open {
   padding: 0 14px 14px;
   // Reserves space for the sticky thead so scrollIntoView doesn't park a row underneath it.
   scroll-padding-top: 36px;
+}
+
+// #trend-drawer-body's table comes from renderTable() (no .data class, unlike
+// the state/county drawers' static markup), so it falls outside both existing
+// styling systems (table.data and :is(.data-grid-card, .data-grid-overlay)).
+// Mirrors the latter, scoped to just this id so it can't affect either.
+#trend-drawer-body table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.8125rem;
+}
+
+#trend-drawer-body th,
+#trend-drawer-body td {
+  padding: 8px 10px;
+  text-align: right;
+  border-bottom: 1px solid rgba(20, 20, 28, 0.10);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+#trend-drawer-body th:first-child,
+#trend-drawer-body td:first-child {
+  text-align: left;
+  font-weight: 600;
+  white-space: normal;
+}
+
+#trend-drawer-body thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f7f8fa;
+  color: #54545f;
+  font-weight: 700;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  box-shadow: inset 0 -1px 0 rgba(20, 20, 28, 0.10);
+}
+
+#trend-drawer-body tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+@media (hover: hover) {
+  #trend-drawer-body tbody tr:hover td {
+    background: #e5f3fa;
+  }
 }
 
 .data-grid-drawer__sort-button {

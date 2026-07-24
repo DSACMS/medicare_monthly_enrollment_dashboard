@@ -19,10 +19,13 @@ import * as d3 from 'd3';
  * @param {Function} [options.onSort] - (columnIndex) => void. Passing this
  *   makes headers clickable buttons instead of plain text (caller owns the
  *   sort state and re-renders with already-sorted `data`).
+ * @param {number} [options.sortableIndex] - When set, only this column index
+ *   gets the clickable sort-button treatment; the rest stay plain text.
+ *   Omit to make every column sortable (the original, still-default behavior).
  */
 function renderTable(selector, columnDefs, data, options = {}) {
   const {
-    onRowClick, isRowSelectable = () => true, isRowSelected = () => false, sortState, onSort,
+    onRowClick, isRowSelectable = () => true, isRowSelected = () => false, sortState, onSort, sortableIndex,
   } = options;
   const container = d3.select(selector);
   container.html('');
@@ -39,6 +42,10 @@ function renderTable(selector, columnDefs, data, options = {}) {
   if (onSort) {
     headerCells.each(function renderSortableHeader(col, index) {
       const th = d3.select(this);
+      if (sortableIndex !== undefined && index !== sortableIndex) {
+        th.text(col.label);
+        return;
+      }
       const isActive = sortState?.index === index;
       let ariaSortValue = 'none';
       if (isActive) ariaSortValue = sortState.direction === 'asc' ? 'ascending' : 'descending';

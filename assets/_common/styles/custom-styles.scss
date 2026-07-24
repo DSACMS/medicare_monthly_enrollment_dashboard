@@ -30,41 +30,6 @@ $bullet-spacing: 1.25rem;
   padding: 0 20px;
 }
 
-.pie-chart-inner {
-  display: grid;
-  grid-template-columns: minmax(0, max-content) minmax(0, clamp(120px, 42cqi, 275px)) minmax(0, max-content);
-  justify-content: center;
-  align-items: center;
-  gap: 5px;
-  width: 540px;
-  max-width: 100%;
-  min-width: 0;
-}
-
-// Lets the circle shrink below the svg's intrinsic size.
-.pie-chart-svg-host {
-  min-width: 0;
-}
-
-.pie-chart-label {
-  @extend %dashboard-label-text;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  font-family: family('cond');
-}
-
-.pie-chart-label__line {
-  @extend %dashboard-label-text;
-  font-weight: bold;
-}
-
-.pie-chart-text {
-  font-family: family('cond');
-  font-size: 20px;
-}
-
 // Set heading colors
 h1, h2, h3, h4, h5, h6 {
   color: color('primary-darker');

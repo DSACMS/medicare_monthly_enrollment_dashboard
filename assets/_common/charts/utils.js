@@ -15,9 +15,9 @@ export const DEFAULT_COLORS = ['#f1eef6', '#d7b5d8', '#df65b0', '#dd1c77', '#980
 export const DRUG_COLORS = ['#edf8fb', '#b2e2e2', '#66c2a4', '#2ca25f', '#006d2c'];
 export const LINE_CHART_COLORS = {
   ma:'#961D56',
-  ffs: '#7928c9',
-  mapd:'#0d4f4b',
-  pdp: '#f92c9a',
+  ffs: '#0074D9',
+  mapd:'#006d2c',
+  pdp: '#E69F00',
   total: '#1b1b1b'
 };
 
@@ -38,14 +38,6 @@ export const TREND_MARGIN = {
 
 export function clearContainer(selector) {
   return d3.select(selector).html('');
-}
-
-// Reads a color (or any value) from a CSS custom property defined on :root,
-// e.g. getCssVar('--pie-medicare-ffs-color'), so chart colors set in JS stay
-// in sync with the stylesheet instead of being duplicated as hex literals.
-export function getCssVar(name, fallback) {
-  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  return value || fallback;
 }
 
 export function sortYearlyAscending(data) {
@@ -105,7 +97,10 @@ export function moveTooltip(tooltip, containerNode, event) {
 
 export function buildLegendHtml(items) {
   return items
-    .map((it) => `<span class="item"><span class="key${it.dot ? ' dot' : ''}" style="background:${it.color}"></span>${it.label}</span>`)
+    .map((it) => {
+      const classes = ['key', it.dot && 'dot', it.dashStyle && `key--${it.dashStyle}`].filter(Boolean).join(' ');
+      return `<span class="item"><span class="${classes}" style="--legend-color:${it.color}"></span>${it.label}</span>`;
+    })
     .join('');
 }
 

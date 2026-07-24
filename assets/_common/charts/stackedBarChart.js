@@ -45,12 +45,28 @@ function renderStackedBarChart(selector, data, config) {
   } = config;
 
   const [bottom, top] = segments;
-  const legendItems = segments.map((seg) => ({ label: seg.label, color: seg.color }));
+  const legendItems = [...segments].reverse().map((seg) => ({
+    label: seg.label,
+    color: seg.color,
+    dashStyle: seg === bottom ? 'hatched' : undefined,
+  }));
   resolveLegendTarget(container, legendSelector).html(buildLegendHtml(legendItems));
 
   const {
     svg, tooltip, width: W, height: H,
   } = appendTrendFigure(container, title);
+
+  // Unique per render since multiple bar charts (card, overlay, mobile
+  // carousel placeholders) can be in the DOM at once -- a shared/static id
+  // would let one chart's pattern get hijacked by another's url(#id) ref.
+  const hatchId = `hatch-${selector.replace(/[^a-zA-Z0-9]/g, '')}-${Math.random().toString(36).slice(2, 8)}`;
+  const hatchPattern = svg.append('defs').append('pattern')
+    .attr('id', hatchId)
+    .attr('width', 6).attr('height', 6)
+    .attr('patternUnits', 'userSpaceOnUse')
+    .attr('patternTransform', 'rotate(45)');
+  hatchPattern.append('rect').attr('width', 6).attr('height', 6).attr('fill', bottom.color).attr('fill-opacity', 0.18);
+  hatchPattern.append('line').attr('x1', 0).attr('y1', 0).attr('x2', 0).attr('y2', 6).attr('stroke', bottom.color).attr('stroke-width', 3);
 
   const xLabels = data.map(xAccessor);
   const yScale = d3.scaleLinear().domain([0, 100]).range([H - MARGIN.bottom, MARGIN.top]);
@@ -95,7 +111,7 @@ function renderStackedBarChart(selector, data, config) {
     col.append('rect')
       .attr('x', barX(d)).attr('width', barWidth)
       .attr('y', yBottomTop).attr('height', Math.max(0, yBase - yBottomTop))
-      .attr('fill', bottom.color);
+      .attr('fill', `url(#${hatchId})`);
 
     col.append('rect')
       .attr('x', barX(d)).attr('width', barWidth)

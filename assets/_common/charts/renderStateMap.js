@@ -87,9 +87,8 @@ async function getStateFeatures() {
  * @param {string} [config.title] - Accessible name for the chart; used as the
  *   sr-only table's <caption>. Falls back to containerSelector if omitted.
  * @param {{label: string, value: Function}[]} [config.tableColumns] - Column
- *   definitions for the sr-only table, same shape as renderPieChart's
- *   config.tableColumns. Falls back to a State/<metric>%/<comparison>%/Total
- *   table if omitted.
+ *   definitions for the sr-only table. Falls back to a
+ *   State/<metric>%/<comparison>%/Total table if omitted.
  */
 
 function renderStateMap(containerSelector, data, config = {}) {

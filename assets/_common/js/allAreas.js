@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import requestDataset from '../../../src/router';
 import renderTable from '../tables/renderTable';
 import usStates from '../../../_data/usStates.json';
-import { getCssVar, sortYearlyAscending, sortMonthlyAscending, observeResize, DRUG_COLORS, computeJenksBreaks } from '../charts/utils';
+import { sortYearlyAscending, sortMonthlyAscending, observeResize, DRUG_COLORS, LINE_CHART_COLORS, computeJenksBreaks } from '../charts/utils';
 import {
   renderHospitalYearlyLineChart,
   renderHospitalMonthlyLineChart,
@@ -57,6 +57,7 @@ async function init() {
     let trendRequestToken = 0;
     let overlayTrendView = 'line';
     let trendOverlayOpen = false;
+    let trendDrawerOpen = false;
 
     const programLabel = (type) => (type === 'drug' ? 'Prescription Drug' : 'Hospital / Medical');
 
@@ -110,6 +111,39 @@ async function init() {
       });
     };
 
+    // Flips {index, direction} for a newly-clicked column (resets to
+    // ascending on a column switch). Shared by both drawers and both grids.
+    const toggleSort = (current, index) => (
+      current.index === index
+        ? { index, direction: current.direction === 'asc' ? 'desc' : 'asc' }
+        : { index, direction: 'asc' }
+    );
+
+    // Year column only -- newest first by default, same for both the
+    // desktop overlay's grid view and the mobile trend drawer.
+    let trendGridSort = { index: 0, direction: 'desc' };
+
+    // Shared by the desktop overlay's grid view and the mobile trend drawer.
+    const renderTrendGrid = (selector) => {
+      const data = currentTrendBucket()?.[activeTrendRange];
+      const ascending = activeTrendRange === 'yearly'
+        ? sortYearlyAscending(data || [])
+        : sortMonthlyAscending(data || []);
+      const sorted = trendGridSort.direction === 'asc' ? ascending : ascending.reverse();
+      if (!sorted.length) {
+        document.querySelector(selector).innerHTML = '<p class="data-grid-placeholder">No trend data available for this selection.</p>';
+      } else {
+        renderTable(selector, trendGridColumns(activeTrendType), sorted, {
+          sortState: trendGridSort,
+          sortableIndex: 0,
+          onSort: () => {
+            trendGridSort = toggleSort(trendGridSort, 0);
+            renderTrendGrid(selector);
+          },
+        });
+      }
+    };
+
     const renderTrendOverlay = () => {
       if (!document.querySelector('#trend-overlay-body')) return;
 
@@ -120,22 +154,14 @@ async function init() {
         if (panel) panel.hidden = view !== overlayTrendView;
       });
 
-      const data = currentTrendBucket()?.[activeTrendRange];
-      const hasData = Boolean(data && data.length);
-      const fns = trendChartFns[activeTrendType][activeTrendRange];
-
       if (overlayTrendView === 'grid') {
-        const sorted = activeTrendRange === 'yearly'
-          ? sortYearlyAscending(data || [])
-          : sortMonthlyAscending(data || []);
-        if (!sorted.length) {
-          document.querySelector('#trend-overlay-grid').innerHTML = '<p class="data-grid-placeholder">No trend data available for this selection.</p>';
-        } else {
-          renderTable('#trend-overlay-grid', trendGridColumns(activeTrendType), sorted);
-        }
+        renderTrendGrid('#trend-overlay-grid');
         return;
       }
 
+      const data = currentTrendBucket()?.[activeTrendRange];
+      const hasData = Boolean(data && data.length);
+      const fns = trendChartFns[activeTrendType][activeTrendRange];
       const host = overlayTrendView === 'line' ? '#trend-overlay-line' : '#trend-overlay-bar';
       if (!hasData) {
         document.querySelector(host).innerHTML = '<p class="data-grid-placeholder">No trend data available for this selection.</p>';
@@ -148,6 +174,19 @@ async function init() {
       }
     };
 
+    // Updates the mobile carousel's page-3 trigger card -- runs on every
+    // renderTrend(), independent of whether the drawer is actually open,
+    // since the trigger itself is always in the DOM while on mobile.
+    const updateTrendDrawerTrigger = () => {
+      const desc = document.querySelector('#trend-mobile-trigger-desc');
+      if (desc) desc.textContent = `Open to view the full ${activeTrendRange} trend data table.`;
+    };
+
+    const renderTrendDrawer = () => {
+      if (!document.querySelector('#trend-drawer-body')) return;
+      renderTrendGrid('#trend-drawer-body');
+    };
+
     const renderTrend = () => {
       const data = currentTrendBucket()?.[activeTrendRange];
       const fns = trendChartFns[activeTrendType][activeTrendRange];
@@ -156,7 +195,9 @@ async function init() {
         fns.bar('#national-trend-bar', data, barLegend);
       }
       d3.select('#national-trend-sub').text(trendContextLabel());
+      updateTrendDrawerTrigger();
       if (trendOverlayOpen) renderTrendOverlay();
+      if (trendDrawerOpen) renderTrendDrawer();
     };
 
     const trendLoadingHtml = '<p class="data-grid-placeholder trend-loading" role="status" aria-live="polite"><span class="trend-loading__spinner" aria-hidden="true"></span>Loading trend…</p>';
@@ -165,6 +206,8 @@ async function init() {
       d3.select('#national-trend-sub').text(trendContextLabel());
       const lineHost = document.querySelector('#national-trend-line');
       if (lineHost) lineHost.innerHTML = trendLoadingHtml;
+      const barHost = document.querySelector('#national-trend-bar');
+      if (barHost) barHost.innerHTML = trendLoadingHtml;
 
       if (trendOverlayOpen) {
         d3.select('#trend-overlay-sub').text(trendContextLabel());
@@ -175,6 +218,11 @@ async function init() {
         }[overlayTrendView];
         const overlayHost = document.querySelector(activeSel);
         if (overlayHost) overlayHost.innerHTML = trendLoadingHtml;
+      }
+
+      if (trendDrawerOpen) {
+        const drawerHost = document.querySelector('#trend-drawer-body');
+        if (drawerHost) drawerHost.innerHTML = trendLoadingHtml;
       }
     };
 
@@ -211,12 +259,6 @@ async function init() {
       if (token !== trendRequestToken) return;
       renderTrend();
     };
-
-    const trendYears = yearlyWithLatest.map((d) => Number(d.year));
-    const yearlyRangeTab = document.querySelector('#national-range-tabs [data-range="yearly"]');
-    if (yearlyRangeTab && trendYears.length) {
-      yearlyRangeTab.textContent = `${d3.min(trendYears)}–${d3.max(trendYears)}`;
-    }
 
     const trendRangeTabs = document.querySelectorAll('#national-range-tabs .chart-range-tab');
     trendRangeTabs.forEach((tab) => {
@@ -299,8 +341,9 @@ async function init() {
       }, { passive: true });
     }
 
-    // IMPORTANT: keep MA/MA-PD SECOND in each array below — pieChart.js
-    // renders index 1 on the donut's left side. currentYear assumes yearlyWithLatest's latest year is first.
+    // IMPORTANT: keep MA/MA-PD SECOND in each array below — renderEnrollmentHero
+    // maps data[1] to slot B, which hero-card.njk renders as the upper bar.
+    // currentYear assumes yearlyWithLatest's latest year is first.
     const currentYear = yearlyWithLatest[0];
 
     // Config for the swappable card at #medicare-enrollment-hero, keyed by
@@ -309,14 +352,11 @@ async function init() {
       hospital: {
         data: [
           { name: 'FFS', label: 'Fee-For-Service (FFS)', value: currentYear.ffsPercent },
-          { name: 'MA', label: 'Medicare Advantage (MA)', value: currentYear.maPercent },
+          { name: 'MA', label: 'Medicare Advantage (MA) & Other Health Plans', value: currentYear.maPercent },
         ],
         total: currentYear.totalEnrollees,
         options: {
-          colors: [
-            getCssVar('--pie-medicare-ffs-color', '#7928c9'),
-            getCssVar('--pie-medicare-ma-color', '#961d56'),
-          ],
+          colors: [LINE_CHART_COLORS.ffs, LINE_CHART_COLORS.ma],
           title: `Medicare enrollment by program type, ${currentYear.year}`,
           tableColumns: [
             { label: 'Program', value: (d) => d.name },
@@ -331,10 +371,7 @@ async function init() {
         ],
         total: currentYear.drugTotal,
         options: {
-          colors: [
-            getCssVar('--pie-drug-pdp-color', '#f92c9a'),
-            getCssVar('--pie-drug-mapd-color', '#0d4f4b'),
-          ],
+          colors: [LINE_CHART_COLORS.pdp, LINE_CHART_COLORS.mapd],
           title: `Medicare Prescription Drug enrollment by plan type, ${currentYear.year}`,
           tableColumns: [
             { label: 'Plan type', value: (d) => d.name },
@@ -466,6 +503,7 @@ async function init() {
     let closeCountyDrawer;
     let closeOverlay;
     let closeTrendOverlay;
+    let closeTrendDrawer;
 
     // Desktop grids' sort state, one per grid. index 0/'asc' matches each
     // grid's previous hardcoded default (name column, A→Z).
@@ -490,14 +528,6 @@ async function init() {
         return String(av).localeCompare(String(bv)) * dir;
       });
     };
-
-    // Flips {index, direction} for a newly-clicked column (resets to
-    // ascending on a column switch). Shared by both drawers and both grids.
-    const toggleSort = (current, index) => (
-      current.index === index
-        ? { index, direction: current.direction === 'asc' ? 'desc' : 'asc' }
-        : { index, direction: 'asc' }
-    );
 
     // Clicking the already-selected row again deselects it; a different
     // row swaps the map to that state, same as before.
@@ -879,8 +909,10 @@ async function init() {
       panel: drawerEls.panel,
       trigger: drawerEls.trigger,
       bodyLockClass: 'data-grid-drawer-open',
-      focusOnOpen: () => drawerEls.search?.focus(),
-      onBeforeOpen: () => closeCountyDrawer(),
+      // Not the search input -- auto-focusing it pops the mobile keyboard
+      // (and, on iOS Safari, zooms the page) the instant the drawer opens.
+      focusOnOpen: () => drawerEls.closeBtn?.focus(),
+      onBeforeOpen: () => { closeCountyDrawer(); closeTrendDrawer(); },
       onOpen: () => {
         renderDrawerList();
         drawerEls.tbody?.querySelector('tr.is-selected')?.scrollIntoView({ block: 'nearest' });
@@ -907,6 +939,7 @@ async function init() {
       if (event.matches) {
         closeDrawer();
         closeCountyDrawer();
+        closeTrendDrawer();
         activeTrendView = 'line';
         setActiveTrendDot('line');
         scrollToTrendView('line', 'auto');
@@ -972,8 +1005,10 @@ async function init() {
       trigger: countyDrawerEls.trigger,
       isDisabled: () => Boolean(countyDrawerEls.trigger?.disabled),
       bodyLockClass: 'data-grid-drawer-open',
-      focusOnOpen: () => countyDrawerEls.search?.focus(),
-      onBeforeOpen: () => closeDrawer(),
+      // Not the search input -- auto-focusing it pops the mobile keyboard
+      // (and, on iOS Safari, zooms the page) the instant the drawer opens.
+      focusOnOpen: () => countyDrawerEls.closeBtn?.focus(),
+      onBeforeOpen: () => { closeDrawer(); closeTrendDrawer(); },
       onOpen: () => {
         renderCountyDrawerList();
         countyDrawerEls.tbody?.querySelector('tr.is-selected')?.scrollIntoView({ block: 'nearest' });
@@ -1092,6 +1127,40 @@ async function init() {
       trendOverlayEls.trigger.addEventListener('click', openTrendOverlay);
       trendOverlayEls.closeBtn?.addEventListener('click', closeTrendOverlay);
       trendOverlayEls.scrim?.addEventListener('click', closeTrendOverlay);
+    }
+
+    // ---- Mobile-only bottom-sheet drawer for the trend data table
+    // (carousel page 3). No search/thead-row/tbody fields from makeDrawerEls
+    // are used -- renderTrendGrid() calls renderTable() directly instead of
+    // the state/county drawers' bespoke sortable-head/row renderer. ----
+
+    const trendDrawerEls = makeDrawerEls('trend');
+
+    const trendDrawerPopup = createPopup({
+      scrim: trendDrawerEls.overlay,
+      panel: trendDrawerEls.panel,
+      trigger: trendDrawerEls.trigger,
+      bodyLockClass: 'data-grid-drawer-open',
+      focusOnOpen: () => trendDrawerEls.closeBtn?.focus(),
+      onBeforeOpen: () => {
+        closeDrawer();
+        closeCountyDrawer();
+      },
+      onOpen: () => {
+        trendDrawerOpen = true;
+        renderTrendDrawer();
+      },
+      onClose: () => {
+        trendDrawerOpen = false;
+      },
+    });
+    const openTrendDrawer = trendDrawerPopup.open;
+    closeTrendDrawer = trendDrawerPopup.close;
+
+    if (trendDrawerEls.trigger) {
+      trendDrawerEls.trigger.addEventListener('click', openTrendDrawer);
+      trendDrawerEls.closeBtn?.addEventListener('click', closeTrendDrawer);
+      trendDrawerEls.overlay?.addEventListener('click', closeTrendDrawer);
     }
 
     // Swaps which table (state/county) is visible, whether the card is
