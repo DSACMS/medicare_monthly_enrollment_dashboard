@@ -1,5 +1,4 @@
 import './allAreas';
-import './counties/countiesView';
 
 require('@uswds/uswds');
 
