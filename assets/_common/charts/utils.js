@@ -27,7 +27,7 @@ export function computeJenksBreaks(values, numClasses = DEFAULT_COLORS.length) {
 
   const clusters = ckmeans(clean, numClasses);
 
-  breaks = clusters.slice(0, -1).map((cluster) => cluster[cluster.length - 1]);
+  const breaks = clusters.slice(0, -1).map((cluster) => cluster[cluster.length - 1]);
 
   return breaks.map((b) => Math.round(b));
 }

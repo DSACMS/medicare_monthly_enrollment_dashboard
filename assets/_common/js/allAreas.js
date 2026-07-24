@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import requestDataset from '../../../src/router';
 import renderTable from '../tables/renderTable';
 import usStates from '../../../_data/usStates.json';
-import { getCssVar, sortMonthlyAscending, observeResize, DRUG_COLORS, DEFAULT_BREAKPOINTS, computeJenksBreaks } from '../charts/utils';
+import { getCssVar, sortMonthlyAscending, observeResize, DRUG_COLORS, computeJenksBreaks } from '../charts/utils';
 import {
   renderHospitalYearlyLineChart,
   renderHospitalMonthlyLineChart,
