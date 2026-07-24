@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import requestDataset from '../../../src/router';
 import renderTable from '../tables/renderTable';
 import usStates from '../../../_data/usStates.json';
-import { getCssVar, sortYearlyAscending, sortMonthlyAscending, observeResize, DRUG_COLORS, DEFAULT_BREAKPOINTS } from '../charts/utils';
+import { getCssVar, sortYearlyAscending, sortMonthlyAscending, observeResize, DRUG_COLORS, computeJenksBreaks } from '../charts/utils';
 import {
   renderHospitalYearlyLineChart,
   renderHospitalMonthlyLineChart,
@@ -552,6 +552,7 @@ async function init() {
         selector: '#medicare-enrollment-state-map',
         options: {
           title: 'Medicare Advantage enrollment by state',
+          metricPercent: (d) => d.maPercent,
           comboBoxSelector: '#medicare-state-selector',
           backButtonSelector: '#medicare-map-back',
           histogramSelector: '#medicare-tier-histogram',
@@ -563,7 +564,6 @@ async function init() {
           metricLabel: 'MAPD',
           metricPercent: (d) => d.mapdPercent,
           metricCount: (d) => d.mapdCount,
-          breakpoints: DEFAULT_BREAKPOINTS,
           colors: DRUG_COLORS,
           comparisonLabel: 'PDP',
           comparisonPercent: (d) => d.pdpPercent,
@@ -1204,6 +1204,11 @@ async function init() {
     resetMapToNational = (type) => {
       const config = mapConfigs[type];
       if (!config) return;
+      
+      const mappableRows = allStatesRows.filter((row) => mappableStateNames.has(row.stateName));
+      const values = mappableRows.map(config.options.metricPercent);
+      config.options.breakpoints = computeJenksBreaks(values);
+
       renderStateMap(config.selector, allStatesRows, config.options);
     };
 
