@@ -12,7 +12,6 @@ import {
   renderDrugMonthlyLineChart,
   renderDrugYearlyStackedBarChart,
   renderDrugMonthlyStackedBarChart,
-  renderPieChart,
   renderEnrollmentHero,
   renderStateMap,
   mergeLatestMonthlyIntoYearly,
@@ -24,28 +23,6 @@ const formatNum = d3.format(',');
 // Can't be handed off to the map -> grid/drawer render them disabled w/ warning label
 const mappableStateNames = new Set(usStates);
 
-const columns = [
-  { label: 'Year', value: (d) => d.year },
-  { label: 'Total Enrollees', value: (d) => formatNum(d.totalEnrollees) },
-  {
-    label: 'Fee-For-Service (FFS)',
-    value: (d) => `${formatNum(d.ffsCount)} (${d.ffsPercent}%)`,
-  },
-  {
-    label: 'Medicare Advantage (MA)',
-    value: (d) => `${formatNum(d.maCount)} (${d.maPercent}%)`,
-  },
-  { label: 'Prescription Drug Enrollment Total', value: (d) => formatNum(d.drugTotal) },
-  {
-    label: 'Stand-Alone Prescription Drug Plans (PDP)',
-    value: (d) => `${formatNum(d.pdpCount)} (${d.pdpPercent}%)`,
-  },
-  {
-    label: 'Medicare Advantage Prescription Drug Plans (MAPD)',
-    value: (d) => `${formatNum(d.mapdCount)} (${d.mapdPercent}%)`,
-  },
-];
-
 async function init() {
   try {
     const [yearly, monthly] = await Promise.all([
@@ -54,8 +31,6 @@ async function init() {
     ]);
 
     const yearlyWithLatest = mergeLatestMonthlyIntoYearly(yearly, monthly);
-
-    renderTable('#medicare-table', columns, yearlyWithLatest);
 
     const barLegend = { legendSelector: '#national-trend-bar-legend' };
     const lineLegend = { legendSelector: '#national-trend-line-legend' };
@@ -253,13 +228,6 @@ async function init() {
     const latestMonth = sortMonthlyAscending(monthly).at(-1);
     d3.select('#dashboard-title-date')
       .text(`${latestMonth.month} ${latestMonth.year}`);
-
-    renderPieChart(
-      '#drug-enrollment-pie',
-      pieCardConfigs.drug.data,
-      pieCardConfigs.drug.total,
-      pieCardConfigs.drug.options,
-    );
 
     const roundPct = (v) => `${Math.round(v)}%`;
 
