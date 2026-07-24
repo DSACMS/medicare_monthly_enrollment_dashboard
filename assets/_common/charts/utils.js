@@ -11,8 +11,8 @@ export const TREND_CHART_HEIGHT = 270;
 
 export const DEFAULT_BREAKPOINTS = [17, 34, 51, 67];
 export const  NO_DATA_FILL = '#eee';
-export const DEFAULT_COLORS = ['#E9A5C1', '#D96A99', '#C4407E', '#AF2A69', '#961D56'];
-export const DRUG_COLORS = ['#b8ece4', '#7fd8ca', '#36b3a8', '#1d7f78', '#0d4f4b'];
+export const DEFAULT_COLORS = ['#f1eef6', '#d7b5d8', '#df65b0', '#dd1c77', '#980043'];
+export const DRUG_COLORS = ['#edf8fb', '#b2e2e2', '#66c2a4', '#2ca25f', '#006d2c'];
 export const LINE_CHART_COLORS = {
   ma:'#961D56',
   ffs: '#7928c9',
