@@ -183,8 +183,11 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 
 .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; }
 .legend .item { display: flex; align-items: center; gap: 7px; font-size: .77rem; color: var(--ink-2); font-weight: 600; }
-.legend .key { width: 17px; height: 3px; border-radius: 2px; }
-.legend .key.dot { width: 11px; height: 11px; border-radius: 50%; }
+.legend .key { width: 22px; height: 4px; border-radius: 2px; background: var(--legend-color); }
+.legend .key.dot { width: 13px; height: 13px; border-radius: 50%; }
+.legend .key--dotted { background: repeating-linear-gradient(to right, var(--legend-color) 0 2px, transparent 2px 6px); border-radius: 0; }
+.legend .key--dashed { background: repeating-linear-gradient(to right, var(--legend-color) 0 8px, transparent 8px 13px); border-radius: 0; }
+.legend .key--hatched { background: repeating-linear-gradient(45deg, var(--legend-color) 0 2px, transparent 2px 5px); border-radius: 0; }
 
 .gridline { stroke: var(--grid); stroke-width: 1; }
 .axis-base { stroke: var(--baseline); stroke-width: 1; }

@@ -9,9 +9,9 @@ function formatMillions(n) {
 
 /**
  * Updates the "total + split bar" hero card (see .dash-hero in
- * dashboard-v2.scss). Unlike renderPieChart, this doesn't build DOM from
- * scratch — the markup (ids heroTotal/heroSeg{A,B}/etc.) already lives in
- * hero-card.njk, so this just fills it in. NOTE: assumes exactly 2 data points.
+ * dashboard-v2.scss). Doesn't build DOM from scratch — the markup (ids
+ * heroTotal/heroSeg{A,B}/etc.) already lives in hero-card.njk, so this just
+ * fills it in. NOTE: assumes exactly 2 data points.
  *
  * @param {string} containerSelector - CSS selector for the hero <section>.
  * @param {{name: string, label: string, value: number}[]} data - exactly two items;

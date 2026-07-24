@@ -10,8 +10,8 @@ import { hospitalYearly, hospitalMonthly } from '../tables/hospitalMedical/table
 
 const HOSPITAL_LINE_SERIES = [
   { key: 'totalEnrollees', label: 'TOTAL', color: LINE_CHART_COLORS.total, primary: true },
-  { key: 'maCount', label: 'MA', color: LINE_CHART_COLORS.ma },
-  { key: 'ffsCount', label: 'FFS', color: LINE_CHART_COLORS.ffs },
+  { key: 'maCount', label: 'MA', color: LINE_CHART_COLORS.ma, dash: 'dashed' },
+  { key: 'ffsCount', label: 'FFS', color: LINE_CHART_COLORS.ffs, dash: 'dotted' },
 ];
 
 const HOSPITAL_STACK_SEGMENTS = [

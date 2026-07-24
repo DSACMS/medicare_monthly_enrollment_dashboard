@@ -10,8 +10,8 @@ import { drugYearly, drugMonthly } from '../tables/prescriptionDrug/tableColumns
 
 const DRUG_LINE_SERIES = [
   { key: 'drugTotal', label: 'TOTAL', color: LINE_CHART_COLORS.total, primary: true },
-  { key: 'mapdCount', label: 'MA-PD', color: LINE_CHART_COLORS.mapd },
-  { key: 'pdpCount', label: 'PDP', color: LINE_CHART_COLORS.pdp },
+  { key: 'mapdCount', label: 'MA-PD', color: LINE_CHART_COLORS.mapd, dash: 'dashed' },
+  { key: 'pdpCount', label: 'PDP', color: LINE_CHART_COLORS.pdp, dash: 'dotted' },
 ];
 
 const DRUG_STACK_SEGMENTS = [

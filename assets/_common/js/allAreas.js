@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import requestDataset from '../../../src/router';
 import renderTable from '../tables/renderTable';
 import usStates from '../../../_data/usStates.json';
-import { getCssVar, sortYearlyAscending, sortMonthlyAscending, observeResize, DRUG_COLORS, computeJenksBreaks } from '../charts/utils';
+import { sortYearlyAscending, sortMonthlyAscending, observeResize, DRUG_COLORS, LINE_CHART_COLORS, computeJenksBreaks } from '../charts/utils';
 import {
   renderHospitalYearlyLineChart,
   renderHospitalMonthlyLineChart,
@@ -299,8 +299,9 @@ async function init() {
       }, { passive: true });
     }
 
-    // IMPORTANT: keep MA/MA-PD SECOND in each array below — pieChart.js
-    // renders index 1 on the donut's left side. currentYear assumes yearlyWithLatest's latest year is first.
+    // IMPORTANT: keep MA/MA-PD SECOND in each array below — renderEnrollmentHero
+    // maps data[1] to slot B, which hero-card.njk renders as the upper bar.
+    // currentYear assumes yearlyWithLatest's latest year is first.
     const currentYear = yearlyWithLatest[0];
 
     // Config for the swappable card at #medicare-enrollment-hero, keyed by
@@ -313,10 +314,7 @@ async function init() {
         ],
         total: currentYear.totalEnrollees,
         options: {
-          colors: [
-            getCssVar('--pie-medicare-ffs-color', '#7928c9'),
-            getCssVar('--pie-medicare-ma-color', '#961d56'),
-          ],
+          colors: [LINE_CHART_COLORS.ffs, LINE_CHART_COLORS.ma],
           title: `Medicare enrollment by program type, ${currentYear.year}`,
           tableColumns: [
             { label: 'Program', value: (d) => d.name },
@@ -331,10 +329,7 @@ async function init() {
         ],
         total: currentYear.drugTotal,
         options: {
-          colors: [
-            getCssVar('--pie-drug-pdp-color', '#f92c9a'),
-            getCssVar('--pie-drug-mapd-color', '#0d4f4b'),
-          ],
+          colors: [LINE_CHART_COLORS.pdp, LINE_CHART_COLORS.mapd],
           title: `Medicare Prescription Drug enrollment by plan type, ${currentYear.year}`,
           tableColumns: [
             { label: 'Plan type', value: (d) => d.name },
