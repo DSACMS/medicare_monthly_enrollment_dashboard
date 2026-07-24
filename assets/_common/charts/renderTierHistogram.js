@@ -87,13 +87,10 @@ function renderTierHistogram(
   });
 
   const title = contextLabel
-    ? `${contextLabel}: ${areaLabel} by ${metricLabel} enrollment tier`
-    : `${areaLabel} by ${metricLabel} enrollment tier`;
+    ? `${contextLabel} by ${metricLabel} Enrollment Distribution`
+    : `${areaLabel} by ${metricLabel} Enrollment Distribution`;
 
-  container
-    .append('p')
-    .attr('class', 'map-tier-histogram__title')
-    .text(title);
+
 
   const figure = container
     .append('div')
@@ -211,6 +208,11 @@ function renderTierHistogram(
     .attr('class', 'map-tier-histogram__x-axis')
     .attr('transform', `translate(0,${innerHeight})`)
     .call(xAxis);
+
+  container
+    .append('p')
+    .attr('class', 'map-tier-histogram__title')
+    .text(title);
 }
 
 export default renderTierHistogram;
