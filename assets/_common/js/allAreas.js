@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import requestDataset from '../../../src/router';
 import renderTable from '../tables/renderTable';
 import usStates from '../../../_data/usStates.json';
-import { getCssVar, sortMonthlyAscending, observeResize, DRUG_COLORS, DEFAULT_BREAKPOINTS } from '../charts/utils';
+import { getCssVar, sortYearlyAscending, sortMonthlyAscending, observeResize, DRUG_COLORS, DEFAULT_BREAKPOINTS } from '../charts/utils';
 import {
   renderHospitalYearlyLineChart,
   renderHospitalMonthlyLineChart,
@@ -60,38 +60,181 @@ async function init() {
     const barLegend = { legendSelector: '#national-trend-bar-legend' };
     const lineLegend = { legendSelector: '#national-trend-line-legend' };
 
-    const nationalTrendRenderers = {
+    const trendChartFns = {
       hospital: {
-        yearly: {
-          line: () => renderHospitalYearlyLineChart('#national-trend-line', yearlyWithLatest, lineLegend),
-          bar: () => renderHospitalYearlyStackedBarChart('#national-trend-bar', yearlyWithLatest, barLegend),
-        },
-        monthly: {
-          line: () => renderHospitalMonthlyLineChart('#national-trend-line', monthly, lineLegend),
-          bar: () => renderHospitalMonthlyStackedBarChart('#national-trend-bar', monthly, barLegend),
-        },
+        yearly: { line: renderHospitalYearlyLineChart, bar: renderHospitalYearlyStackedBarChart },
+        monthly: { line: renderHospitalMonthlyLineChart, bar: renderHospitalMonthlyStackedBarChart },
       },
       drug: {
-        yearly: {
-          line: () => renderDrugYearlyLineChart('#national-trend-line', yearlyWithLatest, lineLegend),
-          bar: () => renderDrugYearlyStackedBarChart('#national-trend-bar', yearlyWithLatest, barLegend),
-        },
-        monthly: {
-          line: () => renderDrugMonthlyLineChart('#national-trend-line', monthly, lineLegend),
-          bar: () => renderDrugMonthlyStackedBarChart('#national-trend-bar', monthly, barLegend),
-        },
+        yearly: { line: renderDrugYearlyLineChart, bar: renderDrugYearlyStackedBarChart },
+        monthly: { line: renderDrugMonthlyLineChart, bar: renderDrugMonthlyStackedBarChart },
       },
     };
 
+    const nationalTrendData = { yearly: yearlyWithLatest, monthly };
+    const stateTrendCache = new Map();
+    const countyTrendCache = new Map();
+
     let activeTrendType = 'hospital';
     let activeTrendRange = 'yearly';
+    let trendScope = 'national';
+    let trendArea = null;
+    let trendRequestToken = 0;
+    let overlayTrendView = 'line';
+    let trendOverlayOpen = false;
 
-    const renderNationalTrend = () => {
-      const renderers = nationalTrendRenderers[activeTrendType][activeTrendRange];
-      renderers.line();
-      renderers.bar();
-      d3.select('#national-trend-sub')
-        .text(`National · ${activeTrendType === 'drug' ? 'Prescription Drug' : 'Hospital / Medical'}`);
+    const programLabel = (type) => (type === 'drug' ? 'Prescription Drug' : 'Hospital / Medical');
+
+    const trendContextLabel = () => {
+      if (trendScope === 'county' && trendArea?.county) {
+        return `${trendArea.county}, ${trendArea.state} · ${programLabel(activeTrendType)}`;
+      }
+      if (trendScope === 'state' && trendArea?.stateName) {
+        return `${trendArea.stateName} · ${programLabel(activeTrendType)}`;
+      }
+      return `National · ${programLabel(activeTrendType)}`;
+    };
+
+    const currentTrendBucket = () => {
+      if (trendScope === 'state' && trendArea) return stateTrendCache.get(trendArea.state);
+      if (trendScope === 'county' && trendArea) return countyTrendCache.get(`${trendArea.state}|${trendArea.county}`);
+      return nationalTrendData;
+    };
+
+    const trendGridColumns = (type) => {
+      const periodCols = activeTrendRange === 'monthly'
+        ? [{ label: 'Year', value: (d) => d.year }, { label: 'Month', value: (d) => d.month }]
+        : [{ label: 'Year', value: (d) => d.year }];
+
+      if (type === 'drug') {
+        return [
+          ...periodCols,
+          { label: 'Total', value: (d) => formatNum(d.drugTotal) },
+          { label: 'PDP', value: (d) => formatNum(d.pdpCount) },
+          { label: 'MAPD', value: (d) => formatNum(d.mapdCount) },
+          { label: 'PDP %', value: (d) => `${Math.round(d.pdpPercent)}%` },
+          { label: 'MAPD %', value: (d) => `${Math.round(d.mapdPercent)}%` },
+        ];
+      }
+      return [
+        ...periodCols,
+        { label: 'Total', value: (d) => formatNum(d.totalEnrollees) },
+        { label: 'FFS', value: (d) => formatNum(d.ffsCount) },
+        { label: 'MA', value: (d) => formatNum(d.maCount) },
+        { label: 'FFS %', value: (d) => `${Math.round(d.ffsPercent)}%` },
+        { label: 'MA %', value: (d) => `${Math.round(d.maPercent)}%` },
+      ];
+    };
+
+    const syncOverlayControls = () => {
+      document.querySelectorAll('#trend-overlay-range .chart-range-tab').forEach((tab) => {
+        tab.setAttribute('aria-selected', String(tab.dataset.range === activeTrendRange));
+      });
+      document.querySelectorAll('#trend-overlay-types [data-view]').forEach((btn) => {
+        btn.setAttribute('aria-pressed', String(btn.dataset.view === overlayTrendView));
+      });
+    };
+
+    const renderTrendOverlay = () => {
+      if (!document.querySelector('#trend-overlay-body')) return;
+
+      d3.select('#trend-overlay-sub').text(trendContextLabel());
+
+      ['line', 'bar', 'grid'].forEach((view) => {
+        const panel = document.querySelector(`#trend-overlay-${view}-panel`);
+        if (panel) panel.hidden = view !== overlayTrendView;
+      });
+
+      const data = currentTrendBucket()?.[activeTrendRange];
+      const hasData = Boolean(data && data.length);
+      const fns = trendChartFns[activeTrendType][activeTrendRange];
+
+      if (overlayTrendView === 'grid') {
+        const sorted = activeTrendRange === 'yearly'
+          ? sortYearlyAscending(data || [])
+          : sortMonthlyAscending(data || []);
+        if (!sorted.length) {
+          document.querySelector('#trend-overlay-grid').innerHTML = '<p class="data-grid-placeholder">No trend data available for this selection.</p>';
+        } else {
+          renderTable('#trend-overlay-grid', trendGridColumns(activeTrendType), sorted);
+        }
+        return;
+      }
+
+      const host = overlayTrendView === 'line' ? '#trend-overlay-line' : '#trend-overlay-bar';
+      if (!hasData) {
+        document.querySelector(host).innerHTML = '<p class="data-grid-placeholder">No trend data available for this selection.</p>';
+        return;
+      }
+      if (overlayTrendView === 'line') {
+        fns.line('#trend-overlay-line', data, { legendSelector: '#trend-overlay-line-legend' });
+      } else {
+        fns.bar('#trend-overlay-bar', data, { legendSelector: '#trend-overlay-bar-legend' });
+      }
+    };
+
+    const renderTrend = () => {
+      const data = currentTrendBucket()?.[activeTrendRange];
+      const fns = trendChartFns[activeTrendType][activeTrendRange];
+      if (data && data.length) {
+        fns.line('#national-trend-line', data, lineLegend);
+        fns.bar('#national-trend-bar', data, barLegend);
+      }
+      d3.select('#national-trend-sub').text(trendContextLabel());
+      if (trendOverlayOpen) renderTrendOverlay();
+    };
+
+    const trendLoadingHtml = '<p class="data-grid-placeholder trend-loading" role="status" aria-live="polite"><span class="trend-loading__spinner" aria-hidden="true"></span>Loading trend…</p>';
+
+    const showTrendLoading = () => {
+      d3.select('#national-trend-sub').text(trendContextLabel());
+      const lineHost = document.querySelector('#national-trend-line');
+      if (lineHost) lineHost.innerHTML = trendLoadingHtml;
+
+      if (trendOverlayOpen) {
+        d3.select('#trend-overlay-sub').text(trendContextLabel());
+        const activeSel = {
+          line: '#trend-overlay-line',
+          bar: '#trend-overlay-bar',
+          grid: '#trend-overlay-grid',
+        }[overlayTrendView];
+        const overlayHost = document.querySelector(activeSel);
+        if (overlayHost) overlayHost.innerHTML = trendLoadingHtml;
+      }
+    };
+
+    const showTrendForScope = async (scope, area) => {
+      trendScope = scope;
+      trendArea = area;
+      trendRequestToken += 1;
+      const token = trendRequestToken;
+
+      if (scope !== 'national') {
+        const cache = scope === 'state' ? stateTrendCache : countyTrendCache;
+        const key = scope === 'state' ? area.state : `${area.state}|${area.county}`;
+
+        if (!cache.has(key)) {
+          showTrendLoading();
+          const service = scope === 'state' ? 'stateEnrollment' : 'countyTrend';
+          const params = scope === 'state'
+            ? { state: area.state }
+            : { state: area.state, county: area.county };
+          try {
+            const [yearlyData, monthlyData] = await Promise.all([
+              requestDataset(service, { ...params, type: 'yearly' }),
+              requestDataset(service, { ...params, type: 'monthly' }),
+            ]);
+            if (token !== trendRequestToken) return;
+            cache.set(key, { yearly: yearlyData, monthly: monthlyData });
+          } catch {
+            if (token !== trendRequestToken) return;
+            cache.set(key, { yearly: [], monthly: [] });
+          }
+        }
+      }
+
+      if (token !== trendRequestToken) return;
+      renderTrend();
     };
 
     const trendYears = yearlyWithLatest.map((d) => Number(d.year));
@@ -105,19 +248,33 @@ async function init() {
       tab.addEventListener('click', () => {
         activeTrendRange = tab.dataset.range;
         trendRangeTabs.forEach((t) => t.setAttribute('aria-selected', String(t === tab)));
-        renderNationalTrend();
+        syncOverlayControls();
+        renderTrend();
       });
     });
 
-    document.addEventListener('dashboard:typechange', (event) => {
-      const { type } = event.detail || {};
-      if (!type) return;
-      activeTrendType = type;
-      renderNationalTrend();
+    const overlayRangeTabs = document.querySelectorAll('#trend-overlay-range .chart-range-tab');
+    overlayRangeTabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        activeTrendRange = tab.dataset.range;
+        trendRangeTabs.forEach((t) => t.setAttribute('aria-selected', String(t.dataset.range === activeTrendRange)));
+        syncOverlayControls();
+        renderTrend();
+      });
     });
 
-    renderNationalTrend();
-    observeResize('#chartsView', renderNationalTrend);
+    const overlayTypeBtns = document.querySelectorAll('#trend-overlay-types [data-view]');
+    overlayTypeBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        overlayTrendView = btn.dataset.view;
+        syncOverlayControls();
+        renderTrendOverlay();
+      });
+    });
+
+    renderTrend();
+    observeResize('#chartsView', renderTrend);
+    observeResize('#trend-overlay-body', () => { if (trendOverlayOpen) renderTrendOverlay(); });
 
     // ---- Mobile trend-card carousel (line chart / bar placeholder / grid
     // placeholder). Presentation-only: doesn't call renderNationalTrend or
@@ -908,6 +1065,14 @@ async function init() {
         closeCountyDrawer();
         closeOverlay();
       },
+      onOpen: () => {
+        trendOverlayOpen = true;
+        syncOverlayControls();
+        requestAnimationFrame(renderTrendOverlay);
+      },
+      onClose: () => {
+        trendOverlayOpen = false;
+      },
     });
     const openTrendOverlay = trendOverlayPopup.open;
     closeTrendOverlay = trendOverlayPopup.close;
@@ -991,6 +1156,14 @@ async function init() {
       // a county straight off the map while never having touched the tabs.
       if (selectedCounty) setActiveGridView('county');
       document.querySelector('#county-table tr.is-selected')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+      if (selectedCounty && selectedState) {
+        showTrendForScope('county', { state: selectedState.state, stateName: selectedState.stateName, county: selectedCounty });
+      } else if (selectedState) {
+        showTrendForScope('state', { state: selectedState.state, stateName: selectedState.stateName });
+      } else {
+        showTrendForScope('national', null);
+      }
     });
 
     const renderCountyGrid = async (stateAbbr, stateName, type = activeDashboardType) => {
@@ -1039,6 +1212,7 @@ async function init() {
       updateDrawerTriggerValue();
       renderAllAreasGrid(activeDashboardType);
       renderCountyGrid(null, null, activeDashboardType);
+      showTrendForScope('national', null);
     };
 
     drawerEls.triggerClear?.addEventListener('click', () => {
@@ -1065,6 +1239,7 @@ async function init() {
       const { type } = event.detail || {};
       if (!type) return;
       activeDashboardType = type;
+      activeTrendType = type;
       setMapPanelVisibility(type);
       selectedState = null;
       updateDrawerTriggerValue();
@@ -1074,6 +1249,7 @@ async function init() {
       }
       renderCountyGrid(null, null, type);
       resetMapToNational(type);
+      showTrendForScope('national', null);
     });
 
     document.addEventListener('dashboard:statechange', (event) => {
@@ -1084,6 +1260,7 @@ async function init() {
       renderAllAreasGrid(activeDashboardType);
       renderCountyGrid(state, stateName, activeDashboardType);
       document.querySelector('#all-areas-table tr.is-selected')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      showTrendForScope('state', { state, stateName });
     });
 
     document.addEventListener('dashboard:stateclear', clearSelectedState);

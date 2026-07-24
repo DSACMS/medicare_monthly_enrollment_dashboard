@@ -1,10 +1,11 @@
 import fetchNationalData from './datasets/nationalEnrollment';
-import fetchCountiesForState from './datasets/countyEnrollment';
+import fetchCountiesForState, { fetchCountyEnrollment } from './datasets/countyEnrollment';
 import { fetchAllStates, fetchStateEnrollment } from './datasets/stateEnrollment';
 
 const functionRegistry = {
   nationalEnrollment: fetchNationalData,
   countyEnrollment: fetchCountiesForState,
+  countyTrend: fetchCountyEnrollment,
   allStates: fetchAllStates,
   stateEnrollment: fetchStateEnrollment,
 };
