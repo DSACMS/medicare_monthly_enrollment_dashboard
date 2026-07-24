@@ -1,6 +1,3 @@
-// Pasted from a new design mockup, not yet reconciled with the CMS/USWDS
-// brand tokens in brand-colors.scss / custom-styles.scss.
-
 @use '../../_common/styles/colors' as *;
 @use 'uswds-core' as *;
 
@@ -20,6 +17,12 @@
   --brand:     #015390;
   --brand-ink: #013b63;
   --focus:     #009ad0;
+
+  // Consumed at runtime by allAreas.js's getCssVar() for the enrollment pie charts.
+  --pie-medicare-ffs-color: #961d56;
+  --pie-medicare-ma-color:  #7928c9;
+  --pie-drug-pdp-color:     #89cc9e;
+  --pie-drug-mapd-color:    #009ad0;
 }
 
 * { box-sizing: border-box; }
@@ -42,8 +45,6 @@ body {
 .hint { font-size: .8rem; color: var(--ink-2); font-weight: 600; }
 
 .topbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-.topbar .push { margin-left: auto; }
-.topbar .rule { width: 1px; align-self: stretch; background: var(--border); margin: 2px 2px; }
 
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: 15px; box-shadow: var(--shadow); }
 
@@ -61,24 +62,27 @@ body {
 .dash-hero__total b { display: block; font-size: 3rem; font-weight: 800; letter-spacing: -.03em; line-height: 1.06; }
 
 .dash-hero__split { flex: 1; min-width: 0; display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
+  // fit-content(50%) caps the label column so a long label wraps instead of starving the value column.
+  grid-template-columns: fit-content(50%) minmax(0, 1fr);
   gap: 9px 12px; align-items: center; }
-.dash-hero__label { font-size: .78rem; color: var(--ink-2); font-weight: 600; white-space: nowrap; text-align: right; }
+.dash-hero__label { font-size: .78rem; color: var(--ink-2); font-weight: 600; white-space: normal; overflow-wrap: break-word; text-align: right; }
 
 .dash-hero__bar-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.dash-hero__bar { display: block; height: 13px; border-radius: 0 4px 4px 0; min-width: 3px; flex: 0 0 auto; }
-.dash-hero__val { display: inline-flex; align-items: baseline; gap: 8px; font-size: .78rem; color: var(--ink-2); font-weight: 600; white-space: nowrap; }
+.dash-hero__bar { display: block; height: 13px; border-radius: 0 4px 4px 0; min-width: 3px; flex: 1 1 0; max-width: 100%; }
+.dash-hero__val { display: inline-flex; align-items: baseline; gap: 8px; font-size: .78rem; color: var(--ink-2); font-weight: 600; white-space: nowrap; min-width: 0; }
 .dash-hero__val b { color: var(--ink); font-weight: 700; font-size: .86rem; }
 
 table.data { width: 100%; border-collapse: separate; border-spacing: 0; overflow: visible; font-size: .81rem; }
 table.data th, table.data td { padding: 7px 11px; text-align: right; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; white-space: nowrap; }
 table.data th:first-child, table.data td:first-child { text-align: left; white-space: normal; }
-table.data.two-label th:nth-child(2), table.data.two-label td:nth-child(2) { text-align: left; }
 table.data thead th { position: sticky; top: 0; z-index: 1; background: var(--surface-2); color: var(--ink-2); font-weight: 700; font-size: .68rem; text-transform: uppercase; letter-spacing: .03em; box-shadow: inset 0 -1px 0 var(--border); }
 table.data tbody tr:last-child td { border-bottom: 0; }
 table.data tbody tr:hover td { background: var(--surface-2); }
 
-.trend-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 2px; }
+.trend-head { display: flex; flex-direction: column; gap: 10px; margin-bottom: 2px; }
+// Title + button only, so the button can never wrap away from the top-right corner.
+.trend-head__top { display: flex; flex-wrap: nowrap; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.trend-head__heading { min-width: 0; }
 .trend-head__controls { display: inline-flex; align-items: center; gap: 10px; }
 #chartsView { display: flex; flex-direction: column; }
 .tabs { display: inline-flex; gap: 4px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 3px; }
@@ -93,7 +97,6 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 .chart-svg { width: 100%; height: auto; display: block; overflow: visible; }
 .chart-block .chart-svg { height: 100%; }
 
-// Mobile-only trend-card carousel
 @media (max-width: 63.99em) {
   #chartsView {
     flex-direction: row;
@@ -112,8 +115,7 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   }
 }
 
-// Placeholder panels only exist for the mobile carousel — hidden on
-// desktop so #chartsView there shows exactly what it shows today.
+// Placeholder panels only exist for the mobile carousel.
 @media (min-width: 64em) {
   .trend-panel--placeholder {
     display: none;
@@ -207,8 +209,7 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 
 @media (max-width: 520px) {
   .segmented { width: 100%; }
-  // min-width:0 lets flex:1 shrink the button; without it, nowrap text like
-  // "Prescription Drug" forces the row wider than the viewport instead of wrapping.
+  // min-width:0 lets flex:1 shrink the button instead of forcing the row wider.
   .segmented button {
     flex: 1;
     justify-content: center;
@@ -227,15 +228,12 @@ table.data tbody tr:hover td { background: var(--surface-2); }
     grid-template-columns: 1fr;
     row-gap: 6px;
   }
-  .dash-hero__label { justify-self: start; text-align: left; }
-
-  .dash-hero__label { white-space: normal; }
+  .dash-hero__label { justify-self: start; text-align: left; white-space: normal; }
 
   #heroNameA { margin-top: 10px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 
-// ---- Two-column dashboard layout: hero+map (left) + trend chart/tables (right) ----
 .dashboard-columns {
   display: grid;
   grid-template-columns: 1fr;
@@ -261,8 +259,6 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   min-width: 0;
 }
 
-// ---- Data grid cards + mobile drawers (All Areas / County) ----
-
 .data-grid-section {
   margin-bottom: units(4);
 }
@@ -285,16 +281,11 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   flex-direction: column;
 }
 
-// here are styles for map-card
-
 #medicare-state-selector.usa-select, #drug-state-selector.usa-select,
 .usa-combo-box__input {
   border-radius: 15px;
   border: 1px solid var(--baseline);
-  // USWDS's base form-control rule bakes in margin-top: 0.5rem (for
-  // stacking a field under a label), which throws off centering against
-  // the back button here since it sits in a plain button+select row, not
-  // a labeled-field stack.
+  // Overrides USWDS's default margin-top: 0.5rem, which throws off centering here.
   margin-top: 0;
 }
 
@@ -374,29 +365,45 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   border-top: 1px solid var(--border);
 }
 
-
-
 @include at-media('desktop') {
+  .dashboard-columns__main {
+    display: grid;
+    grid-template-rows: auto 1fr;
+  }
+
+  .dashboard-columns__side {
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+  }
+
   .dash-hero {
     height: 100px;
   }
 
   .dashboard-map-panel {
-    height: auto;
     min-height: 650px;
   }
 
-
-
-  // Right column total: 375 + 14 (gap) + 375 = 764px, matching the
-  // left column's 100 + 14 + 650 = 764px.
-  .map-card:not(.dashboard-map-panel) {
-    height: 375px;
-    overflow: hidden;
+  // Threads flex-grow down to the chart figure so it fills the card's grown height.
+  #chartsView {
+    flex: 1;
+    min-height: 0;
   }
 
-  .data-grid-card--enrollment {
-    height: 375px;
+  #chartsView > .trend-panel {
+    flex: 1;
+    min-height: 0;
+  }
+
+  #chartsView .table-container {
+    flex: 1;
+    min-height: 0;
+  }
+
+  #chartsView .chart-figure {
+    flex: 1;
+    height: auto;
+    min-height: 267px;
   }
 }
 
@@ -409,6 +416,7 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .data-grid-card__header {
@@ -517,12 +525,8 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 
 .data-grid-scroll {
   overflow: auto;
-  // ~6 data rows (36.5px: 16px padding + 19.5px line-height + 1px border)
-  // plus the ~32.5px sticky header, at this rule's current font/padding values.
-  // Tuned alongside .chart-block .chart-figure's height above so this card
-  // totals ~375px — half of the 750px target shared with the trend card
-  // above it, matching the hero+map column's own 750px target.
-  max-height: 259px;
+  // ~8 rows (36.5px each) + header, as a scrollable preview -- capped, not full-height; the outer card matches the trend card independently.
+  max-height: 332px;
   -webkit-overflow-scrolling: touch;
   scrollbar-gutter: stable;
   // Reserves space for the sticky header so scrollIntoView doesn't park a row underneath it.
@@ -583,8 +587,7 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   white-space: nowrap;
 }
 
-// Name column wraps onto a second line for long state/county names instead
-// of forcing the whole table wider (see width: 100% above).
+// Name column wraps instead of forcing the whole table wider.
 :is(.data-grid-card, .data-grid-overlay) th:first-child,
 :is(.data-grid-card, .data-grid-overlay) td:first-child {
   text-align: left;
@@ -605,8 +608,7 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   box-shadow: inset 0 -1px 0 rgba(20, 20, 28, 0.10);
 }
 
-// Mirrors .data-grid-drawer__sort-button so desktop grid headers and the
-// mobile drawer's headers look/behave the same way when sorted.
+// Mirrors .data-grid-drawer__sort-button so both look/behave the same way when sorted.
 .data-grid-sort-button {
   display: inline-flex;
   align-items: center;
@@ -647,8 +649,7 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   outline-offset: -2px;
 }
 
-// Active row highlight -- bold + accent bar (also used by the mobile
-// drawer, which has no hover state). Click the row again to clear.
+// Also used by the mobile drawer, which has no hover state.
 :is(.data-grid-card, .data-grid-overlay, .data-grid-drawer) tbody tr.is-selected td {
   color: var(--brand-ink, #013b63);
   font-weight: 700;
@@ -730,14 +731,18 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   }
 }
 
-// Mobile trigger + bottom-sheet drawers, styled from dashboard-v2's tokens.
 .data-grid-card__mobile-trigger {
   display: none;
 }
 
+// Declared before the mobile media query (not after) so its equal-specificity
+// display:block rule wins there instead of this one hiding the divider always.
+.data-grid-card__mobile-divider {
+  display: none;
+}
+
 @media (max-width: 63.99em) {
-  // Unscoped so this still matches while reparented into a .data-grid-overlay
-  // outside the card (the class is already card-specific).
+  // Unscoped so this still matches while reparented into a .data-grid-overlay.
   .data-grid-scroll-wrap {
     display: none;
   }
@@ -783,10 +788,6 @@ table.data tbody tr:hover td { background: var(--surface-2); }
     border: 0;
     background: var(--border, rgba(20, 20, 28, 0.10));
   }
-}
-
-.data-grid-card__mobile-divider {
-  display: none;
 }
 
 .data-grid-card__mobile-trigger:disabled {
@@ -846,7 +847,6 @@ table.data tbody tr:hover td { background: var(--surface-2); }
   position: relative;
 }
 
-// display:none by default; shown only in the mobile trigger UI below.
 // Desktop highlights the selected row instead (see tr.is-selected).
 .data-grid-card__mobile-trigger-clear {
   display: none;
@@ -946,8 +946,7 @@ body.data-grid-drawer-open {
   overflow: hidden;
 }
 
-// Guard against a stranded open drawer if the viewport crosses into desktop
-// while it's open (the trigger is hidden there anyway).
+// Guards against a stranded open drawer if the viewport crosses into desktop while it's open.
 @include at-media('desktop') {
   .data-grid-drawer,
   .data-grid-drawer-overlay {
@@ -955,8 +954,7 @@ body.data-grid-drawer-open {
   }
 }
 
-// Desktop-only "expand" overlay — a centered popup card (not the drawer's
-// bottom sheet). See allAreas.js's openOverlay/closeOverlay.
+// Desktop-only expand overlay. See allAreas.js's openOverlay/closeOverlay.
 .data-grid-overlay-scrim {
   position: fixed;
   inset: 0;
@@ -1009,8 +1007,7 @@ body.data-grid-overlay-open {
   overflow: hidden;
 }
 
-// Desktop-only (mobile uses the drawer instead); JS force-closes this on
-// leaving desktop — this display:none is a defense-in-depth backstop.
+// Defense-in-depth backstop; JS also force-closes this on leaving desktop.
 @media (max-width: 63.99em) {
   .data-grid-overlay,
   .data-grid-overlay-scrim {
@@ -1233,10 +1230,6 @@ body.data-grid-overlay-open {
   .chart-block .chart-figure { height: 220px; }
 }
 
-.map-tier-histogram {
-  width: 100%;
-}
-
 .map-tier-histogram__title {
   margin: 0.5rem 0 0;
   text-align: center;
@@ -1283,31 +1276,6 @@ body.data-grid-overlay-open {
 .map-tier-histogram__y-axis {
   color: #565c65;
   font-size: 0.75rem;
-}
-
-.map-tier-histogram__legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1rem;
-  margin-top: 0.75rem;
-}
-
-.map-tier-histogram__legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  font-size: 0.875rem;
-}
-
-.map-tier-histogram__legend-swatch {
-  width: 1rem;
-  height: 1rem;
-  flex: 0 0 1rem;
-  border: 1px solid rgba(27, 27, 27, 0.25);
-}
-
-.map-tier-histogram__legend-swatch--no-data {
-  background: #eee;
 }
 
 .map-tier-histogram__empty {
