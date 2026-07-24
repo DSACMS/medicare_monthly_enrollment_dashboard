@@ -1238,8 +1238,11 @@ body.data-grid-overlay-open {
 }
 
 .map-tier-histogram__title {
-  margin: 0 0 0.75rem;
+  margin: 0.5rem 0 0;
+  text-align: center;
+  font-size: 0.875rem;
   font-weight: 700;
+  color: var(--ink);
 }
 
 .map-tier-histogram__figure {
@@ -1310,4 +1313,19 @@ body.data-grid-overlay-open {
 .map-tier-histogram__empty {
   margin: 0;
   color: #565c65;
+}
+
+.map-tier-histogram__title {
+  margin: 0.5rem 0 0;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.map-tier-histogram__subtitle {
+  margin: 0.125rem 0 0;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--ink-2);
 }
