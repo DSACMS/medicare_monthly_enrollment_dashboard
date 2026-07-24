@@ -87,6 +87,7 @@ function renderTierHistogram(
   });
 
  const title = `${contextLabel}: ${metricLabel} Enrollment Distribution Count`;
+ const countLabel = `Number of ${areaLabel.toLowerCase()}`;
 
 
 
@@ -179,9 +180,14 @@ function renderTierHistogram(
     .call(xAxis);
 
   container
+  .append('p')
+  .attr('class', 'map-tier-histogram__title')
+  .text(title);
+
+  container
     .append('p')
-    .attr('class', 'map-tier-histogram__title')
-    .text(title);
+    .attr('class', 'map-tier-histogram__subtitle')
+    .text(countLabel);
 }
 
 export default renderTierHistogram;
