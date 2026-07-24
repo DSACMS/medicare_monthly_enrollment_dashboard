@@ -89,15 +89,45 @@
   >
     <header class="data-grid-overlay__header">
       <div class="data-grid-overlay__header-row">
-        <h3 class="data-grid-overlay__title" id="trend-overlay-title">Enrollment Trends</h3>
+        <div>
+          <h3 class="data-grid-overlay__title" id="trend-overlay-title">Enrollment Trends</h3>
+          <p class="data-grid-overlay__sub" id="trend-overlay-sub">National · Hospital / Medical</p>
+        </div>
         <button type="button" class="data-grid-overlay__close" id="trend-overlay-close" aria-label="Minimize Enrollment Trends">
           <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
             <path d="M2 2l12 12M14 2L2 14" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
           </svg>
         </button>
       </div>
+      <div class="data-grid-overlay__tabs-slot trend-overlay__toolbar">
+        <div class="tabs" id="trend-overlay-range" role="tablist" aria-label="Time range">
+          <button type="button" role="tab" class="chart-range-tab" data-range="yearly" aria-selected="true">Yearly</button>
+          <button type="button" role="tab" class="chart-range-tab" data-range="monthly" aria-selected="false">12 months</button>
+        </div>
+        <div class="segmented trend-overlay__types" id="trend-overlay-types" role="group" aria-label="Chart type">
+          <button type="button" data-view="line" aria-pressed="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-6 4 3 6-8" /></svg>Line
+          </button>
+          <button type="button" data-view="bar" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V10M12 21V4M19 21v-7" /></svg>Bar
+          </button>
+          <button type="button" data-view="grid" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5" /><path d="M3 10h18M3 15h18M9 4v16" /></svg>Grid
+          </button>
+        </div>
+      </div>
     </header>
     <div class="data-grid-overlay__body" id="trend-overlay-body">
-      <p class="data-grid-placeholder">Full view of line chart, bar chart, and grid — WIP</p>
+      <div class="chart-block trend-overlay__panel" id="trend-overlay-line-panel">
+        <div class="chart-block__head"><h4>Enrollment Count</h4><div class="legend" id="trend-overlay-line-legend"></div></div>
+        <div class="table-container" id="trend-overlay-line"></div>
+      </div>
+      <div class="chart-block trend-overlay__panel" id="trend-overlay-bar-panel" hidden>
+        <div class="chart-block__head"><h4>Percent of Total Enrollment</h4><div class="legend" id="trend-overlay-bar-legend"></div></div>
+        <div class="table-container" id="trend-overlay-bar"></div>
+      </div>
+      <div class="trend-overlay__panel trend-overlay__panel--grid" id="trend-overlay-grid-panel" hidden>
+        <div class="data-grid-scroll-wrap"><div class="data-grid-scroll" id="trend-overlay-grid"></div></div>
+      </div>
     </div>
   </div>
