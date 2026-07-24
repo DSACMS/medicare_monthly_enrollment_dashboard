@@ -7,7 +7,7 @@ const HISTOGRAM_MARGIN = {
   top: 32,
   right: 24,
   bottom: 40,
-  left: 48,
+  left: 8,
 };
 
 /**
@@ -86,9 +86,7 @@ function renderTierHistogram(
     };
   });
 
-  const title = contextLabel
-    ? `${contextLabel} by ${metricLabel} Enrollment Distribution`
-    : `${areaLabel} by ${metricLabel} Enrollment Distribution`;
+ const title = `${contextLabel}: ${metricLabel} Enrollment Distribution Count`;
 
 
 
@@ -140,35 +138,6 @@ function renderTierHistogram(
     .nice()
     .range([innerHeight, 0]);
 
-  const yAxis = d3
-    .axisLeft(y)
-    .ticks(Math.min(maxCount, 5))
-    .tickFormat(d3.format('d'))
-    .tickSizeOuter(0);
-
-  chart
-    .append('g')
-    .attr('class', 'map-tier-histogram__y-axis')
-    .call(yAxis);
-
-  chart
-    .append('text')
-    .attr('class', 'map-tier-histogram__axis-label')
-    .attr('x', -innerHeight / 2)
-    .attr('y', -36)
-    .attr('transform', 'rotate(-90)')
-    .attr('text-anchor', 'middle')
-    .text(`Number of ${areaLabel.toLowerCase()}`);
-
-  chart
-    .selectAll('.map-tier-histogram__divider')
-    .data(breakpoints)
-    .join('line')
-    .attr('class', 'map-tier-histogram__divider')
-    .attr('x1', (value) => x(value))
-    .attr('x2', (value) => x(value))
-    .attr('y1', 0)
-    .attr('y2', innerHeight);
 
   chart
     .selectAll('.map-tier-histogram__bar')
