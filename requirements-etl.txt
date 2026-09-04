@@ -1,0 +1,15 @@
+# ETL toolchain for scripts/fetch_cms_data.py.
+#
+# Version floors are set by the oldest CPython that ships wheels for every
+# pinned package. pyarrow < 18 has no wheels for CPython 3.13, so 18 is the
+# floor even though 17 would otherwise work on 3.11/3.12.
+#
+# The runtime dashboard does not import anything from this file.
+
+requests>=2.32,<3
+pyarrow>=18.0,<22
+pandas>=2.2,<3
+
+# Test-only:
+pytest>=8.3,<10
+responses>=0.25,<1

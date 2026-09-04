@@ -1,0 +1,47 @@
+[
+  {
+    "YEAR": "2024",
+    "MONTH": "January",
+    "BENE_GEO_LVL": "State",
+    "BENE_STATE_ABRVTN": "CA",
+    "BENE_STATE_DESC": "California",
+    "BENE_COUNTY_DESC": "Total",
+    "BENE_FIPS_CD": "06",
+    "TOT_BENES": "6800000",
+    "ORGNL_MDCR_BENES": "2500000",
+    "MA_AND_OTH_BENES": "4300000",
+    "PRSCRPTN_DRUG_TOT_BENES": "5900000",
+    "PRSCRPTN_DRUG_PDP_BENES": "1500000",
+    "PRSCRPTN_DRUG_MAPD_BENES": "4400000"
+  },
+  {
+    "YEAR": "2024",
+    "MONTH": "January",
+    "BENE_GEO_LVL": "State",
+    "BENE_STATE_ABRVTN": "SD",
+    "BENE_STATE_DESC": "South Dakota",
+    "BENE_COUNTY_DESC": "Total",
+    "BENE_FIPS_CD": "46",
+    "TOT_BENES": "195000",
+    "ORGNL_MDCR_BENES": "138000",
+    "MA_AND_OTH_BENES": "57000",
+    "PRSCRPTN_DRUG_TOT_BENES": "160000",
+    "PRSCRPTN_DRUG_PDP_BENES": "110000",
+    "PRSCRPTN_DRUG_MAPD_BENES": "50000"
+  },
+  {
+    "YEAR": "2024",
+    "MONTH": "January",
+    "BENE_GEO_LVL": "State",
+    "BENE_STATE_ABRVTN": "AS",
+    "BENE_STATE_DESC": "American Samoa",
+    "BENE_COUNTY_DESC": "Total",
+    "BENE_FIPS_CD": "60",
+    "TOT_BENES": "1200",
+    "ORGNL_MDCR_BENES": "1100",
+    "MA_AND_OTH_BENES": "100",
+    "PRSCRPTN_DRUG_TOT_BENES": "*",
+    "PRSCRPTN_DRUG_PDP_BENES": "*",
+    "PRSCRPTN_DRUG_MAPD_BENES": "*"
+  }
+]

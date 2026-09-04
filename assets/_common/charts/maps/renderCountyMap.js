@@ -114,7 +114,10 @@ function renderCountyMap(
 
   const joined = joinCountyData(stateCounties, countyRows);
 
-  const projection = d3.geoAlbersUsa();
+  // AlbersUsa's composite projection covers only 50 states + DC; territory
+  // FIPS 60/66/69/72/78 project to null. Use a general Mercator for those.
+  const isTerritory = ['60', '66', '69', '72', '78'].includes(String(stateFips).padStart(2, '0'));
+  const projection = isTerritory ? d3.geoMercator() : d3.geoAlbersUsa();
   projection.fitSize([width, height], {
     type: 'FeatureCollection',
     features: stateCounties,

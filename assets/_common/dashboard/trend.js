@@ -219,11 +219,44 @@ export default function initTrend(state, yearlyWithLatest, monthly) {
 
   const trendRangeTabs = document.querySelectorAll('#national-range-tabs .chart-range-tab');
   trendRangeTabs.forEach((tab) => {
-    tab.addEventListener('click', () => {
-      state.trend.activeTrendRange = tab.dataset.range;
-      trendRangeTabs.forEach((t) => t.setAttribute('aria-selected', String(t === tab)));
-      syncOverlayControls();
-      renderTrend();
+    const isActive = tab.dataset.range === state.trend.activeTrendRange;
+    tab.setAttribute('aria-selected', String(isActive));
+    tab.setAttribute('tabindex', isActive ? '0' : '-1');
+  });
+
+  // Roving tabindex: only the active tab is in the tab order.
+  const setTrendRange = (range, { moveFocus = false, announce = true } = {}) => {
+    const tab = Array.from(trendRangeTabs).find((entry) => entry.dataset.range === range);
+    if (!tab) return;
+    state.trend.activeTrendRange = range;
+    trendRangeTabs.forEach((t) => {
+      t.setAttribute('aria-selected', String(t === tab));
+      t.setAttribute('tabindex', t === tab ? '0' : '-1');
+    });
+    if (moveFocus) tab.focus();
+    syncOverlayControls();
+    renderTrend();
+    document.dispatchEvent(new CustomEvent('dashboard:rangechange', { detail: { announce } }));
+  };
+  state.trend.setRange = setTrendRange;
+
+  trendRangeTabs.forEach((tab, i) => {
+    tab.setAttribute('tabindex', i === 0 ? '0' : '-1');
+
+    tab.addEventListener('click', () => setTrendRange(tab.dataset.range, { moveFocus: true }));
+
+    tab.addEventListener('keydown', (e) => {
+      const tabs = Array.from(trendRangeTabs);
+      const idx = tabs.indexOf(tab);
+      let next = -1;
+      if (e.key === 'ArrowRight') next = (idx + 1) % tabs.length;
+      else if (e.key === 'ArrowLeft') next = (idx - 1 + tabs.length) % tabs.length;
+      else if (e.key === 'Home') next = 0;
+      else if (e.key === 'End') next = tabs.length - 1;
+      if (next >= 0) {
+        e.preventDefault();
+        setTrendRange(tabs[next].dataset.range, { moveFocus: true });
+      }
     });
   });
 

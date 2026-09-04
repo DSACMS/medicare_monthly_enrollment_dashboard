@@ -1,0 +1,32 @@
+[
+  {
+    "YEAR": "2024",
+    "MONTH": "Year",
+    "BENE_GEO_LVL": "National",
+    "BENE_STATE_ABRVTN": "US",
+    "BENE_STATE_DESC": "National",
+    "BENE_COUNTY_DESC": "Total",
+    "BENE_FIPS_CD": "     ",
+    "TOT_BENES": "68000000",
+    "ORGNL_MDCR_BENES": "34000000",
+    "MA_AND_OTH_BENES": "34000000",
+    "PRSCRPTN_DRUG_TOT_BENES": "56000000",
+    "PRSCRPTN_DRUG_PDP_BENES": "24000000",
+    "PRSCRPTN_DRUG_MAPD_BENES": "32000000"
+  },
+  {
+    "YEAR": "2024",
+    "MONTH": "January",
+    "BENE_GEO_LVL": "National",
+    "BENE_STATE_ABRVTN": "US",
+    "BENE_STATE_DESC": "National",
+    "BENE_COUNTY_DESC": "Total",
+    "BENE_FIPS_CD": "     ",
+    "TOT_BENES": "67500000",
+    "ORGNL_MDCR_BENES": "34500000",
+    "MA_AND_OTH_BENES": "33000000",
+    "PRSCRPTN_DRUG_TOT_BENES": "55500000",
+    "PRSCRPTN_DRUG_PDP_BENES": "24200000",
+    "PRSCRPTN_DRUG_MAPD_BENES": "31300000"
+  }
+]

@@ -269,7 +269,7 @@ export default function initGrid(state, mappableStateNames) {
   const viewTabsEl = document.querySelector('#enrollment-view-tabs');
   const viewTabsHome = viewTabsEl?.parentElement;
 
-  let activeGridView = 'state'; // 'state' | 'county'
+  let activeGridView = state.grid.activeView; // 'state' | 'county'
 
   const enrollmentTabState = document.querySelector('#enrollment-tab-state');
   const enrollmentTabCounty = document.querySelector('#enrollment-tab-county');
@@ -324,10 +324,11 @@ export default function initGrid(state, mappableStateNames) {
   // Swaps which table (state/county) is visible, whether the card is
   // expanded into the overlay or not — reused both for a direct tab click
   // and for the forced state-cleared reset in updateCountyGridTitle below.
-  const setActiveGridView = (view) => {
+  const setActiveGridView = (view, { announce = true } = {}) => {
     if (view === activeGridView || (view === 'county' && enrollmentTabCounty.hidden)) return;
     const previousView = activeGridView;
     activeGridView = view;
+    state.grid.activeView = view;
 
     enrollmentTabState.setAttribute('aria-selected', String(view === 'state'));
     enrollmentTabCounty.setAttribute('aria-selected', String(view === 'county'));
@@ -342,7 +343,9 @@ export default function initGrid(state, mappableStateNames) {
     }
 
     bindScrollAffordance(document.querySelector(tableSelectorFor(view)));
+    document.dispatchEvent(new CustomEvent('dashboard:tablechange', { detail: { announce } }));
   };
+  state.grid.setActiveView = setActiveGridView;
 
   [enrollmentTabState, enrollmentTabCounty].forEach((tab) => {
     tab.addEventListener('click', () => setActiveGridView(tab.dataset.view));

@@ -1,0 +1,61 @@
+name: etl-live-contract
+
+# Optional smoke check that catches schema drift on the upstream CMS API
+# before it breaks the weekly deploy. Runs against the live dataset with a
+# narrow scope (National + State only) so a single dataset outage doesn't
+# burn hours of runner time. Fetches happen through the same
+# scripts/fetch_cms_data.py code path that deploy.yml uses.
+#
+# This workflow is NEVER a prerequisite for a deploy. deploy.yml already
+# runs the full ETL and gates artifact upload on it; this workflow just
+# surfaces upstream breakage earlier and on a schedule you can tune
+# independently of deploy cadence.
+
+on:
+  workflow_dispatch:
+  # Wednesday 07:43 UTC — mid-week, non-zero minute, deliberately offset
+  # from deploy.yml (Monday 06:17 UTC) so an upstream break has a chance
+  # to surface between deploys.
+  schedule:
+    - cron: '43 7 * * 3'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: etl-live-contract
+  cancel-in-progress: true
+
+jobs:
+  live-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements-etl.txt
+      - run: pip install -r requirements-etl.txt
+
+      # National-only smoke keeps this run under a minute in normal weather
+      # and still exercises validation, retry, sort and manifest emission.
+      - name: Live smoke — National only
+        run: |
+          python -m scripts.fetch_cms_data \
+            --out /tmp/live-smoke \
+            --only-levels National
+          test -f /tmp/live-smoke/v1/manifest.json
+
+      - name: Live smoke — vendor TopoJSON
+        run: |
+          mkdir -p /tmp/topo
+          python -c "
+          from pathlib import Path
+          from scripts.fetch_cms_data import vendor_topojson
+          paths = vendor_topojson(Path('/tmp/topo'))
+          for p in paths:
+              assert p.stat().st_size > 1024, p
+          print('vendored', [p.name for p in paths])
+          "

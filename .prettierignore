@@ -3,3 +3,10 @@ _includes/**/*.html
 .github/
 *.md
 package-lock.json
+test-results/
+_site/
+generated/
+scripts/tests/fixtures/
+.venv-etl/
+.pytest_cache/
+.playwright-mcp/

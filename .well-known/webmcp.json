@@ -1,0 +1,94 @@
+{
+  "version": "0.1",
+  "title": "Medicare Monthly Enrollment Dashboard WebMCP tools",
+  "description": "Supplemental discovery catalogue. Live document.modelContext registration is authoritative.",
+  "tools": [
+    {
+      "name": "get-dashboard-state",
+      "description": "Get the current dashboard type, selected geography, trend range, and visible table.",
+      "inputSchema": { "type": "object", "properties": {} }
+    },
+    {
+      "name": "set-dashboard-type",
+      "description": "Show either Hospital and Medical enrollment or Prescription Drug enrollment.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["hospital", "drug"],
+            "description": "Dashboard type to show."
+          }
+        },
+        "required": ["type"]
+      }
+    },
+    {
+      "name": "select-state",
+      "description": "Select a U.S. state or territory by its two-letter postal abbreviation.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "stateCode": {
+            "type": "string",
+            "description": "Two-letter state or territory abbreviation, such as ND or PR."
+          }
+        },
+        "required": ["stateCode"]
+      }
+    },
+    {
+      "name": "select-county",
+      "description": "Select a county or county-equivalent by state abbreviation and five-digit FIPS code.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "stateCode": {
+            "type": "string",
+            "description": "Two-letter state or territory abbreviation."
+          },
+          "countyFips": {
+            "type": "string",
+            "description": "Five-digit county or county-equivalent FIPS code."
+          }
+        },
+        "required": ["stateCode", "countyFips"]
+      }
+    },
+    {
+      "name": "clear-geography",
+      "description": "Return the dashboard to the national geography.",
+      "inputSchema": { "type": "object", "properties": {} }
+    },
+    {
+      "name": "set-trend-range",
+      "description": "Show annual or monthly enrollment trends for the selected geography.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "range": {
+            "type": "string",
+            "enum": ["yearly", "monthly"],
+            "description": "Trend reporting period to show."
+          }
+        },
+        "required": ["range"]
+      }
+    },
+    {
+      "name": "show-enrollment-table",
+      "description": "Show the state or county enrollment table for the current geography.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "view": {
+            "type": "string",
+            "enum": ["state", "county"],
+            "description": "Enrollment table to show."
+          }
+        },
+        "required": ["view"]
+      }
+    }
+  ]
+}

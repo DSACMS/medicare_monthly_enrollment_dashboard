@@ -1,8 +1,13 @@
 name: 'deploy'
 on:
   push:
-    branches:
-      - 'main'
+    branches: [main]
+  workflow_dispatch:
+  # Weekly rebuild so newly published CMS periods land in the site without
+  # requiring a code push. Non-zero minute to avoid the top-of-the-hour
+  # scheduling spike on GitHub's runners.
+  schedule:
+    - cron: '17 6 * * 1'
 
 permissions:
   contents: read
@@ -17,9 +22,28 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements-etl.txt
+
+      - name: Install ETL dependencies
+        run: pip install -r requirements-etl.txt
+
+      # ADR-0001: the ETL validates schema and fails loudly rather than
+      # publishing incomplete data, so a non-zero exit here MUST prevent the
+      # upload-pages-artifact step below from running. The previous Pages
+      # deployment then stays live untouched.
+      - name: Run CMS ETL
+        run: |
+          python -m scripts.fetch_cms_data \
+            --out generated/data \
+            --vendor-topojson
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '19.x'
 
@@ -43,11 +67,15 @@ jobs:
           # whether to minify CSS/JS and drop sourcemaps
           ELEVENTY_ENV: production
 
-      - name: Setup GitHub pages
-        uses: actions/configure-pages@v5
+      - name: Confirm data artifacts are present in _site
+        run: |
+          test -f _site/data/v1/manifest.json
+          test -f _site/data/v1/summary.parquet
+          test -d _site/data/v1/counties
+          test -f _site/data/v1/vendor/states-10m.json
+          test -f _site/data/v1/vendor/counties-10m.json
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9
         with:
           path: ./_site
 
