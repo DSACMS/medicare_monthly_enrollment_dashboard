@@ -4,9 +4,9 @@
     <div class="map-card__body">
       <div class="map-card__head">
         <div>
-          <span class="data-grid-card__title">
+          <h2 id="medicare-advantage-enrollment-map" class="data-grid-card__title">
             Medicare Advantage Enrollment Map
-          </span>
+          </h2>
           <p class="data-grid-card__instruction">
             Share of enrollees in Medicare Advantage and Other Health plans (MA)
           </p>
@@ -16,10 +16,10 @@
           <button type="button" class="map-card__back" id="medicare-map-back" hidden aria-label="Back to state map">
             &larr; Back
           </button>
-          <label class="usa-sr-only" for="medicare-state-selector">Select a state</label>
+          <label class="usa-sr-only" for="medicare-state-selector">Select a state or territory</label>
           <div class="usa-combo-box">
                 <select class="usa-select" name="medicare-state" id="medicare-state-selector">
-                  <option value="">Select a state</option>
+                  <option value="">Select a state or territory</option>
                   
                   {% for state in usStates %}
                   <option value="{{ state }}">{{ state }}</option>
@@ -31,6 +31,10 @@
 
       <div class="table-container width-full margin-top-2" id="medicare-enrollment-state-map"></div>
 
+      <p class="data-grid-card__instruction" style="margin-top: 0.5rem; font-size: 0.8rem;">
+        The map displays the 50 states and District of Columbia. Territory enrollment data is available through the selector and enrollment table.
+      </p>
+
       <hr class="map-card__divider">
 
       <div class="map-card__tier-histogram" id="medicare-tier-histogram"></div>
@@ -41,9 +45,9 @@
     <div class="map-card__body">
       <div class="map-card__head">
         <div>
-          <span class="data-grid-card__title">
+          <h2 id="prescription-drug-enrollment-map" class="data-grid-card__title">
             Prescription Drug Enrollment Map
-          </span>
+          </h2>
           <p class="data-grid-card__instruction">
             Share of enrollees in Medicare Prescription Drug plans (MAPD)
           </p>
@@ -53,10 +57,10 @@
           <button type="button" class="map-card__back" id="drug-map-back" hidden aria-label="Back to state map">
             &larr; Back
           </button>
-          <label class="usa-sr-only" for="drug-state-selector">Select a state</label>
+          <label class="usa-sr-only" for="drug-state-selector">Select a state or territory</label>
           <div class="usa-combo-box">
                 <select class="usa-select" name="drug-state" id="drug-state-selector">
-                  <option value="">Select a state</option>
+                  <option value="">Select a state or territory</option>
                   
                   {% for state in usStates %}
                   <option value="{{ state }}">{{ state }}</option>
@@ -67,6 +71,11 @@
       </div>
 
       <div class="table-container width-full margin-top-2" id="medicare-mapd-state-map"></div>
+
+      <p class="data-grid-card__instruction" style="margin-top: 0.5rem; font-size: 0.8rem;">
+        The map displays the 50 states and District of Columbia. Territory enrollment data is available through the selector and enrollment table.
+      </p>
+
       <hr class="map-card__divider">
       <div class="map-card__tier-histogram" id="drug-tier-histogram"></div>
     </div>

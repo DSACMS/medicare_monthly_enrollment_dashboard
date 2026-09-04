@@ -32,7 +32,7 @@
   align-items: center;
 }
 .dash-hero__label {
-  font-size: 0.78rem;
+  font-size: 0.8125rem;
   color: var(--ink-2);
   font-weight: 600;
   white-space: normal;
@@ -59,7 +59,7 @@
   display: inline-flex;
   align-items: baseline;
   gap: 8px;
-  font-size: 0.78rem;
+  font-size: 0.8125rem;
   color: var(--ink-2);
   font-weight: 600;
   white-space: nowrap;
@@ -68,7 +68,7 @@
 .dash-hero__val b {
   color: var(--ink);
   font-weight: 700;
-  font-size: 0.86rem;
+  font-size: 0.875rem;
 }
 
 @media (max-width: $bp-phone-max) {

@@ -42,6 +42,7 @@ A list of core team members responsible for the code and documentation in this r
 - [Future Updates](#future-updates) - Ideas and improvements open for contribution
 - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) - Expected behavior for community members
 - [SECURITY.md](SECURITY.md) - Security and responsible disclosure policy
+- [ACCESSIBILITY.md](ACCESSIBILITY.md) - Accessibility statement, testing, and known limitations
 - [LICENSE](LICENSE) - Licensing terms
 
 ## Repository Structure
@@ -72,8 +73,14 @@ A list of core team members responsible for the code and documentation in this r
 │   ├── api
 │   │   └── cmsClient.js      # data.cms.gov API client
 │   ├── datasets               # Dataset-specific fetch/shape logic (county, state, national)
+│   ├── geographicAreas.js    # Geographic area registry (states, DC, territories)
 │   ├── router.js
 │   └── utils
+├── tests
+│   ├── accessibility         # Playwright + axe-core tests
+│   ├── fixtures              # Deterministic API response fixtures
+│   ├── guidepup              # Screen-reader tests (VoiceOver, NVDA)
+│   └── ...
 ├── index.njk                 # Site entry template
 ├── package.json
 └── repolinter.json
@@ -85,7 +92,7 @@ The following guide is for members of the project team who have access to the re
 
 ## Local Development
 
-The site uses 11ty. Ensure that you have the latest version of [Node](https://nodejs.org/en/download) installed.
+The site uses 11ty. Ensure that you have [Node 24 LTS](https://nodejs.org/en/download) installed.
 
 To run the site locally:
 
@@ -96,6 +103,39 @@ To run the site locally:
    npm run dev
    ```
 3. Open http://localhost:8080
+
+## Testing
+
+### Unit Tests
+
+```bash
+npm test
+```
+
+### Accessibility Tests
+
+```bash
+# Install Playwright browsers (first time only)
+npx playwright install --with-deps chromium
+
+# Run axe-core accessibility scans
+npm run test:a11y
+
+# Run all E2E tests
+npm run test:e2e
+```
+
+### Screen-Reader Tests
+
+```bash
+# VoiceOver on macOS
+npm run test:guidepup:voiceover
+
+# NVDA on Windows
+npm run test:guidepup:nvda
+```
+
+See [ACCESSIBILITY.md](ACCESSIBILITY.md) for full details on testing, known limitations, and how to report issues.
 
 ## I'd like to make a contribution, how do I update this content?
 
@@ -123,10 +163,10 @@ _A running list of ideas and improvements that are open for contribution. If you
 
 We use a GitHub workflow in place that performs a number of tests on every pull request:
 
-- Automated accessbility test with`pa11y-ci`
 - Code linting with `eslint`
 - HTML validation with `html-validate`
 - Internal link checking with `check-html-links`
+- Accessibility testing with Playwright and axe-core
 
 Additionally, we use `prettier` for code formatting.
 

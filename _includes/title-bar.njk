@@ -5,11 +5,23 @@
     <div class="topbar">
       <span class="hint">Click to swap dashboards:</span>
       <div class="segmented" role="group" aria-label="Choose enrollment dashboard type">
-        <button type="button" class="dashboard-type-button" data-dashboard-type="hospital" aria-pressed="true">
+        <button
+          type="button"
+          class="dashboard-type-button"
+          id="hospital-view-heading"
+          data-dashboard-type="hospital"
+          aria-pressed="true"
+        >
           {% usa_icons 'location_city' %}
           Hospital / Medical
         </button>
-        <button type="button" class="dashboard-type-button" data-dashboard-type="drug" aria-pressed="false">
+        <button
+          type="button"
+          class="dashboard-type-button"
+          id="drug-view-heading"
+          data-dashboard-type="drug"
+          aria-pressed="false"
+        >
           {% usa_icons 'local_pharmacy' %}
           Prescription Drug
         </button>

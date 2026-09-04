@@ -134,7 +134,7 @@
 }
 
 .map-tier-histogram__divider {
-  stroke: rgba(27, 27, 27, 0.45);
+  stroke: var(--baseline);
   stroke-dasharray: 3 3;
   pointer-events: none;
 }
@@ -146,18 +146,25 @@
 }
 
 .map-tier-histogram__axis-label {
-  fill: #454545;
+  fill: var(--muted);
   font-size: 0.75rem;
 }
 
 .map-tier-histogram__x-axis {
-  color: #565c65;
+  color: var(--muted);
   font-size: 0.75rem;
 }
 
 .map-tier-histogram__empty {
   margin: 0;
-  color: #565c65;
+  color: var(--ink-2);
+}
+
+// Choropleth fill conveys data, not decoration -- keep it out of the forced-colors
+// override so category colors stay visible; strokes still adopt system colors via
+// the --map-stroke* tokens (see dashboard/_tokens.scss).
+.map-card__body svg path {
+  forced-color-adjust: none;
 }
 
 .map-tier-histogram__subtitle {

@@ -5,13 +5,14 @@ import {
   createTooltip,
   moveTooltip,
   DEFAULT_BREAKPOINTS,
-  DEFAULT_COLORS,
-  NO_DATA_FILL,
+  getDefaultColors,
+  getNoDataFill,
   computeJenksBreaks,
   formatCount,
   formatPercent,
 } from '../utils';
 import renderCountyMap from './renderCountyMap';
+import { normalizeAreaName } from '../../../../src/geographicAreas';
 import requestDataset from '../../../../src/router';
 import renderTierHistogram from './renderTierHistogram';
 import createRequestGuard from '../../requestGuard';
@@ -177,7 +178,7 @@ function renderStateMap(containerSelector, data, config = {}) {
 
   const resolvedBreakpoints =
     breakpoints && breakpoints.length === 4 ? breakpoints : DEFAULT_BREAKPOINTS;
-  const resolvedColors = colors && colors.length === 5 ? colors : DEFAULT_COLORS;
+  const resolvedColors = colors && colors.length === 5 ? colors : getDefaultColors();
 
   if (histogramSelector) {
     renderTierHistogram(histogramSelector, histogramData, {
@@ -192,20 +193,20 @@ function renderStateMap(containerSelector, data, config = {}) {
 
   const metricColor = d3.scaleThreshold().domain(resolvedBreakpoints).range(resolvedColors);
 
-  // Lookup by full state name (matches us-atlas's properties.name field).
-  const dataByName = new Map(data.map((d) => [d.stateName, d]));
+  const dataByName = new Map(
+    data.map((d) => [normalizeAreaName(d.stateName), d]),
+  );
 
   const isMobile = window.matchMedia(MOBILE_MEDIA_QUERY).matches;
   const width = 975;
   const height = isMobile ? 750 : 620;
 
   const getStateFill = (stateFeature) => {
-    const row = dataByName.get(stateFeature.properties.name);
-
-    if (!row) return NO_DATA_FILL;
+    const row = dataByName.get(normalizeAreaName(stateFeature.properties.name));
+    if (!row) return getNoDataFill();
 
     const percent = metricPercent(row);
-    return Number.isFinite(percent) ? metricColor(percent) : NO_DATA_FILL;
+    return Number.isFinite(percent) ? metricColor(percent) : getNoDataFill();
   };
 
   const container = d3.select(containerSelector);
@@ -337,7 +338,7 @@ function renderStateMap(containerSelector, data, config = {}) {
   getStateFeatures()
     .then((features) => {
       const featureByStateName = new Map(
-        features.map((stateFeature) => [stateFeature.properties.name, stateFeature]),
+        features.map((stateFeature) => [normalizeAreaName(stateFeature.properties.name), stateFeature]),
       );
 
       d3.select(comboBoxSelector).on('change.state-map', async (event) => {
@@ -350,10 +351,11 @@ function renderStateMap(containerSelector, data, config = {}) {
           return;
         }
 
-        const stateData = dataByName.get(selectedValue);
+        const normalizedValue = normalizeAreaName(selectedValue);
+        const stateData = dataByName.get(normalizedValue);
         if (!stateData) return;
 
-        const stateFeature = featureByStateName.get(selectedValue);
+        const stateFeature = featureByStateName.get(normalizedValue);
         if (!stateFeature) return;
 
         emitStateChange(stateData);
@@ -366,14 +368,14 @@ function renderStateMap(containerSelector, data, config = {}) {
         .join('path')
         .attr('d', path)
         .attr('fill', getStateFill)
-        .attr('stroke', '#fff')
+        .attr('stroke', 'var(--map-stroke)')
         .attr('stroke-width', 1)
         .style('cursor', 'pointer');
 
       const hoverOutline = svg
         .append('path')
         .attr('fill', 'none')
-        .attr('stroke', '#111')
+        .attr('stroke', 'var(--map-stroke-selected)')
         .attr('stroke-width', 3)
         .style('pointer-events', 'none')
         .style('opacity', 0);
@@ -385,7 +387,7 @@ function renderStateMap(containerSelector, data, config = {}) {
           hoverOutline.attr('d', path(d)).style('opacity', 1);
         })
         .on('mousemove', (event, d) => {
-          const row = dataByName.get(d.properties.name);
+          const row = dataByName.get(normalizeAreaName(d.properties.name));
           if (!row) {
             tooltip.style('opacity', 0).style('display', 'none');
             return;
@@ -408,7 +410,7 @@ function renderStateMap(containerSelector, data, config = {}) {
           tooltip.style('opacity', 0).style('display', 'none');
         })
         .on('click', async (event, d) => {
-          const stateData = dataByName.get(d.properties.name);
+          const stateData = dataByName.get(normalizeAreaName(d.properties.name));
           if (!stateData) return;
 
           emitStateChange(stateData);

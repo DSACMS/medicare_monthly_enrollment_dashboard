@@ -55,12 +55,12 @@ figcaption details {
   z-index: 10;
   min-width: 11rem;
   padding: 0.5rem 0.75rem;
-  background: color('white');
-  border: 1px solid color('base-light');
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 0.25rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--shadow);
   font-size: 0.85rem;
-  color: color('ink');
+  color: var(--ink);
   transition: opacity 0.1s ease;
 }
 

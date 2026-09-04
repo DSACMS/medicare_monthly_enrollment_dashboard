@@ -23,6 +23,30 @@ export const DEFAULT_BREAKPOINTS = [17, 34, 51, 67];
 export const NO_DATA_FILL = '#eee';
 export const DEFAULT_COLORS = ['#f1eef6', '#d7b5d8', '#df65b0', '#dd1c77', '#980043'];
 
+// D3 needs real, parseable colors (not `var(...)` strings -- d3.color() can't
+// resolve custom properties) so the choropleth scale and its .brighter()
+// hover/selected variant stay in sync with light/dark mode, we read the
+// resolved value of the theme tokens defined in dashboard/_tokens.scss at
+// render time instead of hardcoding one palette.
+function readColorToken(name, fallback) {
+  if (typeof document === 'undefined' || typeof getComputedStyle !== 'function') {
+    return fallback;
+  }
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return value || fallback;
+}
+
+// Theme-aware "no data / suppressed" fill for map choropleths.
+export function getNoDataFill() {
+  return readColorToken('--map-no-data', NO_DATA_FILL);
+}
+
+// Theme-aware 5-color sequential choropleth scale (falls back to
+// DEFAULT_COLORS outside a browser, e.g. in Jest/Node).
+export function getDefaultColors() {
+  return DEFAULT_COLORS.map((fallback, index) => readColorToken(`--map-scale-${index}`, fallback));
+}
+
 export function computeJenksBreaks(values, numClasses = DEFAULT_COLORS.length) {
   const clean = values.filter((v) => v !== null && v !== undefined && !Number.isNaN(v));
   if (clean.length < numClasses) return DEFAULT_BREAKPOINTS;
@@ -160,7 +184,8 @@ export function appendTrendFigure(container, title) {
     .append('div')
     .attr('class', 'chart-figure')
     .attr('role', 'img')
-    .attr('aria-label', title);
+    .attr('aria-label', title)
+    .attr('tabindex', '0');
 
   // Figure's height is flex-grown to fill its card on desktop
   // viewBox is sized to match the figure's actual box rather than a fixed constant

@@ -57,7 +57,7 @@
 
 .data-grid-card__instruction {
   margin: 6px 0 0;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   line-height: 1.4;
   color: var(--ink-2);
 }
@@ -98,7 +98,7 @@
 }
 
 .data-grid-view-tabs .data-grid-view-tab {
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   padding: 6px 14px;
   border: 1px solid transparent;
   font-weight: 600;
@@ -150,7 +150,7 @@
 
 @media (max-width: $bp-narrow-max) {
   .data-grid-card table {
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
   }
 
   .data-grid-card th,
@@ -159,7 +159,7 @@
   }
 
   .data-grid-card thead th {
-    font-size: 0.625rem;
+    font-size: 0.75rem;
     letter-spacing: 0.01em;
     padding: 7px 5px;
   }
@@ -250,7 +250,7 @@
 .data-grid-card__mobile-trigger-desc {
   display: block;
   margin-top: 8px;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   line-height: 1.5;
   color: var(--ink-2);
 }

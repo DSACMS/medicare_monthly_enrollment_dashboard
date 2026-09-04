@@ -75,6 +75,7 @@ esbuild
     target: ['chrome58', 'firefox57', 'safari11', 'edge18'],
     plugins: [
       sassPlugin({
+        embedded: true,
         loadPaths: ['./node_modules/@uswds', './node_modules/@uswds/uswds/packages'],
       }),
     ],

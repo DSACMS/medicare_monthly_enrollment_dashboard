@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import requestDataset from '../../../src/router';
 import renderTable from '../tables/renderTable';
-import { sortYearlyAscending, sortMonthlyAscending, observeResize } from '../charts/utils';
+import { observeResize } from '../charts/utils';
 import { buildTrendGridColumns } from '../tables/gridColumns';
 import { toggleSort, makeDrawerEls, makeOverlayEls, createPopup } from './shared';
 import { DASHBOARD_TREND_CHARTS } from '../charts/index';
@@ -77,24 +77,34 @@ export default function initTrend(state, yearlyWithLatest, monthly) {
   // Shared by the desktop overlay's grid view and the mobile trend drawer.
   const renderTrendGrid = (selector) => {
     const data = currentTrendBucket()?.[state.trend.activeTrendRange];
-    const ascending =
-      state.trend.activeTrendRange === 'yearly'
-        ? sortYearlyAscending(data || [])
-        : sortMonthlyAscending(data || []);
-    const sorted = state.trend.trendGridSort.direction === 'asc' ? ascending : ascending.reverse();
+    const columns = buildTrendGridColumns(state.trend.activeTrendType, state.trend.activeTrendRange);
+    const { index, direction } = state.trend.trendGridSort;
+    const sortCol = columns[index];
+    const sortKey = sortCol?.sortValue || sortCol?.value;
+    const sorted = [...(data || [])].sort((a, b) => {
+      const av = sortKey(a);
+      const bv = sortKey(b);
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      let cmp;
+      if (av < bv) cmp = -1;
+      else if (av > bv) cmp = 1;
+      else cmp = 0;
+      return direction === 'asc' ? cmp : -cmp;
+    });
     if (!sorted.length) {
       document.querySelector(selector).innerHTML =
         '<p class="data-grid-placeholder">No trend data available for this selection.</p>';
     } else {
       renderTable(
         selector,
-        buildTrendGridColumns(state.trend.activeTrendType, state.trend.activeTrendRange),
+        columns,
         sorted,
         {
           sortState: state.trend.trendGridSort,
-          sortableIndex: 0,
-          onSort: () => {
-            state.trend.trendGridSort = toggleSort(state.trend.trendGridSort, 0);
+          onSort: (colIndex) => {
+            state.trend.trendGridSort = toggleSort(state.trend.trendGridSort, colIndex);
             renderTrendGrid(selector);
           },
         },
@@ -218,24 +228,81 @@ export default function initTrend(state, yearlyWithLatest, monthly) {
   };
 
   const trendRangeTabs = document.querySelectorAll('#national-range-tabs .chart-range-tab');
+
+  // Set initial tab state from URL
   trendRangeTabs.forEach((tab) => {
-    tab.addEventListener('click', () => {
-      state.trend.activeTrendRange = tab.dataset.range;
-      trendRangeTabs.forEach((t) => t.setAttribute('aria-selected', String(t === tab)));
-      syncOverlayControls();
-      renderTrend();
+    const isActive = tab.dataset.range === state.trend.activeTrendRange;
+    tab.setAttribute('aria-selected', String(isActive));
+    tab.setAttribute('tabindex', isActive ? '0' : '-1');
+  });
+
+  // Roving tabindex: only the active tab is in the tab order.
+  const activateRangeTab = (tab) => {
+    state.trend.activeTrendRange = tab.dataset.range;
+    trendRangeTabs.forEach((t) => {
+      t.setAttribute('aria-selected', String(t === tab));
+      t.setAttribute('tabindex', t === tab ? '0' : '-1');
+    });
+    tab.focus();
+    syncOverlayControls();
+    renderTrend();
+    document.dispatchEvent(new CustomEvent('dashboard:rangechange'));
+  };
+
+  trendRangeTabs.forEach((tab, i) => {
+    tab.setAttribute('tabindex', i === 0 ? '0' : '-1');
+
+    tab.addEventListener('click', () => activateRangeTab(tab));
+
+    tab.addEventListener('keydown', (e) => {
+      const tabs = Array.from(trendRangeTabs);
+      const idx = tabs.indexOf(tab);
+      let next = -1;
+      if (e.key === 'ArrowRight') next = (idx + 1) % tabs.length;
+      else if (e.key === 'ArrowLeft') next = (idx - 1 + tabs.length) % tabs.length;
+      else if (e.key === 'Home') next = 0;
+      else if (e.key === 'End') next = tabs.length - 1;
+      if (next >= 0) {
+        e.preventDefault();
+        activateRangeTab(tabs[next]);
+      }
     });
   });
 
   const overlayRangeTabs = document.querySelectorAll('#trend-overlay-range .chart-range-tab');
-  overlayRangeTabs.forEach((tab) => {
-    tab.addEventListener('click', () => {
-      state.trend.activeTrendRange = tab.dataset.range;
-      trendRangeTabs.forEach((t) =>
-        t.setAttribute('aria-selected', String(t.dataset.range === state.trend.activeTrendRange)),
-      );
-      syncOverlayControls();
-      renderTrend();
+
+  const activateOverlayRangeTab = (tab) => {
+    state.trend.activeTrendRange = tab.dataset.range;
+    trendRangeTabs.forEach((t) =>
+      t.setAttribute('aria-selected', String(t.dataset.range === state.trend.activeTrendRange)),
+    );
+    overlayRangeTabs.forEach((t) => {
+      t.setAttribute('aria-selected', String(t === tab));
+      t.setAttribute('tabindex', t === tab ? '0' : '-1');
+    });
+    tab.focus();
+    syncOverlayControls();
+    renderTrend();
+    document.dispatchEvent(new CustomEvent('dashboard:rangechange'));
+  };
+
+  overlayRangeTabs.forEach((tab, i) => {
+    tab.setAttribute('tabindex', i === 0 ? '0' : '-1');
+
+    tab.addEventListener('click', () => activateOverlayRangeTab(tab));
+
+    tab.addEventListener('keydown', (e) => {
+      const tabs = Array.from(overlayRangeTabs);
+      const idx = tabs.indexOf(tab);
+      let next = -1;
+      if (e.key === 'ArrowRight') next = (idx + 1) % tabs.length;
+      else if (e.key === 'ArrowLeft') next = (idx - 1 + tabs.length) % tabs.length;
+      else if (e.key === 'Home') next = 0;
+      else if (e.key === 'End') next = tabs.length - 1;
+      if (next >= 0) {
+        e.preventDefault();
+        activateOverlayRangeTab(tabs[next]);
+      }
     });
   });
 
@@ -279,6 +346,7 @@ export default function initTrend(state, yearlyWithLatest, monthly) {
       state.trend.activeTrendView = dot.dataset.view;
       setActiveTrendDot(state.trend.activeTrendView);
       scrollToTrendView(state.trend.activeTrendView);
+      document.dispatchEvent(new CustomEvent('dashboard:viewchange'));
     });
   });
 
@@ -305,23 +373,6 @@ export default function initTrend(state, yearlyWithLatest, monthly) {
   }
 
   const trendOverlayEls = makeOverlayEls('trend'); // tabsSlot resolves to null (no tabs-slot markup) and is unused
-
-  // Force-close the drawers on entering desktop, and the expand overlays
-  // on leaving it — matches each one's own CSS display:none guard.
-  const desktopMql = window.matchMedia('(min-width: 64em)');
-  desktopMql.addEventListener('change', (event) => {
-    if (event.matches) {
-      state.popups.closeDrawer();
-      state.popups.closeCountyDrawer();
-      state.popups.closeTrendDrawer();
-      state.trend.activeTrendView = 'line';
-      setActiveTrendDot('line');
-      scrollToTrendView('line', 'auto');
-    } else {
-      state.popups.closeOverlay();
-      state.popups.closeTrendOverlay();
-    }
-  });
 
   // ---- Desktop "expand" overlay for the trend card. No reparenting — the
   // body is static placeholder markup baked into trend-card.njk, so this
@@ -390,5 +441,5 @@ export default function initTrend(state, yearlyWithLatest, monthly) {
     trendDrawerEls.overlay?.addEventListener('click', state.popups.closeTrendDrawer);
   }
 
-  return { showTrendForScope };
+  return { showTrendForScope, setActiveTrendDot, scrollToTrendView };
 }

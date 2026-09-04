@@ -8,3 +8,6 @@ code.json
 .github
 config
 docs
+test-results
+.venv-etl
+.pytest_cache

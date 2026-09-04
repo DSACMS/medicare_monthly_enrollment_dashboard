@@ -4,6 +4,10 @@
 // Values are column-aligned for scanning; prettier-ignore keeps it that way.
 // prettier-ignore
 :root {
+  // Lets native form controls, scrollbars, etc. match the active scheme even
+  // before our own tokens below are resolved for the light/dark media query.
+  color-scheme: light dark;
+
   --page:      #f3f4f6;
   --surface:   #ffffff;
   --surface-2: #f7f8fa;
@@ -15,10 +19,86 @@
   --border:    rgba(20, 20, 28, 0.10);
   --shadow:    0 1px 2px rgba(16, 16, 24, 0.05), 0 4px 16px rgba(16, 16, 24, 0.05);
   --total:     #1b1b1b;
+  --row-hover: #e5f3fa;
+  --error:     #a04b20;
 
   --brand:     #015390;
   --brand-ink: #013b63;
   --focus:     #009ad0;
+
+  // Choropleth map + "no data" fill -- read at render time by
+  // charts/utils.js so D3 (which needs real colors, not var()) stays in
+  // sync with the active theme. Map stroke tokens are consumed directly as
+  // var() strings by the map renderers.
+  --map-scale-0:  #f1eef6;
+  --map-scale-1:  #d7b5d8;
+  --map-scale-2:  #df65b0;
+  --map-scale-3:  #dd1c77;
+  --map-scale-4:  #980043;
+  --map-no-data:  #eeeeee;
+  --map-stroke:          #ffffff;
+  --map-stroke-selected: #111111;
+}
+
+// prettier-ignore
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page:      #101114;
+    --surface:   #1c1d22;
+    --surface-2: #24252b;
+    --ink:       #f2f2f5;
+    --ink-2:     #c7c7d1;
+    --muted:     #b7b7c2;
+    --grid:      #33343b;
+    --baseline:  #46474f;
+    --border:    rgba(255, 255, 255, 0.14);
+    --shadow:    0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.4);
+    --total:     #f5f5f7;
+    --row-hover: #143244;
+    --error:     #e8aa8a;
+
+    --brand:     #5fb8ea;
+    --brand-ink: #8fd0f2;
+    --focus:     #63d6ff;
+
+    --map-scale-0:  #4a3350;
+    --map-scale-1:  #7a3f74;
+    --map-scale-2:  #b0428f;
+    --map-scale-3:  #e0489a;
+    --map-scale-4:  #ff6fb8;
+    --map-no-data:  #33343b;
+    --map-stroke:          #1c1d22;
+    --map-stroke-selected: #ffffff;
+  }
+}
+
+// Windows High Contrast Mode / forced-colors: replace UI chrome tokens with
+// system color keywords. Map/chart data colors are intentionally left alone
+// here -- they're carved out with forced-color-adjust: none at the point of
+// use (map.scss, _chart.scss) since they convey data, not just decoration.
+// prettier-ignore
+@media (forced-colors: active) {
+  :root {
+    --page:      Canvas;
+    --surface:   Canvas;
+    --surface-2: Canvas;
+    --ink:       CanvasText;
+    --ink-2:     CanvasText;
+    --muted:     CanvasText;
+    --grid:      CanvasText;
+    --baseline:  CanvasText;
+    --border:    CanvasText;
+    --total:     CanvasText;
+    --row-hover: Canvas;
+    --error:     LinkText;
+
+    --brand:     LinkText;
+    --brand-ink: LinkText;
+    --focus:     Highlight;
+
+    --map-stroke:          CanvasText;
+    --map-stroke-selected: Highlight;
+  }
 }
 
 // Breakpoints (Sass variables, not CSS custom properties -- @media queries

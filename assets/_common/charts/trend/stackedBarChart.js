@@ -6,7 +6,7 @@ import {
   resolveLegendTarget,
   selectTickRows,
   formatPeriod,
-  NO_DATA_FILL,
+  getNoDataFill,
   NO_DATA_LABEL,
   TREND_MARGIN,
 } from '../utils';
@@ -175,7 +175,7 @@ function renderStackedBarChart(selector, data, config) {
         .attr('width', barWidth)
         .attr('y', yTopEdge)
         .attr('height', Math.max(0, yBase - yTopEdge))
-        .attr('fill', NO_DATA_FILL)
+        .attr('fill', getNoDataFill())
         .attr('rx', 4)
         .attr('ry', 4);
     }

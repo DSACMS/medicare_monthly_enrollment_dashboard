@@ -1,0 +1,17 @@
+[
+  {
+    "YEAR": "2026",
+    "MONTH": "Year",
+    "BENE_GEO_LVL": "State",
+    "BENE_STATE_ABRVTN": "XX",
+    "BENE_STATE_DESC": "Fictional State",
+    "BENE_COUNTY_DESC": "",
+    "BENE_FIPS_CD": "99",
+    "TOT_BENES": "1000",
+    "ORGNL_MDCR_BENES": "500",
+    "MA_AND_OTH_BENES": "500",
+    "PRSCRPTN_DRUG_TOT_BENES": "800",
+    "PRSCRPTN_DRUG_PDP_BENES": "200",
+    "PRSCRPTN_DRUG_MAPD_BENES": "600"
+  }
+]

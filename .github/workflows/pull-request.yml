@@ -1,98 +1,101 @@
-name: pull request
+name: CI
 
-on: [pull_request]
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
-    name: build
     runs-on: ubuntu-latest
-
-    outputs:
-      cache_key: ${{ steps.cache_key.outputs.cache_key }}
-
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v3
-      - id: cache_key
-        run: echo "cache_key=${{ hashFiles('**/**') }}-v1" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache@v3
-        id: cache
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          path: .
-          key: ${{ steps.cache_key.outputs.cache_key }}
-      - if: steps.cache.outputs.cache-hit != true
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-      - if: steps.cache.outputs.cache-hit != true
-        run: npm install
-      - if: steps.cache.outputs.cache-hit != true
-        env:
-          ELEVENTY_ENV: production
-        run: npm run build
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run build
 
-  pa11y-scan:
-    # Pinned to 20.04 because pa11y-ci fails to run on 22.04
-    # See the discussion on https://github.com/pa11y/pa11y-ci/issues/198
-    # and https://github.com/pa11y/pa11y/issues/651
-    # Bumped to 22.04 since 20.04 runners no longer get picked up
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v3
-      - name: Use Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-      - name: Install node dependencies
-        run: npm install
-      - name: Refresh assets
-        run: npm run assets:refresh
-      - name: Accessibility scan
-        run: npm run test:pa11y-ci
-
-  validate_html:
-    needs: [build]
-    name: validate html
+  unit-tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/cache/restore@v3
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          key: ${{ needs.build.outputs.cache_key }}
-          path: .
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 18
-      - run: npm run test:html-validation
-
-
-  check_links:
-    needs: [build]
-    name: Check all links
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/cache/restore@v3
-        with:
-          key: ${{ needs.build.outputs.cache_key }}
-          path: .
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 18
-      - name: Test all links
-        run: npm run test:links
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm test
 
   lint:
-    name: Run linter
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
-      - name: Use Node
-        uses: actions/setup-node@v3
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          node-version: 18
-      - name: Install node dependencies
-        run: npm install
-      - name: Run eslint
-        run: npm run lint
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+
+  validate_html:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run test:html-validation
+
+  check_links:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run test:links
+
+  accessibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - run: npm run test:a11y
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
+        with:
+          name: playwright-report
+          path: test-results/
+          retention-days: 7

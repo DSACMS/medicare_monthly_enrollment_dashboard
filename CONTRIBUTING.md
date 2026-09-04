@@ -19,7 +19,7 @@ Our project maintainers are listed in [COMMUNITY.md](COMMUNITY.md). They are res
 
 ### Building dependencies
 
-This is a Node.js project built with [11ty](https://www.11ty.dev/) and D3.js. You'll need the latest LTS version of [Node](https://nodejs.org/en/download) installed, then run:
+This is a Node.js project built with [11ty](https://www.11ty.dev/) and D3.js. You'll need [Node 24 LTS](https://nodejs.org/en/download) installed, then run:
 
 ```bash
 npm install
@@ -54,7 +54,6 @@ Treat each change you merge to `main` as immediately deployable to production �
 
 We use a GitHub workflow that runs a number of checks on every pull request, including:
 
-- Automated accessibility testing with `pa11y-ci`
 - Code linting with `eslint`
 - HTML validation with `html-validate`
 - Internal link checking with `check-html-links`
@@ -113,7 +112,7 @@ Some notes on commit messages:
 Pull requests are reviewed by the project maintainers listed in [COMMUNITY.md](COMMUNITY.md) before merging. Reviewers will check for:
 
 - Correctness — does the change do what it says, without breaking existing charts, tables, or data fetching
-- Accessibility — does the change pass automated `pa11y-ci` checks and, where relevant, meet 508 compliance
+- Accessibility — does the change, where relevant, meet 508 compliance
 - Code clarity — does the change follow our `eslint`/`prettier` conventions and match the style of surrounding code
 - Documentation — is the [README](README.md) updated if the change affects usage, structure, or data sources
 - Scope — is the pull request focused on a single change

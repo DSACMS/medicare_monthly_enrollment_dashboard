@@ -1,5 +1,4 @@
 // Area (state) + county enrollment grid -- mirrors dashboard/grid.js.
-@use '../colors' as *;
 @use 'tokens' as *;
 
 .data-grid-scroll-wrap {
@@ -49,10 +48,10 @@
   display: inline-flex;
   align-items: center;
   margin-left: 6px;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  // Darkened for WCAG AA contrast (raw $color-red is only ~3.45:1).
-  color: darken($color-red, 15%);
+  // --error is a darkened red for WCAG AA contrast (has its own dark/forced-colors variants).
+  color: var(--error);
   white-space: nowrap;
 }
 

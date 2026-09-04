@@ -1,11 +1,10 @@
-import usStates from '../../../_data/usStates.json';
+import { getMappableAreas } from '../../../src/geographicAreas';
 import { computeJenksBreaks } from '../charts/utils';
 import { renderStateMap } from '../charts/index';
 import DASHBOARD_LABELS from '../labels';
 
-// API's "State" geo level includes territories (e.g. Puerto Rico)
-// Can't be handed off to the map -> grid/drawer render them disabled w/ warning label
-const mappableStateNames = new Set(usStates);
+// Only areas with geometry are mappable; territories without geometry are excluded
+const mappableStateNames = new Set(getMappableAreas().map((area) => area.name));
 
 const hospitalLabels = DASHBOARD_LABELS.hospitalMedical;
 const drugLabels = DASHBOARD_LABELS.prescriptionDrug;

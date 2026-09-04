@@ -81,7 +81,10 @@ function renderTierHistogram(
     })
     .filter((tier) => tier.count > 0);
 
-  const title = `${contextLabel}: ${metricLabel} Enrollment Distribution Count`;
+  const title =
+    contextLabel === 'United States'
+      ? 'Distribution across 50 states'
+      : `${contextLabel}: ${metricLabel} Enrollment Distribution Count`;
   const countLabel = `Number of ${areaLabel.toLowerCase()}`;
 
   const figure = container
@@ -149,9 +152,20 @@ function renderTierHistogram(
     .attr('transform', `translate(0,${innerHeight})`)
     .call(xAxis);
 
-  container.append('p').attr('class', 'map-tier-histogram__title').text(title);
+  const titleId = `${containerSelector.replace(/[^a-zA-Z0-9_-]+/g, '-')}-title`;
+
+  container
+    .append('h3')
+    .attr('class', 'map-tier-histogram__title')
+    .attr('id', titleId)
+    .text(title);
 
   container.append('p').attr('class', 'map-tier-histogram__subtitle').text(countLabel);
+
+  if (title === 'Distribution across 50 states') {
+    const distributionHeading = container.select('.map-tier-histogram__title');
+    distributionHeading.attr('id', 'distribution-across-50-states');
+  }
 }
 
 export default renderTierHistogram;

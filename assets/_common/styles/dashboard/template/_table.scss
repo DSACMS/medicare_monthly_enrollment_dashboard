@@ -108,7 +108,7 @@ table.data tbody tr:hover td {
     tbody
     tr:not(.is-unselectable):hover
     td {
-    background: #e5f3fa;
+    background: var(--row-hover);
   }
 }
 

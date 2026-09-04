@@ -18,7 +18,7 @@ import createRequestGuard from '../requestGuard';
 
 // Owns the state/county grids, drawers, and overlay. Trend-card syncing
 // happens via the dashboard:* listeners in dashboard/index.js instead.
-export default function initGrid(state, mappableStateNames) {
+export default function initGrid(state) {
   const countyGridRequest = createRequestGuard();
   // Shared by the desktop grids and both mobile drawers
   const selectStateFromGrid = (stateName) => {
@@ -64,7 +64,7 @@ export default function initGrid(state, mappableStateNames) {
 
     renderTable('#all-areas-table', cols, rows, {
       onRowClick: (row) => selectStateFromGrid(row.stateName),
-      isRowSelectable: (row) => mappableStateNames.has(row.stateName),
+      isRowSelectable: () => true,
       isRowSelected: (row) => state.selectedState?.stateName === row.stateName,
       sortState: state.grid.allAreasSort,
       onSort: (index) => {
@@ -112,7 +112,7 @@ export default function initGrid(state, mappableStateNames) {
       emptyMessage: drawerSearchTerm
         ? `No states match "${drawerSearchTerm}".`
         : 'No data available.',
-      isRowSelectable: (row) => mappableStateNames.has(row.stateName),
+      isRowSelectable: () => true,
       isRowSelected: (row) => state.selectedState?.stateName === row.stateName,
       onSelectRow: (row) => {
         selectStateFromGrid(row.stateName);
@@ -276,8 +276,8 @@ export default function initGrid(state, mappableStateNames) {
   const enrollmentInstructionEl = document.querySelector('#enrollment-instruction');
 
   const viewInstructions = {
-    state: 'Click a state to display on the map. Click again to deselect.',
-    county: 'Click a county to display on the map. Click again to deselect.',
+    state: 'Select a state or territory to display on the map.',
+    county: 'Select a county or equivalent area to display on the map.',
   };
 
   const scrollWrapFor = (view) => (view === 'county' ? countyScrollWrapEl : allAreasScrollWrapEl);

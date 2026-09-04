@@ -1,8 +1,8 @@
-title: Website title here
+title: Medicare Monthly Enrollment Dashboard
 description: >- # this means to ignore newlines
-  Website description here.
+  Medicare enrollment data by geographic area, including hospital/medical and prescription drug coverage trends.
 
-host: https://dsacms.github.io/
+host: https://mgifford.github.io/
 # TODO: Digital Analytics Program
 # dap:
 #   agency: GSA

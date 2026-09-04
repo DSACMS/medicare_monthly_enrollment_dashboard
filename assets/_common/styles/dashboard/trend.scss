@@ -39,7 +39,7 @@
   background: transparent;
   font: inherit;
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   color: var(--ink-2);
   padding: 6px 12px;
   border-radius: 8px;
@@ -64,6 +64,11 @@
 .chart-block .chart-figure {
   height: 267px;
 }
+.chart-block .chart-figure:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
 .chart-block__head {
   display: flex;
   flex-wrap: wrap;
@@ -74,7 +79,7 @@
 }
 .chart-block h3,
 .chart-block h4 {
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   font-weight: 700;
   margin: 0;
 }
@@ -82,7 +87,7 @@
 .chart-block h4 span {
   color: var(--ink-2);
   font-weight: 500;
-  font-size: 0.74rem;
+  font-size: 0.8125rem;
 }
 .chart-svg {
   width: 100%;
@@ -144,8 +149,8 @@
   padding: 0;
   border: 1.5px solid var(--border);
   border-radius: 999px;
-  width: 8px;
-  height: 8px;
+  width: 24px;
+  height: 24px;
   background: var(--surface-2);
   cursor: pointer;
 }
@@ -161,7 +166,7 @@
 
 // Active state changes shape (round -> pill) + size, not color alone
 .trend-carousel-dot[aria-pressed='true'] {
-  width: 20px;
+  width: 32px;
   border-radius: 5px;
   background: var(--ink-2);
   border-color: var(--ink-2);
@@ -221,6 +226,24 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+}
+
+.trend-overlay__panel--grid table.data,
+#trend-drawer-body table.data {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.trend-overlay__panel--grid table.data th,
+#trend-drawer-body table.data th {
+  background: var(--surface-2);
+}
+
+.trend-overlay__panel--grid table.data tbody tr:hover td,
+#trend-drawer-body table.data tbody tr:hover td {
+  background: var(--surface-2);
 }
 
 .trend-loading {

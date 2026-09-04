@@ -7,6 +7,13 @@ The home page uses wide.html layout, since it extends full width of page
 {% include "meta.html" %}
 
 <body class="display-flex flex-column minh-viewport">
+  <a class="usa-sr-only usa-focus" href="#hospital-view-heading">Skip to Hospital / Medical</a>
+  <a class="usa-sr-only usa-focus" href="#drug-view-heading">Skip to Prescription Drug</a>
+  <a class="usa-sr-only usa-focus" href="#medicare-advantage-enrollment-map">Skip to Medicare Advantage Enrollment Map</a>
+  <a class="usa-sr-only usa-focus" href="#enrollment-trends">Skip to Enrollment Trends</a>
+  <a class="usa-sr-only usa-focus" href="#enrollment-table">Skip to Enrollment Table</a>
+  <a class="usa-sr-only usa-focus" href="#distribution-across-50-states">Skip to Distribution across 50 states</a>
+  <a class="usa-sr-only usa-focus" href="#main-content">Skip to main content</a>
   {{ content }}
 
   {% comment %} Hide SVG Sprites {% endcomment %}
@@ -17,7 +24,7 @@ The home page uses wide.html layout, since it extends full width of page
 
     TODO: Remove once this set of icons once we've determined the usa_icons
     above is enough. Currently, keeping both adds two sets of SVGs with duplicate IDs,
-    which is flagged as by pa11y as an accessibility error.
+    which is flagged as an accessibility error.
 
     {% uswds_icons_sprite %}
 
@@ -26,6 +33,7 @@ The home page uses wide.html layout, since it extends full width of page
   </div>
 
   {% include "scripts.html" %}
+  <script data-skipto="displayOption: popup" src="https://skipto-landmarks-headings.github.io/page-script-5/dist/skipto.js"></script>
 </body>
 
 </html>

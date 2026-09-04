@@ -4,8 +4,8 @@ import {
   createTooltip,
   moveTooltip,
   DEFAULT_BREAKPOINTS,
-  NO_DATA_FILL,
-  DEFAULT_COLORS,
+  getNoDataFill,
+  getDefaultColors,
   formatCount,
   formatPercent,
 } from '../utils';
@@ -72,7 +72,7 @@ function renderCountyMap(
 
   const resolvedBreakpoints =
     breakpoints && breakpoints.length === 4 ? breakpoints : DEFAULT_BREAKPOINTS;
-  const resolvedColors = colors && colors.length === 5 ? colors : DEFAULT_COLORS;
+  const resolvedColors = colors && colors.length === 5 ? colors : getDefaultColors();
   if (histogramSelector) {
     renderTierHistogram(histogramSelector, countyRows, {
       metricPercent,
@@ -97,10 +97,10 @@ function renderCountyMap(
   const height = isMobile ? 750 : 620;
 
   const getCountyFill = (entry) => {
-    if (!entry.data) return NO_DATA_FILL;
+    if (!entry.data) return getNoDataFill();
 
     const percent = metricPercent(entry.data);
-    return Number.isFinite(percent) ? metricColor(percent) : NO_DATA_FILL;
+    return Number.isFinite(percent) ? metricColor(percent) : getNoDataFill();
   };
 
   const container = d3.select(containerSelector);
@@ -147,14 +147,16 @@ function renderCountyMap(
     .join('path')
     .attr('d', (entry) => path(entry.feature))
     .attr('fill', getDisplayedFill)
-    .attr('stroke', (entry) => (isSelected(entry) ? '#111' : '#fff'))
+    .attr('stroke', (entry) =>
+      isSelected(entry) ? 'var(--map-stroke-selected)' : 'var(--map-stroke)',
+    )
     .attr('stroke-width', (entry) => (isSelected(entry) ? 3 : 0.75))
     .style('cursor', (entry) => (isSelectable(entry) ? 'pointer' : 'default'));
 
   const hoverOutline = svg
     .append('path')
     .attr('fill', 'none')
-    .attr('stroke', '#111')
+    .attr('stroke', 'var(--map-stroke-selected)')
     .attr('stroke-width', 3)
     .style('pointer-events', 'none')
     .style('opacity', 0);
@@ -220,7 +222,9 @@ function renderCountyMap(
     selectedCounty = newSelectedCounty;
     countyPaths
       .attr('fill', getDisplayedFill)
-      .attr('stroke', (entry) => (isSelected(entry) ? '#111' : '#fff'))
+      .attr('stroke', (entry) =>
+        isSelected(entry) ? 'var(--map-stroke-selected)' : 'var(--map-stroke)',
+      )
       .attr('stroke-width', (entry) => (isSelected(entry) ? 3 : 0.75));
     countyPaths.filter((entry) => isSelected(entry)).raise();
   };
