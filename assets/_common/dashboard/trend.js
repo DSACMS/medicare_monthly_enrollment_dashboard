@@ -110,7 +110,20 @@ export default function initTrend(state, yearlyWithLatest, monthly) {
       : sortMonthlyAscending(data || []);
   const sorted = state.trend.trendGridSort.direction === 'asc' ? ascending : ascending.reverse();
   const columnDefs = buildTrendGridColumns(state.trend.activeTrendType, state.trend.activeTrendRange);
-  const filename = `enrollment-trend-${state.trend.activeTrendType}-${state.trend.activeTrendRange}.csv`;
+  
+  // Build filename with area
+  let filename = `enrollment-trend-${state.trend.activeTrendType}-${state.trend.activeTrendRange}`;
+  
+  if (state.trend.trendScope === 'county' && state.trend.trendArea?.county) {
+    filename += `-${state.trend.trendArea.county.toLowerCase().replace(/\s+/g, '-')}`;
+  } else if (state.trend.trendScope === 'state' && state.trend.trendArea?.stateName) {
+    filename += `-${state.trend.trendArea.stateName.toLowerCase().replace(/\s+/g, '-')}`;
+  } else {
+    filename += '-national';
+  }
+  
+  filename += '.csv';
+  
   return { columnDefs, data: sorted, filename };
 };
 
