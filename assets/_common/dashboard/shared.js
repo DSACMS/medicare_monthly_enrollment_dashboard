@@ -283,3 +283,32 @@ export const filterAndSortDrawerRows = (rows, cols, sortState, searchTerm, match
   const filtered = term ? rows.filter((row) => matchesSearch(row, term)) : rows;
   return sortRows(filtered, cols, sortState);
 };
+
+
+// Converts column defs + row data into a CSV file and triggers a browser
+// download. Reuses the same {label, value} column shape as renderTable.
+export const downloadTableAsCsv = (filename, columnDefs, data) => {
+  const escapeCsvValue = (value) => {
+    const str = String(value ?? '');
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
+  const headerRow = columnDefs.map((col) => escapeCsvValue(col.label)).join(',');
+  const bodyRows = data.map((row) =>
+    columnDefs.map((col) => escapeCsvValue(col.value ? col.value(row) : '')).join(','),
+  );
+  const csvContent = [headerRow, ...bodyRows].join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};

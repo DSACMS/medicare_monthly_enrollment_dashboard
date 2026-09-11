@@ -3,7 +3,7 @@ import requestDataset from '../../../src/router';
 import renderTable from '../tables/renderTable';
 import { sortYearlyAscending, sortMonthlyAscending, observeResize } from '../charts/utils';
 import { buildTrendGridColumns } from '../tables/gridColumns';
-import { toggleSort, makeDrawerEls, makeOverlayEls, createPopup } from './shared';
+import { toggleSort, makeDrawerEls, makeOverlayEls, createPopup, downloadTableAsCsv } from './shared';
 import { DASHBOARD_TREND_CHARTS } from '../charts/index';
 import createRequestGuard from '../requestGuard';
 import DASHBOARD_LABELS from '../labels';
@@ -101,6 +101,31 @@ export default function initTrend(state, yearlyWithLatest, monthly) {
       );
     }
   };
+
+   const currentTrendTableExport = () => {
+  const data = currentTrendBucket()?.[state.trend.activeTrendRange];
+  const ascending =
+    state.trend.activeTrendRange === 'yearly'
+      ? sortYearlyAscending(data || [])
+      : sortMonthlyAscending(data || []);
+  const sorted = state.trend.trendGridSort.direction === 'asc' ? ascending : ascending.reverse();
+  const columnDefs = buildTrendGridColumns(state.trend.activeTrendType, state.trend.activeTrendRange);
+  
+  // Build filename with area
+  let filename = `enrollment-trend-${state.trend.activeTrendType}-${state.trend.activeTrendRange}`;
+  
+  if (state.trend.trendScope === 'county' && state.trend.trendArea?.county) {
+    filename += `-${state.trend.trendArea.county.toLowerCase().replace(/\s+/g, '-')}`;
+  } else if (state.trend.trendScope === 'state' && state.trend.trendArea?.stateName) {
+    filename += `-${state.trend.trendArea.stateName.toLowerCase().replace(/\s+/g, '-')}`;
+  } else {
+    filename += '-national';
+  }
+  
+  filename += '.csv';
+  
+  return { columnDefs, data: sorted, filename };
+};
 
   const renderTrendOverlay = () => {
     if (!document.querySelector('#trend-overlay-body')) return;
@@ -356,6 +381,12 @@ export default function initTrend(state, yearlyWithLatest, monthly) {
     trendOverlayEls.scrim?.addEventListener('click', state.popups.closeTrendOverlay);
   }
 
+  const trendOverlayDownloadBtn = document.querySelector('#trend-overlay-download');
+  trendOverlayDownloadBtn?.addEventListener('click', () => {
+    const { columnDefs, data, filename } = currentTrendTableExport();
+    downloadTableAsCsv(filename, columnDefs, data);
+  });
+
   // ---- Mobile-only bottom-sheet drawer for the trend data table
   // (carousel page 3). No search/thead-row/tbody fields from makeDrawerEls
   // are used -- renderTrendGrid() calls renderTable() directly instead of
@@ -389,6 +420,12 @@ export default function initTrend(state, yearlyWithLatest, monthly) {
     trendDrawerEls.closeBtn?.addEventListener('click', state.popups.closeTrendDrawer);
     trendDrawerEls.overlay?.addEventListener('click', state.popups.closeTrendDrawer);
   }
+
+  const trendDrawerDownloadBtn = document.querySelector('#trend-drawer-download');
+  trendDrawerDownloadBtn?.addEventListener('click', () => {
+    const { columnDefs, data, filename } = currentTrendTableExport();
+    downloadTableAsCsv(filename, columnDefs, data);
+  });
 
   return { showTrendForScope };
 }
