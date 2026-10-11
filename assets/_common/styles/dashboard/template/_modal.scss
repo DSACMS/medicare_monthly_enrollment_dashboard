@@ -125,7 +125,6 @@ body.data-grid-drawer-open {
   cursor: pointer;
 }
 
-
 .data-grid-drawer__download-wrap {
   flex: none;
   padding: 12px 14px 16px 14px;
@@ -147,7 +146,9 @@ body.data-grid-drawer-open {
   font-weight: 500;
   color: #ffffff;
   cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
 
   svg {
     flex-shrink: 0;
@@ -264,7 +265,6 @@ body.data-grid-overlay-open {
   gap: 12px;
 }
 
-
 .data-grid-overlay__title {
   @include card-title;
 }
@@ -277,8 +277,6 @@ body.data-grid-overlay-open {
   color: var(--ink-2);
   cursor: pointer;
 }
-
-
 
 .data-grid-overlay__download {
   display: flex;
@@ -293,7 +291,9 @@ body.data-grid-overlay-open {
   font-weight: 500;
   color: #ffffff;
   cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
   white-space: nowrap;
 
   svg {
@@ -311,7 +311,6 @@ body.data-grid-overlay-open {
     outline-offset: 2px;
   }
 }
-
 
 .data-grid-overlay__body {
   flex: 1;

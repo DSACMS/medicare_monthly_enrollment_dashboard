@@ -284,7 +284,6 @@ export const filterAndSortDrawerRows = (rows, cols, sortState, searchTerm, match
   return sortRows(filtered, cols, sortState);
 };
 
-
 // Converts column defs + row data into a CSV file and triggers a browser
 // download. Reuses the same {label, value} column shape as renderTable.
 export const downloadTableAsCsv = (filename, columnDefs, data) => {
@@ -311,4 +310,21 @@ export const downloadTableAsCsv = (filename, columnDefs, data) => {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+};
+
+// Builds the trend CSV filename from the active type/range and the selected
+// area, e.g. enrollment-trend-hospital-yearly-CA-los-angeles.csv
+export const trendCsvFilename = ({ activeTrendType, activeTrendRange, trendScope, trendArea }) => {
+  const slug = (text) =>
+    String(text)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+  let area = 'national';
+  if (trendScope === 'county' && trendArea?.state && trendArea?.county) {
+    area = `${trendArea.state}-${slug(trendArea.county)}`;
+  } else if (trendScope === 'state' && trendArea?.state) {
+    area = trendArea.state;
+  }
+  return `enrollment-trend-${activeTrendType}-${activeTrendRange}-${area}.csv`;
 };
