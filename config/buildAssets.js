@@ -38,8 +38,11 @@ async function createAssetPaths() {
       }
       return files.map((file) => {
         const { name, ext } = path.parse(file);
+        const normalizedFile = file.split(path.sep).join('/');
         const publicDir = '_site/';
-        const assetDirs = file.slice(file.indexOf(publicDir) + publicDir.length);
+        const assetDirs = normalizedFile.slice(
+          normalizedFile.indexOf(publicDir) + publicDir.length,
+        );
         const hashedAt = name.lastIndexOf('-');
         const originalName = name.slice(0, hashedAt);
         const key = `${originalName}${ext}`;

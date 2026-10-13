@@ -283,3 +283,48 @@ export const filterAndSortDrawerRows = (rows, cols, sortState, searchTerm, match
   const filtered = term ? rows.filter((row) => matchesSearch(row, term)) : rows;
   return sortRows(filtered, cols, sortState);
 };
+
+// Converts column defs + row data into a CSV file and triggers a browser
+// download. Reuses the same {label, value} column shape as renderTable.
+export const downloadTableAsCsv = (filename, columnDefs, data) => {
+  const escapeCsvValue = (value) => {
+    const str = String(value ?? '');
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
+  const headerRow = columnDefs.map((col) => escapeCsvValue(col.label)).join(',');
+  const bodyRows = data.map((row) =>
+    columnDefs.map((col) => escapeCsvValue(col.value ? col.value(row) : '')).join(','),
+  );
+  const csvContent = [headerRow, ...bodyRows].join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
+// Builds the trend CSV filename from the active type/range and the selected
+// area, e.g. enrollment-trend-hospital-yearly-CA-los-angeles.csv
+export const trendCsvFilename = ({ activeTrendType, activeTrendRange, trendScope, trendArea }) => {
+  const slug = (text) =>
+    String(text)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+  let area = 'national';
+  if (trendScope === 'county' && trendArea?.state && trendArea?.county) {
+    area = `${trendArea.state}-${slug(trendArea.county)}`;
+  } else if (trendScope === 'state' && trendArea?.state) {
+    area = trendArea.state;
+  }
+  return `enrollment-trend-${activeTrendType}-${activeTrendRange}-${area}.csv`;
+};
