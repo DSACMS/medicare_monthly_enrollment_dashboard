@@ -1,0 +1,32 @@
+[
+  {
+    "YEAR": "2024",
+    "MONTH": "January",
+    "BENE_GEO_LVL": "County",
+    "BENE_STATE_ABRVTN": "AK",
+    "BENE_STATE_DESC": "Alaska",
+    "BENE_COUNTY_DESC": "Aleutians East Borough",
+    "BENE_FIPS_CD": "02013",
+    "TOT_BENES": "180",
+    "ORGNL_MDCR_BENES": "*",
+    "MA_AND_OTH_BENES": "*",
+    "PRSCRPTN_DRUG_TOT_BENES": "150",
+    "PRSCRPTN_DRUG_PDP_BENES": "*",
+    "PRSCRPTN_DRUG_MAPD_BENES": "*"
+  },
+  {
+    "YEAR": "2024",
+    "MONTH": "January",
+    "BENE_GEO_LVL": "County",
+    "BENE_STATE_ABRVTN": "AK",
+    "BENE_STATE_DESC": "Alaska",
+    "BENE_COUNTY_DESC": "Kalawao County",
+    "BENE_FIPS_CD": "15005",
+    "TOT_BENES": "0",
+    "ORGNL_MDCR_BENES": "0",
+    "MA_AND_OTH_BENES": "0",
+    "PRSCRPTN_DRUG_TOT_BENES": null,
+    "PRSCRPTN_DRUG_PDP_BENES": null,
+    "PRSCRPTN_DRUG_MAPD_BENES": null
+  }
+]

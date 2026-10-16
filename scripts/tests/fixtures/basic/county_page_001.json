@@ -1,0 +1,32 @@
+[
+  {
+    "YEAR": "2024",
+    "MONTH": "January",
+    "BENE_GEO_LVL": "County",
+    "BENE_STATE_ABRVTN": "SD",
+    "BENE_STATE_DESC": "South Dakota",
+    "BENE_COUNTY_DESC": "Aurora County",
+    "BENE_FIPS_CD": "46003",
+    "TOT_BENES": "800",
+    "ORGNL_MDCR_BENES": "500",
+    "MA_AND_OTH_BENES": "300",
+    "PRSCRPTN_DRUG_TOT_BENES": "700",
+    "PRSCRPTN_DRUG_PDP_BENES": "500",
+    "PRSCRPTN_DRUG_MAPD_BENES": "200"
+  },
+  {
+    "YEAR": "2024",
+    "MONTH": "January",
+    "BENE_GEO_LVL": "County",
+    "BENE_STATE_ABRVTN": "SD",
+    "BENE_STATE_DESC": "South Dakota",
+    "BENE_COUNTY_DESC": "Minnehaha County",
+    "BENE_FIPS_CD": "46099",
+    "TOT_BENES": "32000",
+    "ORGNL_MDCR_BENES": "22400",
+    "MA_AND_OTH_BENES": "9600",
+    "PRSCRPTN_DRUG_TOT_BENES": "27000",
+    "PRSCRPTN_DRUG_PDP_BENES": "19000",
+    "PRSCRPTN_DRUG_MAPD_BENES": "8000"
+  }
+]

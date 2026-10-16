@@ -1,0 +1,27 @@
+# Medicare Monthly Enrollment Dashboard
+
+This is an open-source, client-side dashboard for exploring CMS Medicare Monthly Enrollment data by national, state, territory, county, and county-equivalent geography.
+
+## Data
+
+CMS is the authoritative data source. The dashboard refreshes from the CMS Data API on every deployment and on a weekly schedule. The displayed reporting period identifies the newest enrollment period in the data; it is distinct from the dashboard build time.
+
+The default source is the CMS API. An optional downloaded Apache Parquet data path can be enabled by setting `localStorage['use-parquet']` to `1`; it is generated from CMS data, queried locally with DuckDB-Wasm, and falls back to the CMS API when unavailable.
+
+## WebMCP
+
+Compatible browsers discover WebMCP tools at runtime from `document.modelContext` when this dashboard page is open. WebMCP is optional; browsers without that API retain the full human interface.
+
+The available tools change the same visible dashboard state as human controls. They do not expose raw SQL or direct data-source access.
+
+- `get-dashboard-state`: Read the dashboard type, selected geography, trend range, and visible table.
+- `set-dashboard-type`: Choose Hospital and Medical or Prescription Drug data.
+- `select-state`: Select a state or territory by postal abbreviation.
+- `select-county`: Select a county or county-equivalent by state and FIPS code.
+- `clear-geography`: Return to the national view.
+- `set-trend-range`: Choose yearly or monthly trends.
+- `show-enrollment-table`: Choose the state or county enrollment table.
+
+## Supplemental catalogue
+
+An experimental static catalogue is available at `/.well-known/webmcp.json`. It is a discovery hint only; live `document.modelContext` tool registration is authoritative.

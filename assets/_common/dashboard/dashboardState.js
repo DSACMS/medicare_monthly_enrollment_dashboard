@@ -10,6 +10,8 @@ export default function createDashboardState() {
     grid: {
       allStatesRows: [],
       currentCountyRows: [],
+      activeView: 'state',
+      setActiveView: null,
       allAreasSort: { index: 0, direction: 'asc' },
       countyGridSort: { index: 0, direction: 'asc' },
     },
@@ -20,6 +22,7 @@ export default function createDashboardState() {
       countyTrendCache: new Map(),
       activeTrendType: 'hospital',
       activeTrendRange: 'yearly',
+      setRange: null,
       activeTrendView: 'line', // mobile carousel: 'line' | 'bar' | 'grid'
       trendScope: 'national',
       trendArea: null,

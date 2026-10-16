@@ -1,0 +1,17 @@
+[
+  {
+    "YEAR": "2024",
+    "MONTH": "January",
+    "BENE_GEO_LVL": "County",
+    "BENE_STATE_ABRVTN": "CA",
+    "BENE_STATE_DESC": "California",
+    "BENE_COUNTY_DESC": "Los Angeles County",
+    "BENE_FIPS_CD": "06037",
+    "TOT_BENES": "1500000",
+    "ORGNL_MDCR_BENES": "500000",
+    "MA_AND_OTH_BENES": "1000000",
+    "PRSCRPTN_DRUG_TOT_BENES": "1300000",
+    "PRSCRPTN_DRUG_PDP_BENES": "250000",
+    "PRSCRPTN_DRUG_MAPD_BENES": "1050000"
+  }
+]

@@ -79,14 +79,17 @@ export default function initHeroCard(yearlyWithLatest) {
 
   renderEnrollmentHeroCard('hospital');
 
+  document.addEventListener('dashboard:typechange', (event) => {
+    renderEnrollmentHeroCard(event.detail?.type);
+  });
+
   document.querySelectorAll('.dashboard-type-button').forEach((btn) => {
     btn.addEventListener('click', () => {
       const { dashboardType } = btn.dataset;
-      renderEnrollmentHeroCard(dashboardType);
-      // Lets future features (state maps, tables, etc.) react to the
-      // dataset swap without this handler needing to know about them.
       document.dispatchEvent(
-        new CustomEvent('dashboard:typechange', { detail: { type: dashboardType } }),
+        new CustomEvent('dashboard:typechange', {
+          detail: { type: dashboardType, source: 'human', moveFocus: true, announce: true },
+        }),
       );
     });
   });

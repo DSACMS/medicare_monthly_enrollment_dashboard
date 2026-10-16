@@ -30,6 +30,29 @@ module.exports = function (config) {
   // Copy the robots.txt file to the output
   config.addPassthroughCopy('robots.txt');
 
+  // Belt-and-suspenders: also emit a .nojekyll in _site so the Pages CDN
+  // never tries to re-run Jekyll on the uploaded artifact.
+  config.addPassthroughCopy('.nojekyll');
+  config.addPassthroughCopy('llms.txt');
+  config.addPassthroughCopy('.well-known');
+
+  // Parquet + manifest emitted by scripts/fetch_cms_data.py. The directory
+  // only exists in the deploy pipeline (see ADR-0001); PR CI builds without
+  // it, so guard the passthrough so a missing directory doesn't warn.
+  if (fs.existsSync('generated/data')) {
+    config.addPassthroughCopy({ 'generated/data': 'data' });
+  }
+
+  config.addPassthroughCopy({
+    'node_modules/@duckdb/duckdb-wasm/dist/duckdb-browser.mjs': 'assets/duckdb/duckdb-browser.mjs',
+    'node_modules/@duckdb/duckdb-wasm/dist/duckdb-mvp.wasm': 'assets/duckdb/duckdb-mvp.wasm',
+    'node_modules/@duckdb/duckdb-wasm/dist/duckdb-eh.wasm': 'assets/duckdb/duckdb-eh.wasm',
+    'node_modules/@duckdb/duckdb-wasm/dist/duckdb-browser-mvp.worker.js':
+      'assets/duckdb/duckdb-browser-mvp.worker.js',
+    'node_modules/@duckdb/duckdb-wasm/dist/duckdb-browser-eh.worker.js':
+      'assets/duckdb/duckdb-browser-eh.worker.js',
+  });
+
   // Specific scripts to guides
   config.addPassthroughCopy('./assets/_common/dashboard/*');
   config.addPassthroughCopy('./assets/**/js/*');
