@@ -356,6 +356,8 @@ export default function initGrid(state, mappableStateNames) {
     const hasState = Boolean(stateName);
 
     enrollmentTabCounty.hidden = !hasState;
+    // Lone "States" tab has nothing to switch to until a state is picked.
+    enrollmentTabState.setAttribute('aria-disabled', String(!hasState));
     enrollmentTabCounty.textContent = hasState ? `${stateName} Counties` : 'Counties';
 
     // Edge case: state cleared while county view was active — force back to state view.

@@ -104,7 +104,7 @@
   font-weight: 600;
 }
 
-.data-grid-view-tabs .data-grid-view-tab:hover {
+.data-grid-view-tabs .data-grid-view-tab:not([aria-disabled='true']):hover {
   background: rgba(20, 20, 28, 0.06);
   color: var(--ink);
 }
@@ -112,6 +112,14 @@
 .data-grid-view-tabs .data-grid-view-tab[aria-selected='true'] {
   font-weight: 700;
   border-color: var(--border);
+}
+
+.data-grid-view-tabs .data-grid-view-tab[aria-disabled='true'] {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  color: var(--ink-2);
+  cursor: not-allowed;
 }
 
 .data-grid-view-tabs .data-grid-view-tab:focus-visible {
