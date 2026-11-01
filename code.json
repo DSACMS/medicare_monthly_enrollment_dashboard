@@ -11,7 +11,9 @@
         "URL": "https://github.com/DSACMS/medicare_monthly_enrollment_dashboard/blob/main/LICENSE"
       }
     ],
-    "usageType": ["openSource"],
+    "usageType": [
+      "openSource"
+    ],
     "exemptionText": ""
   },
   "organization": "Centers for Medicare & Medicaid Services",
@@ -23,25 +25,40 @@
   "disclaimerURL": "",
   "disclaimerText": "",
   "vcs": "git",
-  "laborHours": 5625,
+  "laborHours": 5792,
   "reuseFrequency": {
-    "forks": 0,
+    "forks": 3,
     "clones": 0
   },
-  "platforms": ["web"],
-  "categories": ["data-visualization", "data-analytics"],
+  "platforms": [
+    "web"
+  ],
+  "categories": [
+    "data-visualization",
+    "data-analytics"
+  ],
   "softwareType": "standalone/web",
-  "languages": ["JavaScript", "SCSS", "Nunjucks", "HTML"],
+  "languages": [
+    "JavaScript",
+    "SCSS",
+    "Nunjucks",
+    "HTML"
+  ],
   "maintenance": "internal",
   "contractNumber": [],
   "SBOM": "https://github.com/DSACMS/medicare_monthly_enrollment_dashboard/network/dependencies",
   "relatedCode": [],
-  "reusedCode": [],
+  "reusedCode": [
+    {
+      "name": "U.S. Web Design System (USWDS)",
+      "URL": "https://github.com/uswds/uswds"
+    }
+  ],
   "partners": [],
   "date": {
     "created": "2026-06-17T16:59:45Z",
-    "lastModified": "2026-08-11T19:02:28Z",
-    "metadataLastUpdated": "2026-08-11T19:03:13.636Z"
+    "lastModified": "2026-10-13T19:26:19Z",
+    "metadataLastUpdated": "2026-11-01T05:12:46.501Z"
   },
   "tags": [
     "dashboard",
@@ -62,9 +79,18 @@
   "userInput": true,
   "fismaLevel": "low",
   "group": "CMS/OA/DSAC",
-  "projects": ["medicare-monthly-enrollment-dashboard"],
-  "systems": ["data.cms.gov"],
-  "subsetInHealthcare": ["medicare"],
-  "userType": ["beneficiaries", "patients"],
+  "projects": [
+    "medicare-monthly-enrollment-dashboard"
+  ],
+  "systems": [
+    "data.cms.gov"
+  ],
+  "subsetInHealthcare": [
+    "medicare"
+  ],
+  "userType": [
+    "beneficiaries",
+    "patients"
+  ],
   "maturityModelTier": 2
 }
