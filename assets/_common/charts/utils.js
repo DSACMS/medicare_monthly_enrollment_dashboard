@@ -29,9 +29,10 @@ export function computeJenksBreaks(values, numClasses = DEFAULT_COLORS.length) {
 
   const clusters = ckmeans(clean, numClasses);
 
-  const breaks = clusters.slice(0, -1).map((cluster) => cluster[cluster.length - 1]);
-
-  return breaks.map((b) => Math.round(b));
+  // d3.scaleThreshold puts a value equal to a break in the class above, so
+  // each break is the lowest value of the next class. Rounding it can move
+  // values near a break into the wrong class.
+  return clusters.slice(1).map((cluster) => cluster[0]);
 }
 
 export const TREND_MARGIN = {
